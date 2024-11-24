@@ -3,6 +3,9 @@
 
 #include "Game/ProjectJBattleManager.h"
 
+#include "AbilitySystemComponent.h"
+#include "Game/Card/ProjectJCharacter.h"
+
 // Sets default values
 AProjectJBattleManager::AProjectJBattleManager()
 {
@@ -27,5 +30,11 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 
 void AProjectJBattleManager::StartBattle()
 {
+	for (auto& Character : BattleCharacters)
+	{
+		// 使用Attack技能
+		auto AttackHandle = Character->AttackAbilitySpecHandle;
+		Character->GetAbilitySystemComponent()->TryActivateAbility(AttackHandle, false);
+	}
 }
 

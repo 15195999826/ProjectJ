@@ -59,7 +59,7 @@ public:
 	TObjectPtr<AProjectJPerformManager> PerformManager;
 	UPROPERTY()
 	TObjectPtr<AProjectJLuaExecutor> LuaExecutor;
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AProjectJBattleManager> BattleManager;
 	// RuntimeData
 public:

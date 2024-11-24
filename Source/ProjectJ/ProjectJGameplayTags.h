@@ -11,6 +11,14 @@ namespace ProjectJGameplayTags
 	
 	PROJECTJ_API FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString = false);
 
+	// ActionPoints, 用于Montage动画抛出事件触发点
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint0);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint1);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint2);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint3);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint4);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint5);
+
 	// 战斗属性
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Battle_Health);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Battle_Attack);

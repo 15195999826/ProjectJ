@@ -10,6 +10,13 @@
 namespace ProjectJGameplayTags
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Test, "Test", "Test gameplay tag.");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint0, "Ability.ActionPoint0", "Action Point 0");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint1, "Ability.ActionPoint1", "Action Point 1");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint2, "Ability.ActionPoint2", "Action Point 2");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint3, "Ability.ActionPoint3", "Action Point 3");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint4, "Ability.ActionPoint4", "Action Point 4");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint5, "Ability.ActionPoint5", "Action Point 5");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Battle_Health, "SetByCaller.Attribute.Battle.Health", "生命值");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Battle_Attack, "SetByCaller.Attribute.Battle.Attack", "攻击力");

@@ -26,7 +26,7 @@ AProjectJCardBase::AProjectJCardBase()
 	FrameSprite->SetupAttachment(Collider);
 
 	Title = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Title"));
-	Title->SetupAttachment(RootComponent);
+	Title->SetupAttachment(Mesh, "Cube");
 }
 
 // Called when the game starts or when spawned
