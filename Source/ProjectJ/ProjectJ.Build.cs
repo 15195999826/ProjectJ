@@ -13,7 +13,7 @@ public class ProjectJ : ModuleRules
 		// RuntimeDependencies.Add(Path.Combine(ModuleDirectory, "../../Config/Config", "Unlua_LocText.ini"));
 
 		PublicDependencyModuleNames.AddRange(new string[] {
-			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "LomoCharacterCreator", "GameplayAbilities", "UMG", "Paper2D",
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "GameplayAbilities", "UMG", "Paper2D",
 			"Slate", "SlateCore", "UnLua"
 		});
 

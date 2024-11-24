@@ -2,7 +2,6 @@
 #include "CoreMinimal.h"
 #include "ProjectJItemBase.generated.h"
 
-class UPaperSprite;
 
 UENUM(BlueprintType)
 enum class EProjectJItemType : uint8
@@ -28,7 +27,7 @@ struct FProjectJItemBase : public FTableRowBase
 	FText Description;
 
 	UPROPERTY(BlueprintReadOnly, EditAnywhere)
-	TSoftObjectPtr<UPaperSprite> Sprite;
+	TSoftObjectPtr<UTexture2D> Icon;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	EProjectJItemType ItemType;

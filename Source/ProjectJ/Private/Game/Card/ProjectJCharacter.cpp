@@ -13,6 +13,7 @@
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Types/ProjectJCharacterConfig.h"
+#include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
 
 // Sets default values
 AProjectJCharacter::AProjectJCharacter()
@@ -21,7 +22,9 @@ AProjectJCharacter::AProjectJCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	FloatWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("FloatWidgetComponent"));
+	// 手动设置ReceiveHardwareInput为true
 	FloatWidgetComponent->SetupAttachment(RootComponent);
+
 
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(false);
@@ -51,14 +54,24 @@ void AProjectJCharacter::BindConfig_Implementation(const FName& InRowName)
 	auto Config = GetDefault<UProjectJDataTableSettings>()->CharacterTable.LoadSynchronous()->FindRow<
 		FProjectJCharacterConfig>(InRowName, TEXT(""));
 
-	// 给予属性
-	auto GSettings = GetDefault<UProjectJGeneralSettings>();
-	auto InitAttributeGESpecHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(this, GSettings->InitAttributeEffect);
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Health, Config->Health);
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Attack, Config->Attack);
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Speed, Config->Speed);
+	if (Config)
+	{
+		// 给予属性
+		auto GSettings = GetDefault<UProjectJGeneralSettings>();
+		auto InitAttributeGESpecHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(this, GSettings->InitAttributeEffect);
+		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Health, Config->Health);
+		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Attack, Config->Attack);
+		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Speed, Config->Speed);
 
-	AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*InitAttributeGESpecHandle.Data.Get());
+		AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*InitAttributeGESpecHandle.Data.Get());
+
+		auto FloatPanel = Cast<UProjectJCharacterFloatPanel>(FloatWidgetComponent->GetWidget());
+		FloatPanel->BindCharacter(this);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("CharacterConfig %s not found"), *InRowName.ToString());
+	}
 }
 
 FName AProjectJCharacter::GetConfigRowName_Implementation()

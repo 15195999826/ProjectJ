@@ -6,7 +6,6 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayAbilitySpecHandle.h"
 #include "ProjectJCardBase.h"
-#include "GameFramework/Actor.h"
 #include "Interface/ProjectJCardInterface.h"
 #include "ProjectJCharacter.generated.h"
 

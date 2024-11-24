@@ -14,6 +14,9 @@ class PROJECTJ_API AProjectJDebugBattleGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+public:
+	virtual void BeginPlay() override;
+
 protected:
 	UPROPERTY(EditAnywhere)
 	FVector TopTeamCenterPos;
@@ -22,7 +25,7 @@ protected:
 	FVector BottomTeamCenterPos;
 
 	UPROPERTY(EditAnywhere)
-	FVector TeamOffset;
+	float TeamOffsetY;
 	
 	// UPROPERTY()
 	// TArray<>

@@ -25,3 +25,7 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 
 }
 
+void AProjectJBattleManager::StartBattle()
+{
+}
+

@@ -8,6 +8,7 @@
 #include "Types/ProjectJGameStage.h"
 #include "Types/ProjectJLevelConfig.h"
 #include "Types/ProjectJRecord.h"
+#include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJEventSystem.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJNameLevelConfigDelegate, const FName&, const FProjectJLevelConfig&);
@@ -15,6 +16,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FProjectJOneCardDelegate, class AProjectJCar
 DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJOneStageChangeDelegate, EProjectJGameStage, EProjectJGameStage);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJStoryRecordSignature, const FProjectJStoryRecord&, Record);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FProjectJFocusEquipmentSlotSignature, bool , IsFocus,const FName& , RowName, EProjectJItemType, ItemType); 
 /**
  * 
  */
@@ -37,6 +39,12 @@ public:
 	
 	FSimpleMulticastDelegate OnPerformEnd;
 	// ----------------- 表演事件 End-----------------
+
+	// ----------------- UI事件 Start-----------------
+	UPROPERTY(BlueprintCallable, BlueprintAssignable)
+	FProjectJFocusEquipmentSlotSignature OnFocusEquipmentSlot;
+	// ----------------- UI事件 End-----------------
+
 	
 	FProjectJOneStageChangeDelegate OnStageChange;
 	FProjectJOneCardDelegate OnObserveCard;

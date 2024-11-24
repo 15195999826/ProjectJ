@@ -4,12 +4,26 @@
 #include "DebugBattle/ProjectJDebugBattleGameMode.h"
 
 #include "AbilitySystemComponent.h"
+#include "EngineUtils.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJBattleManager.h"
 #include "Game/ProjectJGameBPFL.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/Item/ProjectJItemBase.h"
+
+void AProjectJDebugBattleGameMode::BeginPlay()
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	// 查询BattleManager
+	for (TActorIterator<AProjectJBattleManager> It(GetWorld()); It; ++It)
+	{
+		ContextSystem->BattleManager = *It;
+		break;
+	}
+	
+	Super::BeginPlay();
+}
 
 void AProjectJDebugBattleGameMode::RegisterTeamCharacter(int32 TeamID, const FString& InPosition, const FString& InCharacterRow,
                                                          const FString& InWeaponRow, const FString& InArmorRow)
@@ -49,20 +63,22 @@ void AProjectJDebugBattleGameMode::EnterDebugBattle()
 		auto ASC = Character->GetAbilitySystemComponent();
 		auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 		auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+
+		auto Location = GetTeamPosition(TeamID, Position, TeamCountMap[TeamID]);
+		UE_LOG(LogTemp, Log, TEXT("TeamID: %d, Position: %d, TeamCount: %d, Location: %s"), TeamID, Position, TeamCountMap[TeamID], *Location.ToString());
 		
-		
-		Character->SetActorLocation(GetTeamPosition(TeamID, Position, TeamCountMap[TeamID]));
+		Character->SetActorLocation(Location);
 	}
 }
 
 FVector AProjectJDebugBattleGameMode::GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount)
 {
 	// 始终保持队伍显示居中
-	const FVector& TeamCenterPos = InTeamID == 0 ? TopTeamCenterPos : BottomTeamCenterPos;
+	const FVector& TeamCenterPos = InTeamID == 1 ? TopTeamCenterPos : BottomTeamCenterPos;
 
 	// Calculate the offset for each character
-	float Offset = TeamOffset.X * (InPosition - (InTotalCount - 1) / 2.0f);
+	float Offset = TeamOffsetY * (InPosition - (InTotalCount - 1) / 2.0f);
 
 	// Return the calculated position
-	return TeamCenterPos + FVector(Offset, 0, 0);
+	return TeamCenterPos + FVector(0, Offset, 0);
 }

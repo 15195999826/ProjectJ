@@ -5,6 +5,7 @@
 #include "Engine/EngineTypes.h"
 #include "GameplayTagsManager.h"
 #include "ProjectJLogChannels.h"
+#include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #define LOCTEXT_NAMESPACE "ProjectJGameplayTags"
 namespace ProjectJGameplayTags
 {
@@ -21,21 +22,19 @@ namespace ProjectJGameplayTags
 	};
 
 	const TMap<FGameplayTag, FText> Attributes2Text ={
-		// {SetByCaller_Attribute_Player_Gold, LOCTEXT("Gold", "金币")},
-		// {SetByCaller_Attribute_Player_Round, LOCTEXT("Round", "回合")},
-		// {SetByCaller_Attribute_Player_WinTimes, LOCTEXT("WinTimes", "胜利次数")},
-		// {SetByCaller_Attribute_Player_MaxWinTimes, LOCTEXT("MaxWinTimes", "最大胜利次数")},
-		// {SetByCaller_Attribute_Player_LeftLife, LOCTEXT("LeftLife", "剩余生命")},
-		// {SetByCaller_Attribute_Player_Difficulty, LOCTEXT("Difficulty", "难度")},
+		{SetByCaller_Attribute_Battle_Health, LOCTEXT("Health", "生命值")},
+		{SetByCaller_Attribute_Battle_Attack, LOCTEXT("Attack", "攻击力")},
+		{SetByCaller_Attribute_Battle_Speed, LOCTEXT("Speed", "身法")},
+		{SetByCaller_Attribute_Battle_Armor, LOCTEXT("Armor", "护甲")},
+		{SetByCaller_Attribute_Battle_Damage, LOCTEXT("Damage", "伤害")},
 	};
 
 	const TMap<FGameplayTag, TFunction<FGameplayAttribute()>> Tag2Attribute = {
-		// {SetByCaller_Attribute_Player_Gold, [](){return UAutoDWPlayerAttributeSet::GetGoldAttribute();}},
-		// {SetByCaller_Attribute_Player_Round, [](){return UAutoDWPlayerAttributeSet::GetRoundAttribute();}},
-		// {SetByCaller_Attribute_Player_WinTimes, [](){return UAutoDWPlayerAttributeSet::GetWinTimesAttribute();}},
-		// {SetByCaller_Attribute_Player_MaxWinTimes, [](){return UAutoDWPlayerAttributeSet::GetMaxWinTimesAttribute();}},
-		// {SetByCaller_Attribute_Player_LeftLife, [](){return UAutoDWPlayerAttributeSet::GetLeftLifeAttribute();}},
-		// {SetByCaller_Attribute_Player_Difficulty, [](){return UAutoDWPlayerAttributeSet::GetDifficultyAttribute();}},
+		{SetByCaller_Attribute_Battle_Health, [](){return UProjectJCharacterAttributeSet::GetHealthAttribute();}},
+		{SetByCaller_Attribute_Battle_Attack, [](){return UProjectJCharacterAttributeSet::GetAttackAttribute();}},
+		{SetByCaller_Attribute_Battle_Speed, [](){return UProjectJCharacterAttributeSet::GetSpeedAttribute();}},
+		{SetByCaller_Attribute_Battle_Armor, [](){return UProjectJCharacterAttributeSet::GetArmorAttribute();}},
+		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
 	};
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)

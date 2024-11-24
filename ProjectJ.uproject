@@ -48,6 +48,10 @@
 		{
 			"Name": "AutoNodeArranger",
 			"Enabled": true
+		},
+		{
+			"Name": "LomoCharacterCreator",
+			"Enabled": true
 		}
 	]
 }
