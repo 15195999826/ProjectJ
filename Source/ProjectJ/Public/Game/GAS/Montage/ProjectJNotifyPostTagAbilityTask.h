@@ -5,19 +5,19 @@
 #include "CoreMinimal.h"
 #include "Abilities/Tasks/AbilityTask.h"
 #include "Game/GAS/ProjectJAbilitySystemComponent.h"
-#include "ProjectJMontagePostTagAbilityTask.generated.h"
+#include "ProjectJNotifyPostTagAbilityTask.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTJ_API UProjectJMontagePostTagAbilityTask : public UAbilityTask
+class PROJECTJ_API UProjectJNotifyPostTagAbilityTask : public UAbilityTask
 {
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "ProjectJ|Ability|Tasks", meta = (DisplayName="Wait MontagePost", HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "TRUE"))
-	static UProjectJMontagePostTagAbilityTask* CreateMontagePost(UGameplayAbility* OwningAbility, FGameplayTag EventTag, bool OnlyTriggerOnce = false);
+	UFUNCTION(BlueprintCallable, Category = "ProjectJ|Ability|Tasks", meta = (DisplayName="Wait NotifyPost", HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "TRUE"))
+	static UProjectJNotifyPostTagAbilityTask* CreateNotifyPost(UGameplayAbility* OwningAbility, FGameplayTag EventTag, bool OnlyTriggerOnce = false);
 
 protected:
 	virtual void Activate() override;

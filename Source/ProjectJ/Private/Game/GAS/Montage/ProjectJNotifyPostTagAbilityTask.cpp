@@ -1,18 +1,18 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Game/GAS/Montage/ProjectJMontagePostTagAbilityTask.h"
+#include "Game/GAS/Montage/ProjectJNotifyPostTagAbilityTask.h"
 
-UProjectJMontagePostTagAbilityTask* UProjectJMontagePostTagAbilityTask::CreateMontagePost(UGameplayAbility* OwningAbility,
+UProjectJNotifyPostTagAbilityTask* UProjectJNotifyPostTagAbilityTask::CreateNotifyPost(UGameplayAbility* OwningAbility,
 	FGameplayTag EventTag, bool OnlyTriggerOnce)
 {
-	UProjectJMontagePostTagAbilityTask* RetTask = NewAbilityTask<UProjectJMontagePostTagAbilityTask>(OwningAbility);
+	UProjectJNotifyPostTagAbilityTask* RetTask = NewAbilityTask<UProjectJNotifyPostTagAbilityTask>(OwningAbility);
 	RetTask->Tag = EventTag;
 	RetTask->OnlyTriggerOnce = OnlyTriggerOnce;
 	return RetTask;
 }
 
-void UProjectJMontagePostTagAbilityTask::Activate()
+void UProjectJNotifyPostTagAbilityTask::Activate()
 {
 	Super::Activate();
 
@@ -25,10 +25,10 @@ void UProjectJMontagePostTagAbilityTask::Activate()
 	}
 
 	MyHandle = ProjectJASC->MontageEventCallbacks.FindOrAdd(Tag).AddUObject(this,
-		&UProjectJMontagePostTagAbilityTask::MontagePostCallback);
+		&UProjectJNotifyPostTagAbilityTask::MontagePostCallback);
 }
 
-void UProjectJMontagePostTagAbilityTask::OnDestroy(bool bInOwnerFinished)
+void UProjectJNotifyPostTagAbilityTask::OnDestroy(bool bInOwnerFinished)
 {
 	auto ProjectJASC = Cast<UProjectJAbilitySystemComponent>(AbilitySystemComponent);
 	if (ProjectJASC && MyHandle.IsValid())
@@ -40,7 +40,7 @@ void UProjectJMontagePostTagAbilityTask::OnDestroy(bool bInOwnerFinished)
 }
 
 
-void UProjectJMontagePostTagAbilityTask::MontagePostCallback(FProjectJMontageEventData* PanguMontageEventData)
+void UProjectJNotifyPostTagAbilityTask::MontagePostCallback(FProjectJMontageEventData* PanguMontageEventData)
 {
 	EventReceived.Broadcast(*PanguMontageEventData);
 		

@@ -41,7 +41,7 @@ void AProjectJDebugBattleGameMode::RegisterTeamCharacter(int32 TeamID, const FSt
 	auto Position  = FCString::Atoi(*InPosition);
 	Character->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute(), Position);
 
-	ContextSystem->BattleManager->BattleCharacters.Add(Character);
+	ContextSystem->BattleManager->BattleCharacterMap.Add(Character->ID, Character);
 }
 
 void AProjectJDebugBattleGameMode::EnterDebugBattle()
@@ -51,23 +51,23 @@ void AProjectJDebugBattleGameMode::EnterDebugBattle()
 		{0, 0},
 		{1, 0}
 	};
-	for (auto& TeamCharacter : ContextSystem->BattleManager->BattleCharacters)
+	for (auto& Tuple : ContextSystem->BattleManager->BattleCharacterMap)
 	{
-		auto TeamASC = TeamCharacter->GetAbilitySystemComponent();
+		auto TeamASC = Tuple.Value->GetAbilitySystemComponent();
 		auto LocalTeamID = static_cast<int32>(TeamASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 		TeamCountMap[LocalTeamID]++;
 	}
 	
-	for (auto& Character : ContextSystem->BattleManager->BattleCharacters)
+	for (auto& Tuple : ContextSystem->BattleManager->BattleCharacterMap)
 	{
-		auto ASC = Character->GetAbilitySystemComponent();
+		auto ASC = Tuple.Value->GetAbilitySystemComponent();
 		auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 		auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
 
 		auto Location = GetTeamPosition(TeamID, Position, TeamCountMap[TeamID]);
 		UE_LOG(LogTemp, Log, TEXT("TeamID: %d, Position: %d, TeamCount: %d, Location: %s"), TeamID, Position, TeamCountMap[TeamID], *Location.ToString());
 		
-		Character->SetActorLocation(Location);
+		Tuple.Value->SetActorLocation(Location);
 	}
 }
 

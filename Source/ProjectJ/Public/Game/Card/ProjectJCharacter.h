@@ -7,6 +7,7 @@
 #include "GameplayAbilitySpecHandle.h"
 #include "ProjectJCardBase.h"
 #include "Interface/ProjectJCardInterface.h"
+#include "Types/ProjectJCardAnimState.h"
 #include "ProjectJCharacter.generated.h"
 
 class UProjectJAttackGA;
@@ -47,6 +48,9 @@ public:
 	
 	// End IProjectJCard
 
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void ChangeAnimState(EProjectJCardAnimState InState);
+
 protected:
 	UPROPERTY()
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
@@ -65,6 +69,7 @@ public:
 	// 普攻技能，未装备武器时需要设置默认值； 装备武器后替换为武器默认攻击
 	FGameplayAbilitySpecHandle AttackAbilitySpecHandle;
 	TWeakObjectPtr<UProjectJAttackGA> AttackGA;
-	
+
+	bool IsDead();
 	// ------- 战斗相关 End -------
 };

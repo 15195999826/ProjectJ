@@ -31,5 +31,15 @@ namespace ProjectJGameplayTags
 	PROJECTJ_API extern const TMap<FGameplayTag, TFunction<FGameplayAttribute()>> Tag2Attribute;
 	
 
+	// 战斗事件
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_RoundStart);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_RoundEnd);
+	
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_BeforeAttack);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_AfterAttack);
+	
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_GetDamage);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_Dead);
+	
 	
 };

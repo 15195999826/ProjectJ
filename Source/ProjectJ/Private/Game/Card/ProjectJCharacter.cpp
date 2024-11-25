@@ -79,3 +79,10 @@ FName AProjectJCharacter::GetConfigRowName_Implementation()
 	return ConfigRowName;
 }
 
+bool AProjectJCharacter::IsDead()
+{
+	auto Health = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetHealthAttribute());
+	auto Damage = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetDamageAttribute());
+	return Health <= Damage;
+}
+

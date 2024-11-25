@@ -43,6 +43,15 @@ namespace ProjectJGameplayTags
 		{SetByCaller_Attribute_Battle_Armor, [](){return UProjectJCharacterAttributeSet::GetArmorAttribute();}},
 		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
 	};
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_RoundStart, "Battle.Event.RoundStart", "Round Start");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_RoundEnd, "Battle.Event.RoundEnd", "Round End");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_BeforeAttack, "Battle.Event.BeforeAttack", "Before Attack");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_AfterAttack, "Battle.Event.AfterAttack", "After Attack");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetDamage, "Battle.Event.GetDamage", "Get Damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_Dead, "Battle.Event.Dead", "Dead");
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{
