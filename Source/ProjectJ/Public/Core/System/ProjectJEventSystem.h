@@ -52,4 +52,10 @@ public:
 	FProjectJOneCardDelegate OnHideAtCard;
 	// 偷袭
 	FProjectJOneCardDelegate OnAmbushCard;
+
+
+	// ----------------- 战斗事件 Start-----------------
+	FOnProjectJOneIntParamDelegate OnWaitingAttack;
+	
+	// -----------------战斗事件 End-----------------
 };

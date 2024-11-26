@@ -1,6 +1,6 @@
 #pragma once
 
-namespace AutoDWGlobal
+namespace ProjectJGlobal
 {
 	// 定义全局常量
 	// Shop ScenePoint
@@ -8,4 +8,6 @@ namespace AutoDWGlobal
 
 	PROJECTJ_API extern const TArray<FName> RightTeams;
 	PROJECTJ_API extern const TMap<FName, int32> LeftTeamToPosition;
+
+	PROJECTJ_API extern const FName Program_Ani_LocationKey;
 }

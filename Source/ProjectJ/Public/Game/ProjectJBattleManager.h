@@ -50,8 +50,11 @@ struct FProjectJBattleContext
 	// 行动顺序， 角色ID
 	TArray<int32> OrderArray;
 	int32 CurrentOrderIndex = 0;
+	
+	// 攻击相关数据
 	int32 AttackTimes = 0;
 	int32 AttackTotalTimes = 1;
+	TArray<int32> AttackTargets;
 };
 
 UCLASS()
@@ -98,9 +101,10 @@ private:
 		{EProjectJBattleStage::RoundEnd, TEXT("RoundEnd")},
 		{EProjectJBattleStage::EndBattle, TEXT("EndBattle")},
 	};
-
+	
 	// Todo: Pending功能
-	TArray<FString> WaitSignals;
+	inline static FName SignalSimplePending = TEXT("SimplePending");
+	TArray<FName> WaitSignals;
 	EProjectJBattleStage Stage = EProjectJBattleStage::EnterBattle;
 
 	void ChangeStage(EProjectJBattleStage NewStage);
@@ -110,5 +114,6 @@ private:
 
 	void RoundStart();
 
+	void OnWaitingAttack(int InCharacterID);
 	
 };

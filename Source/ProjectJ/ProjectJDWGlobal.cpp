@@ -1,6 +1,6 @@
 #include "ProjectJDWGlobal.h"
 
-namespace AutoDWGlobal
+namespace ProjectJGlobal
 {
 	const FName Test = TEXT("Test");
 	
@@ -12,4 +12,5 @@ namespace AutoDWGlobal
 		
 	};
 
+	const FName Program_Ani_LocationKey = TEXT("Location");
 }

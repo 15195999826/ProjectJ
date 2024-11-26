@@ -4,6 +4,7 @@
 #include "Game/ProjectJBattleManager.h"
 
 #include "AbilitySystemComponent.h"
+#include "Core/System/ProjectJEventSystem.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/ProjectJCardAnimState.h"
@@ -20,7 +21,8 @@ AProjectJBattleManager::AProjectJBattleManager()
 void AProjectJBattleManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+	EventSystem->OnWaitingAttack.AddUObject(this, &AProjectJBattleManager::OnWaitingAttack);
 }
 
 FProjectJExecEventRet AProjectJBattleManager::ExecuteEvent(const FProjectJBattleEventData& InEventData)
@@ -140,7 +142,7 @@ void AProjectJBattleManager::ChangeStage(EProjectJBattleStage NewStage)
 		UE_LOG(LogTemp, Warning, TEXT("上一个阶段尚未完成, Stage: %s"), *BattleStageToStr[Stage]);
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("Change Stage %s -> %s"), *BattleStageToStr[Stage], *BattleStageToStr[NewStage]);
+	UE_LOG(LogTemp, Log, TEXT("[BattleManager] Change Stage %s -> %s"), *BattleStageToStr[Stage], *BattleStageToStr[NewStage]);
 	auto OldStage = Stage;
 	Stage = NewStage;
 	OnStageChange(OldStage, NewStage);
@@ -183,25 +185,55 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				BattleContext.CurrentOrderIndex = BattleContext.CurrentOrderIndex + 1;
 				BattleContext.AttackTimes = 0;
 				BattleContext.AttackTotalTimes = 1;
+				BattleContext.AttackTargets.Empty();
 			}
 			break;
 		case EProjectJBattleStage::CharacterStartAttack:
 			{
 				BattleContext.AttackTimes = BattleContext.AttackTimes + 1;
-				WaitSignals.Add("1");
+				WaitSignals.Add(SignalSimplePending);
 				// 1. 先播放当前攻击者StartAttack动画
 				// 2. 等待动画播放完毕
 				// 3. 抛出战斗事件， XXX 攻击前， 检查是否触发了其它卡牌的技能
 				//   - 如果有技能动画， 要等待技能动画执行完毕
 				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
-				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::AttackStart);
+				FProjectJCharacterAniData AniData;
+				// 选择最近的目标
+				auto SelfPosition = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+				// 遍历敌方队伍，	Position相减，取绝对值，最小的就是最近的
+				auto SelfTeam = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetTeamAttribute()));
+				const auto& TargetTeam = SelfTeam == 0 ? BattleContext.TopTeam : BattleContext.BottomTeam;
+				int32 MinDistance = INT32_MAX;
+				int32 MinTargetID = 0;
+				for (const auto& TargetID : TargetTeam)
+				{
+					auto TargetCharacter = BattleCharacterMap[TargetID];
+					auto TargetPosition = static_cast<int32>(TargetCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+					auto Distance = FMath::Abs(SelfPosition - TargetPosition);
+					if (Distance < MinDistance)
+					{
+						MinDistance = Distance;
+						MinTargetID = TargetID;
+					}
+				}
+
+				BattleContext.AttackTargets.Add(MinTargetID);
+				AniData.TargetCards.Add(BattleCharacterMap[MinTargetID].Get());
+				
+				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::AttackStart, AniData);
 			}
 			break;
 		case EProjectJBattleStage::CharacterDoAttack:
 			{
+				WaitSignals.Add(SignalSimplePending);
 				// 1. 当前卡牌播放DoAttack动画， 在ActionPoint执行造成伤害的功能
 				// 2. 等待动画播放完毕
 				// 3. 战斗中产生了, XXX受伤事件， XXX死亡，依次存入事件队列， 每次向一个角色发送， 如果该角色有技能，就先执行它的，再执行下一个人的。
+				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
+				FProjectJCharacterAniData AniData;
+				AniData.TargetCards.Add(BattleCharacterMap[BattleContext.AttackTargets[0]].Get());
+				
+				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::DoAttack, AniData);
 			}
 			break;
 		case EProjectJBattleStage::CharacterEndAttack:
@@ -251,5 +283,12 @@ void AProjectJBattleManager::RoundStart()
 	BattleContext.CurrentOrderIndex = -1;
 	
 	// Todo: 回合开始事件
+}
+
+void AProjectJBattleManager::OnWaitingAttack(int InCharacterID)
+{
+	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
+	check(WaitSignals.Contains(SignalSimplePending));
+	WaitSignals.Remove(SignalSimplePending);
 }
 

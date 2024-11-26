@@ -10,6 +10,34 @@
 #include "Types/ProjectJCardAnimState.h"
 #include "ProjectJCharacter.generated.h"
 
+UENUM()
+enum class EProgramAniAttackType
+{
+	Single,
+	
+};
+
+USTRUCT()
+struct FProgramAttackData
+{
+	GENERATED_BODY()
+
+	FProgramAttackData(): StartTime(0), Duration(0)
+	{
+	}
+
+	EProgramAniAttackType AttackType = EProgramAniAttackType::Single;
+
+	FVector StartLocation;
+	FVector TargetLocation;
+	FRotator StartRotation;
+	FRotator TargetRotation;
+	
+	float StartTime;
+	float Duration;
+	
+};
+
 class UProjectJAttackGA;
 class UWidgetComponent;
 class UAbilitySystemComponent;
@@ -48,8 +76,9 @@ public:
 	
 	// End IProjectJCard
 
-	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
-	void ChangeAnimState(EProjectJCardAnimState InState);
+	// 蓝图动画状态机
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void ChangeAnimState(EProjectJCardAnimState InState, const FProjectJCharacterAniData& InData);
 
 protected:
 	UPROPERTY()
@@ -72,4 +101,22 @@ public:
 
 	bool IsDead();
 	// ------- 战斗相关 End -------
+
+	// 程序动画
+private:
+	FProjectJCharacterAniData AniData;
+	EProjectJCardAnimState AnimState = EProjectJCardAnimState::Idle;
+
+	FProgramAttackData AttackAniData;
+	// StartAttack动画
+	FTimerHandle StartAttackTimerHandle;
+	void UpdateStartAttackAnimation();
+
+	// WaitingAttack动画
+	FVector WaitingAttackOriginLocation;
+	float WaitingAttackTimer = 0;
+
+	// DoAttack动画
+	FTimerHandle DoAttackTimerHandle;
+	void UpdateDoAttackAnimation();
 };
