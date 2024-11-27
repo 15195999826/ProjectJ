@@ -1,3 +1,3 @@
 #include "Types/ProjectJCardAnimState.h"
 
-const FProjectJCharacterAniData FProjectJCharacterAniData::Empty;
+const FProjectJCharacterAniData FProjectJCharacterAniData::Empty{true};

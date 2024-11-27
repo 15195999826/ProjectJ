@@ -57,6 +57,7 @@ struct FProjectJBattleContext
 	TArray<int32> AttackTargets;
 };
 
+
 UCLASS()
 class PROJECTJ_API AProjectJBattleManager : public AActor
 {
@@ -80,6 +81,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FProjectJExecEventRet ExecuteEvent(const FProjectJBattleEventData& InEventData);
+
+	FVector GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount);
 protected:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJCharacter>> BattleCharacterMap;
@@ -115,5 +118,9 @@ private:
 	void RoundStart();
 
 	void OnWaitingAttack(int InCharacterID);
+	void AfterAttackHit(int InCharacterID);
+	void OnIdleReturnToPosition(int InCharacterID);
+	
+	
 	
 };

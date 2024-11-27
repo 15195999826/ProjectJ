@@ -49,5 +49,8 @@ public:
 	
 	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJNavPointActor> NavPointClass;
-	
+
+
+	UPROPERTY(config, EditAnywhere, Category=Animations)
+	TSoftObjectPtr<UAnimMontage> HitMontage;
 };

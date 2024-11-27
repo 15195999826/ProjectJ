@@ -73,7 +73,8 @@ public:
 	virtual void BindConfig_Implementation(const FName& InRowName) override;
 
 	virtual FName GetConfigRowName_Implementation() override;
-	
+	void PostAfterAttackHit();
+
 	// End IProjectJCard
 
 	// 蓝图动画状态机
@@ -100,6 +101,7 @@ public:
 	TWeakObjectPtr<UProjectJAttackGA> AttackGA;
 
 	bool IsDead();
+	bool IsAtTopTeam();
 	// ------- 战斗相关 End -------
 
 	// 程序动画
@@ -107,7 +109,8 @@ private:
 	FProjectJCharacterAniData AniData;
 	EProjectJCardAnimState AnimState = EProjectJCardAnimState::Idle;
 
-	FProgramAttackData AttackAniData;
+	// 用于下列动画的相关数据
+	FProgramAttackData GeneralAniData;
 	// StartAttack动画
 	FTimerHandle StartAttackTimerHandle;
 	void UpdateStartAttackAnimation();
@@ -119,4 +122,9 @@ private:
 	// DoAttack动画
 	FTimerHandle DoAttackTimerHandle;
 	void UpdateDoAttackAnimation();
+	bool AlreadyPlayWillHitMontage = false;
+
+	// Idle Return To Position Animation
+	FTimerHandle IdleReturnToPositionTimerHandle;
+	void UpdateIdleReturnToPositionAnimation();
 };

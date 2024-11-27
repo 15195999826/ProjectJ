@@ -11,6 +11,7 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/Item/ProjectJItemBase.h"
+#include "Game/ProjectJLevelSettingActor.h"
 
 void AProjectJDebugBattleGameMode::BeginPlay()
 {
@@ -19,6 +20,13 @@ void AProjectJDebugBattleGameMode::BeginPlay()
 	for (TActorIterator<AProjectJBattleManager> It(GetWorld()); It; ++It)
 	{
 		ContextSystem->BattleManager = *It;
+		break;
+	}
+
+	for (TActorIterator<AProjectJLevelSettingActor> It(GetWorld()); It; ++It)
+	{
+		auto LevelSetting = *It;
+		ContextSystem->LevelSettingActor = LevelSetting;
 		break;
 	}
 	
@@ -64,21 +72,9 @@ void AProjectJDebugBattleGameMode::EnterDebugBattle()
 		auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 		auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
 
-		auto Location = GetTeamPosition(TeamID, Position, TeamCountMap[TeamID]);
+		auto Location = ContextSystem->BattleManager->GetTeamPosition(TeamID, Position, TeamCountMap[TeamID]);
 		UE_LOG(LogTemp, Log, TEXT("TeamID: %d, Position: %d, TeamCount: %d, Location: %s"), TeamID, Position, TeamCountMap[TeamID], *Location.ToString());
 		
 		Tuple.Value->SetActorLocation(Location);
 	}
-}
-
-FVector AProjectJDebugBattleGameMode::GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount)
-{
-	// 始终保持队伍显示居中
-	const FVector& TeamCenterPos = InTeamID == 1 ? TopTeamCenterPos : BottomTeamCenterPos;
-
-	// Calculate the offset for each character
-	float Offset = TeamOffsetY * (InPosition - (InTotalCount - 1) / 2.0f);
-
-	// Return the calculated position
-	return TeamCenterPos + FVector(0, Offset, 0);
 }

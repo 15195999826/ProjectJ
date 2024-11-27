@@ -18,17 +18,7 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-	UPROPERTY(EditAnywhere)
-	FVector TopTeamCenterPos;
 
-	UPROPERTY(EditAnywhere)
-	FVector BottomTeamCenterPos;
-
-	UPROPERTY(EditAnywhere)
-	float TeamOffsetY;
-	
-	// UPROPERTY()
-	// TArray<>
 	
 public:
 	UFUNCTION(BlueprintCallable)
@@ -38,5 +28,5 @@ public:
 	void EnterDebugBattle();
 
 private:
-	FVector GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount);
+	
 };

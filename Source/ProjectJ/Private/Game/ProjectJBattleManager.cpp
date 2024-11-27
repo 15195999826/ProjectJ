@@ -4,7 +4,9 @@
 #include "Game/ProjectJBattleManager.h"
 
 #include "AbilitySystemComponent.h"
+#include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/ProjectJLevelSettingActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/ProjectJCardAnimState.h"
@@ -23,6 +25,8 @@ void AProjectJBattleManager::BeginPlay()
 	Super::BeginPlay();
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 	EventSystem->OnWaitingAttack.AddUObject(this, &AProjectJBattleManager::OnWaitingAttack);
+	EventSystem->AfterAttackHit.AddUObject(this, &AProjectJBattleManager::AfterAttackHit);
+	EventSystem->OnIdleReturnToPosition.AddUObject(this, &AProjectJBattleManager::OnIdleReturnToPosition);
 }
 
 FProjectJExecEventRet AProjectJBattleManager::ExecuteEvent(const FProjectJBattleEventData& InEventData)
@@ -32,6 +36,19 @@ FProjectJExecEventRet AProjectJBattleManager::ExecuteEvent(const FProjectJBattle
 	
 	
 	return Ret;
+}
+
+FVector AProjectJBattleManager::GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount)
+{
+	auto LevelSettingActor = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+	// 始终保持队伍显示居中
+	const FVector& TeamCenterPos = InTeamID == 1 ? LevelSettingActor->BattleAreaSettings.TopTeamCenterPos : LevelSettingActor->BattleAreaSettings.BottomTeamCenterPos;
+
+	// Calculate the offset for each character
+	float Offset = LevelSettingActor->BattleAreaSettings.TeamOffsetY * (InPosition - (InTotalCount - 1) / 2.0f);
+
+	// Return the calculated position
+	return TeamCenterPos + FVector(0, Offset, 0);
 }
 
 // Called every frame
@@ -84,7 +101,7 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 					if (BattleContext.AttackTimes == BattleContext.AttackTotalTimes)
 					{
 						// 轮到下一个角色准备攻击
-						if (BattleContext.CurrentOrderIndex >= BattleContext.OrderArray.Num())
+						if (BattleContext.CurrentOrderIndex >= BattleContext.OrderArray.Num() - 1)
 						{
 							ChangeStage(EProjectJBattleStage::RoundEnd);
 						}
@@ -238,9 +255,18 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 			break;
 		case EProjectJBattleStage::CharacterEndAttack:
 			{
+				WaitSignals.Add(SignalSimplePending);
 				// 1. 当前卡牌动画切换会Idle状态
 				// 2. 等待动画播放完毕
 				// 3. 抛出战斗事件， XXX攻击后， 检查是否触发了其它卡牌的技能
+				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
+				auto ASC = CurrentCharacter->GetAbilitySystemComponent();
+				auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
+				auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+				FProjectJCharacterAniData AniData;
+				// 返回发起攻击的位置
+				AniData.LocationPayload =  GetTeamPosition(TeamID, Position, TeamID == 0? BattleContext.BottomTeam.Num() : BattleContext.TopTeam.Num());
+				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::Idle, AniData);
 			}
 			break;
 		case EProjectJBattleStage::RoundEnd:
@@ -286,6 +312,20 @@ void AProjectJBattleManager::RoundStart()
 }
 
 void AProjectJBattleManager::OnWaitingAttack(int InCharacterID)
+{
+	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
+	check(WaitSignals.Contains(SignalSimplePending));
+	WaitSignals.Remove(SignalSimplePending);
+}
+
+void AProjectJBattleManager::AfterAttackHit(int InCharacterID)
+{
+	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
+	check(WaitSignals.Contains(SignalSimplePending));
+	WaitSignals.Remove(SignalSimplePending);
+}
+
+void AProjectJBattleManager::OnIdleReturnToPosition(int InCharacterID)
 {
 	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
 	check(WaitSignals.Contains(SignalSimplePending));

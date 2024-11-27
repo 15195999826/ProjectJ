@@ -56,6 +56,8 @@ public:
 
 	// ----------------- 战斗事件 Start-----------------
 	FOnProjectJOneIntParamDelegate OnWaitingAttack;
+	FOnProjectJOneIntParamDelegate AfterAttackHit;
+	FOnProjectJOneIntParamDelegate OnIdleReturnToPosition;
 	
 	// -----------------战斗事件 End-----------------
 };

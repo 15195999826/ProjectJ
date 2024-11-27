@@ -4,7 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Types/ProjectJCardAnimState.h"
 #include "ProjectJLevelSettingActor.generated.h"
+
+USTRUCT(BlueprintType)
+struct FProjectJBattleAreaSettings
+{
+	GENERATED_BODY()
+	
+	FProjectJBattleAreaSettings(): TeamOffsetY(0)
+	{
+	}
+
+	UPROPERTY(EditAnywhere)
+	FVector TopTeamCenterPos = FVector(200, 0 ,0);
+
+	UPROPERTY(EditAnywhere)
+	FVector BottomTeamCenterPos = FVector(-200, 0 ,0);
+
+	UPROPERTY(EditAnywhere)
+	float TeamOffsetY = 200.f;
+};
 
 UCLASS()
 class PROJECTJ_API AProjectJLevelSettingActor : public AActor
@@ -24,4 +44,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
 	FVector TalkWidgetOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
+	FProjectJProgramAnimationSettings ProgramAnimationSettings;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
+	FProjectJBattleAreaSettings BattleAreaSettings;
 };

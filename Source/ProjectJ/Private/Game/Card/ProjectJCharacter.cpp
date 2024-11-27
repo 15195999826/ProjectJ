@@ -11,6 +11,7 @@
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJGameBPFL.h"
+#include "Game/ProjectJLevelSettingActor.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "ProjectJ/ProjectJDWGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
@@ -63,9 +64,27 @@ void AProjectJCharacter::Tick(float DeltaTime)
 				// }
 			}
 			break;
-		case EProjectJCardAnimState::DoAttack:
+		case EProjectJCardAnimState::AfterAttackHit:
 			{
-				
+				// 如果卡牌Z轴值大于1， 怎快速下落到1
+				if (GetActorLocation().Z > 1 || GetActorRotation().Pitch > 0.1f)
+				{
+					auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+					auto NewLocation = GetActorLocation();
+					NewLocation.Z -= LevelSettings->ProgramAnimationSettings.OnAttackHitDropDownSpeed * DeltaTime;
+					auto NewRotation = GetActorRotation();
+					NewRotation.Pitch -= LevelSettings->ProgramAnimationSettings.OnAttackHitDropDownRotateSpeed * DeltaTime;
+					if (NewLocation.Z <= 1)
+					{
+						NewLocation.Z = 1;
+					}
+					if (NewRotation.Pitch <= 0)
+					{
+						NewRotation.Pitch = 0;
+					}
+					SetActorLocation(NewLocation);
+					SetActorRotation(NewRotation);
+				}
 			}
 			break;
 		default:
@@ -105,8 +124,14 @@ FName AProjectJCharacter::GetConfigRowName_Implementation()
 	return ConfigRowName;
 }
 
+void AProjectJCharacter::PostAfterAttackHit()
+{
+	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+	EventSystem->AfterAttackHit.Broadcast(ID);
+}
+
 void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState InState,
-	const FProjectJCharacterAniData& InData)
+                                                        const FProjectJCharacterAniData& InData)
 {
 	AnimState = InState;
 	AniData = InData;
@@ -115,23 +140,51 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 	// Todo: 根据AniData， 和State， 设置实际的动画数据
 	switch (AnimState) {
 		case EProjectJCardAnimState::Idle:
+			{
+				if (!InData.IsEmpty)
+				{
+					// 有动画数据，设置位置， 返回至数据中的位置
+					GeneralAniData = FProgramAttackData();
+					GeneralAniData.TargetLocation = InData.LocationPayload;
+					GeneralAniData.TargetRotation = FRotator::ZeroRotator;
+					GeneralAniData.StartLocation = GetActorLocation();
+					GeneralAniData.StartRotation = GetActorRotation();
+					GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
+					GeneralAniData.Duration = 0.5f;
+
+					GetWorld()->GetTimerManager().SetTimer(
+						IdleReturnToPositionTimerHandle,
+						this,
+						&AProjectJCharacter::UpdateIdleReturnToPositionAnimation,
+						0.01f,
+						true
+					);
+				}
+			}
 			break;
 		case EProjectJCardAnimState::AttackStart:
 			{
+				auto IsInTop = IsAtTopTeam();
+				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
 				// Todo: 目前都用单体攻击
 				// 动画表现为： 卡牌快速向后向上移动，并且向下旋转10°
-				AttackAniData = FProgramAttackData();
+				GeneralAniData = FProgramAttackData();
 				// 计算跟Target 0的角度差
 				auto TargetLocation = AniData.TargetCards[0]->GetActorLocation();
 				auto TargetDirection = TargetLocation - GetActorLocation();
-				auto TargetRotation = FRotationMatrix::MakeFromX(TargetDirection).Rotator();
 				
-				AttackAniData.TargetLocation = GetActorLocation() + FVector(-100, 0, 100);
-				AttackAniData.TargetRotation = FRotator(-10, TargetRotation.Yaw, TargetRotation.Roll);
-				AttackAniData.StartLocation = GetActorLocation();
-				AttackAniData.StartRotation = GetActorRotation();
-				AttackAniData.StartTime = GetWorld()->GetTimeSeconds();
-				AttackAniData.Duration = 0.5f;
+				auto TargetRotation = IsInTop ?
+					FRotationMatrix::MakeFromX(-TargetDirection).Rotator():
+					FRotationMatrix::MakeFromX(TargetDirection).Rotator();
+
+				float Reverse = IsInTop ? -1 : 1;
+				
+				GeneralAniData.TargetLocation = GetActorLocation() + LevelSettings->ProgramAnimationSettings.AttackStartTargetLocationOffset * FVector(Reverse, 1, 1);
+				GeneralAniData.TargetRotation = FRotator(Reverse * LevelSettings->ProgramAnimationSettings.AttackStartTargetPitch, TargetRotation.Yaw, TargetRotation.Roll);
+				GeneralAniData.StartLocation = GetActorLocation();
+				GeneralAniData.StartRotation = GetActorRotation();
+				GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
+				GeneralAniData.Duration = LevelSettings->ProgramAnimationSettings.AttackStartDuration;
 
 				GetWorld()->GetTimerManager().SetTimer(
 					StartAttackTimerHandle,
@@ -144,14 +197,18 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 			break;
 		case EProjectJCardAnimState::DoAttack:
 			{
-				AttackAniData = FProgramAttackData();
-				AttackAniData.TargetLocation = AniData.TargetCards[0]->GetActorLocation();
+				auto IsInTop = IsAtTopTeam();
+				float Reverse = IsInTop ? -1 : 1;
+				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+				GeneralAniData = FProgramAttackData();
+				GeneralAniData.TargetLocation = AniData.TargetCards[0]->GetActorLocation() + Reverse * LevelSettings->ProgramAnimationSettings.DoAttackTargetLocationOffset;
 				auto CurrentRotation = GetActorRotation();
-				AttackAniData.TargetRotation = FRotator(0, CurrentRotation.Yaw, CurrentRotation.Roll);
-				AttackAniData.StartLocation = GetActorLocation();
-				AttackAniData.StartRotation = CurrentRotation;
-				AttackAniData.StartTime = GetWorld()->GetTimeSeconds();
-				AttackAniData.Duration = 0.5f;
+				GeneralAniData.TargetRotation = FRotator(0, CurrentRotation.Yaw, CurrentRotation.Roll);
+				GeneralAniData.StartLocation = GetActorLocation();
+				GeneralAniData.StartRotation = CurrentRotation;
+				GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
+				GeneralAniData.Duration = LevelSettings->ProgramAnimationSettings.DoAttackDuration;
+				AlreadyPlayWillHitMontage = false;
 				GetWorld()->GetTimerManager().SetTimer(
 					DoAttackTimerHandle,
 					this,
@@ -170,10 +227,24 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 				EventSystem->OnWaitingAttack.Broadcast(ID);
 			}
 			break;
-		case EProjectJCardAnimState::OnAttackHit:
+		case EProjectJCardAnimState::AfterAttackHit:
 			{
-				// 发送命中事件
-				// 然后蓝图播放命中时的卡牌撞击动画
+				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+				if (LevelSettings->ProgramAnimationSettings.OnAttackHitDelayToNextStage > 0)
+				{
+					FTimerHandle UnUsedDelegate;
+					GetWorld()->GetTimerManager().SetTimer(
+						UnUsedDelegate,
+						this,
+						&AProjectJCharacter::PostAfterAttackHit,
+						LevelSettings->ProgramAnimationSettings.OnAttackHitDelayToNextStage,
+						false
+					);
+				}
+				else
+				{
+					PostAfterAttackHit();
+				}
 			}
 			break;
 	}
@@ -186,10 +257,15 @@ bool AProjectJCharacter::IsDead()
 	return Health <= Damage;
 }
 
+bool AProjectJCharacter::IsAtTopTeam()
+{
+	return static_cast<int32>(AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute())) == 1;
+}
+
 void AProjectJCharacter::UpdateStartAttackAnimation()
 {
 	auto CurrentTime = GetWorld()->GetTimeSeconds();
-	auto Alpha = (CurrentTime - AttackAniData.StartTime) / AttackAniData.Duration;
+	auto Alpha = (CurrentTime - GeneralAniData.StartTime) / GeneralAniData.Duration;
 	if (Alpha >= 1)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(StartAttackTimerHandle);
@@ -202,8 +278,8 @@ void AProjectJCharacter::UpdateStartAttackAnimation()
 	{
 		auto EasedAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 2.0f);
 		
-		auto NewLocation = FMath::Lerp(AttackAniData.StartLocation, AttackAniData.TargetLocation, EasedAlpha);
-		auto NewRotation = FMath::Lerp(AttackAniData.StartRotation, AttackAniData.TargetRotation, EasedAlpha);
+		auto NewLocation = FMath::Lerp(GeneralAniData.StartLocation, GeneralAniData.TargetLocation, EasedAlpha);
+		auto NewRotation = FMath::Lerp(GeneralAniData.StartRotation, GeneralAniData.TargetRotation, EasedAlpha);
 		SetActorLocation(NewLocation);
 		SetActorRotation(NewRotation);
 	}
@@ -213,12 +289,12 @@ void AProjectJCharacter::UpdateDoAttackAnimation()
 {
 	// 撞击到目标位置
 	auto CurrentTime = GetWorld()->GetTimeSeconds();
-	auto Alpha = (CurrentTime - AttackAniData.StartTime) / AttackAniData.Duration;
+	auto Alpha = (CurrentTime - GeneralAniData.StartTime) / GeneralAniData.Duration;
 	if (Alpha >= 1)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(DoAttackTimerHandle);
 		// Animation ends
-		ChangeAnimState(EProjectJCardAnimState::OnAttackHit, FProjectJCharacterAniData::Empty);
+		ChangeAnimState(EProjectJCardAnimState::AfterAttackHit, FProjectJCharacterAniData::Empty);
 	}
 	else
 	{
@@ -227,19 +303,45 @@ void AProjectJCharacter::UpdateDoAttackAnimation()
 		FVector NewLocation;
 		FRotator NewRotation;
 
+		auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+		float Reverse = IsAtTopTeam() ? -1 : 1;
 		if (Alpha < 0.5f)
 		{
+			
 			// First half of the animation: move backward
 			EasedAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha * 2.0f, 2.0f);
-			NewLocation = FMath::Lerp(AttackAniData.StartLocation, AttackAniData.StartLocation + FVector(-50, 0, 0), EasedAlpha);
-			NewRotation = FMath::Lerp(AttackAniData.StartRotation, AttackAniData.TargetRotation, EasedAlpha);
+			NewLocation = FMath::Lerp(GeneralAniData.StartLocation,
+			                          GeneralAniData.StartLocation + FVector(
+				                          Reverse * LevelSettings->ProgramAnimationSettings.DoAttackMoveBackWorldOffset,
+				                          0, 0), EasedAlpha);
+			NewRotation = FMath::Lerp(GeneralAniData.StartRotation,
+			                          GeneralAniData.StartRotation + FRotator(
+				                          Reverse * LevelSettings->ProgramAnimationSettings.DoAttackMoveBackWorldPitch,
+				                          0, 0), EasedAlpha);
 		}
 		else
 		{
 			// Second half of the animation: move forward
 			EasedAlpha = FMath::InterpExpoIn(0.0f, 1.0f, (Alpha - 0.5f) * 2);
-			NewLocation = FMath::Lerp(AttackAniData.StartLocation + FVector(-50, 0, 0), AttackAniData.TargetLocation, EasedAlpha);
-			NewRotation = FMath::Lerp(AttackAniData.TargetRotation, AttackAniData.TargetRotation, EasedAlpha);
+			NewLocation = FMath::Lerp(GeneralAniData.StartLocation + FVector(
+				                          Reverse * LevelSettings->ProgramAnimationSettings.DoAttackMoveBackWorldOffset,
+				                          0, 0), GeneralAniData.TargetLocation, EasedAlpha);
+			NewRotation = FMath::Lerp(GeneralAniData.StartRotation + FRotator(
+				                          Reverse * LevelSettings->ProgramAnimationSettings.DoAttackMoveBackWorldPitch,
+				                          0, 0), GeneralAniData.TargetRotation, EasedAlpha);
+			
+			if (EasedAlpha >= LevelSettings->ProgramAnimationSettings.DoAttackPlayMontagePercent && !AlreadyPlayWillHitMontage)
+			{
+				// Play will hit montage
+				AlreadyPlayWillHitMontage = true;
+				auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
+				// PlayMontage
+				Mesh->GetAnimInstance()->Montage_Play(HitMontage);
+				// 目标也需要播放该动画
+				AniData.TargetCards[0]->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
+
+				// 发送命中事件
+			}
 		}
 
 		SetActorLocation(NewLocation);
@@ -251,5 +353,29 @@ void AProjectJCharacter::UpdateDoAttackAnimation()
 		// SetActorLocation(NewLocation);
 		// SetActorRotation(NewRotation);
 	}
+}
+
+void AProjectJCharacter::UpdateIdleReturnToPositionAnimation()
+{
+	auto CurrentTime = GetWorld()->GetTimeSeconds();
+	auto Alpha = (CurrentTime - GeneralAniData.StartTime) / GeneralAniData.Duration;
+	if (Alpha >= 1)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(IdleReturnToPositionTimerHandle);
+		SetActorLocation(GeneralAniData.TargetLocation);
+		SetActorRotation(GeneralAniData.TargetRotation);
+		auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+		EventSystem->OnIdleReturnToPosition.Broadcast(ID);
+	}
+	else
+	{
+		auto EasedAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 2.0f);
+		auto NewLocation = FMath::Lerp(GeneralAniData.StartLocation, GeneralAniData.TargetLocation, EasedAlpha);
+		auto NewRotation = FMath::Lerp(GeneralAniData.StartRotation, GeneralAniData.TargetRotation, EasedAlpha);
+		
+		SetActorLocation(NewLocation);
+		SetActorRotation(NewRotation);
+	}
+	
 }
 
