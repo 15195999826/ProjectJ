@@ -13,7 +13,7 @@ enum class EProjectJCardAnimState : uint8
 	AttackStart,
 	WaitingAttack,
 	DoAttack,
-	AfterAttackHit,
+	AfterDoAttack,
 	OnBeHit,
 	Death
 };
@@ -36,6 +36,10 @@ struct FProjectJCharacterAniData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<TObjectPtr<AProjectJCharacter>> TargetCards;
 
+	/**
+	 * 位置数据
+	 * StartAttack时， 对应卡牌旋转朝向的位置
+	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector LocationPayload;
 

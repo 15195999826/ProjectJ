@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "GameplayAbilitySpecHandle.h"
 #include "ProjectJCardBase.h"
+#include "Interface/ProjectJBattleInterface.h"
 #include "Interface/ProjectJCardInterface.h"
 #include "Types/ProjectJCardAnimState.h"
 #include "ProjectJCharacter.generated.h"
@@ -44,7 +45,7 @@ class UAbilitySystemComponent;
 class UProjectJCharacterAttributeSet;
 
 UCLASS()
-class PROJECTJ_API AProjectJCharacter : public AProjectJCardBase, public IProjectJCardInterface, public IAbilitySystemInterface
+class PROJECTJ_API AProjectJCharacter : public AProjectJCardBase, public IProjectJCardInterface, public IAbilitySystemInterface, public IProjectJBattleInterface
 {
 	GENERATED_BODY()
 	
@@ -54,7 +55,10 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> FloatWidgetComponent;
-	
+
+	// Todo: 临时方案，以后再从道具实例中读取
+	FName TempWeaponRowName = NAME_None;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -73,8 +77,6 @@ public:
 	virtual void BindConfig_Implementation(const FName& InRowName) override;
 
 	virtual FName GetConfigRowName_Implementation() override;
-	void PostAfterAttackHit();
-
 	// End IProjectJCard
 
 	// 蓝图动画状态机
@@ -93,15 +95,20 @@ public:
 	{
 		return AbilitySystemComponent;
 	}
-
+	
 	// ------- 战斗相关 Start -------
 public:
 	// 普攻技能，未装备武器时需要设置默认值； 装备武器后替换为武器默认攻击
 	FGameplayAbilitySpecHandle AttackAbilitySpecHandle;
 	TWeakObjectPtr<UProjectJAttackGA> AttackGA;
 
+	bool GetIsDead_Implementation() override;
+	bool GetIsAtTopTeam_Implementation() override;
+
 	bool IsDead();
 	bool IsAtTopTeam();
+
+	void PostAfterAttackHit();
 	// ------- 战斗相关 End -------
 
 	// 程序动画
@@ -120,9 +127,11 @@ private:
 	float WaitingAttackTimer = 0;
 
 	// DoAttack动画
-	FTimerHandle DoAttackTimerHandle;
-	void UpdateDoAttackAnimation();
-	bool AlreadyPlayWillHitMontage = false;
+	void ProgramDoAttack(const FName& InName);
+	// Knock动画
+	FTimerHandle ProgramDoAttackTimerHandle;
+	void UpdateKnockAnimation();
+	bool AlreadyPostAttackHit = false;
 
 	// Idle Return To Position Animation
 	FTimerHandle IdleReturnToPositionTimerHandle;

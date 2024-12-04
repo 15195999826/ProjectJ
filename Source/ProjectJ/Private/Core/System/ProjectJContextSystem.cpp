@@ -5,6 +5,7 @@
 
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Game/ProjectJCardBackendSystem.h"
+#include "Game/ProjectJEffectActor.h"
 #include "Game/ProjectJNavPointActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
@@ -211,4 +212,41 @@ void UProjectJContextSystem::GeneralOnRecycle(AActor* InActor)
 {
 	InActor->SetActorEnableCollision(false);
 	InActor->SetActorLocation(HiddenLocation);
+}
+
+AProjectJEffectActor* UProjectJContextSystem::GetEffectActor(TSubclassOf<UObject> InEffectClass)
+{
+	FName EffectName = InEffectClass->GetClass()->GetFName();
+	if (EffectActorPool.Contains(EffectName))
+	{
+		auto Pool = EffectActorPool[EffectName].Pool;
+		if (Pool.Num() > 0)
+		{
+			auto EffectActor = Pool.Pop();
+			return EffectActor;
+		}
+	}
+
+	// 检查InSoftEffect是否是AProjectJEffectActor类型
+	if (!InEffectClass->IsChildOf(AProjectJEffectActor::StaticClass()))
+	{
+		UE_LOG(LogTemp, Error, TEXT("GetEffectActor: InSoftEffect is not AProjectJEffectActor"));
+		return nullptr;
+	}
+
+	auto EffectActor = GetWorld()->SpawnActor<AProjectJEffectActor>(InEffectClass);
+	return EffectActor;
+}
+
+void UProjectJContextSystem::RecycleEffectActor(AProjectJEffectActor* InEffectActor)
+{
+	FName EffectName = InEffectActor->GetClass()->GetFName();
+	if (!EffectActorPool.Contains(EffectName))
+	{
+		EffectActorPool.Add(EffectName, FProjectJEffectContainer());
+	}
+	InEffectActor->SetActorEnableCollision(false);
+	InEffectActor->SetActorLocation(HiddenLocation);
+	InEffectActor->SetActorHiddenInGame(true);
+	EffectActorPool[EffectName].Pool.Add(InEffectActor);
 }

@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ActiveGameplayEffectHandle.h"
+#include "GameplayEffectTypes.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "ProjectJBlueprintFunctionLibrary.generated.h"
 
+class UGameplayEffect;
 /**
  * 
  */

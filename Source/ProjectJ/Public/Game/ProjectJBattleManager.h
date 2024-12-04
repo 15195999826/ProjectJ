@@ -5,24 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Types/ProjectJBattleEventData.h"
+#include "Types/ProjectJBattleStage.h"
 #include "ProjectJBattleManager.generated.h"
 
 class AProjectJCharacter;
 class AProjectJDebugBattleGameMode;
-
-UENUM()
-enum class EProjectJBattleStage : uint8
-{
-	EnterBattle,
-	RoundStart,
-	CharacterPrepareAttack, // 无事件，目前用于确定，当前玩家应该执行几次攻击循环
-	CharacterStartAttack,
-	CharacterDoAttack,
-	CharacterEndAttack,
-	RoundEnd,
-
-	EndBattle,
-};
 
 USTRUCT(BlueprintType)
 struct FProjectJExecEventRet
@@ -69,6 +56,7 @@ public:
 	AProjectJBattleManager();
 
 protected:
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -89,18 +77,28 @@ protected:
 
 private:
 	bool IsRunningBattle = false;
+	bool IsBattleEnd();
+
+	// -------缓存数据 Start-------
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> DamageEffect;
+
+	// -------缓存数据 End-------
 	
 	UPROPERTY()
 	FProjectJBattleContext BattleContext;
+
+	TWeakObjectPtr<AProjectJCharacter> GetCurrentCharacter();
 
 	// --- 战斗状态机相关 Start ---
 	inline static TMap<EProjectJBattleStage, FString> BattleStageToStr = {
 		{EProjectJBattleStage::EnterBattle, TEXT("EnterBattle")},
 		{EProjectJBattleStage::RoundStart, TEXT("RoundStart")},
-		{EProjectJBattleStage::CharacterPrepareAttack, TEXT("CharacterPrepareAttack")},
+		{EProjectJBattleStage::CharacterGetTurn, TEXT("CharacterGetTurn")},
 		{EProjectJBattleStage::CharacterStartAttack, TEXT("CharacterStartAttack")},
 		{EProjectJBattleStage::CharacterDoAttack, TEXT("CharacterDoAttack")},
 		{EProjectJBattleStage::CharacterEndAttack, TEXT("CharacterEndAttack")},
+		{EProjectJBattleStage::CharacterEndTurn, TEXT("CharacterEndTurn")},
 		{EProjectJBattleStage::RoundEnd, TEXT("RoundEnd")},
 		{EProjectJBattleStage::EndBattle, TEXT("EndBattle")},
 	};
@@ -118,6 +116,7 @@ private:
 	void RoundStart();
 
 	void OnWaitingAttack(int InCharacterID);
+	void OnAttackHit(int InCharacterID);
 	void AfterAttackHit(int InCharacterID);
 	void OnIdleReturnToPosition(int InCharacterID);
 	

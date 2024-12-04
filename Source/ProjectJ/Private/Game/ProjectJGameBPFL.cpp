@@ -23,6 +23,7 @@ void UProjectJGameBPFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, 
 	switch (InType) {
 		case EProjectJItemType::Weapon:
 			{
+				InCharacter->TempWeaponRowName = InRowName;
 				auto Config = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<FProjectJWeaponConfig>(InRowName, TEXT("Equip Weapon"));
 				Giver = Config->AttributeGiver;
 				// 赋予攻击攻击技能
@@ -43,7 +44,7 @@ void UProjectJGameBPFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, 
 			Giver = FProjectJAttributeGiver();
 			break;
 	}
-
+	
 	auto AttributeSpecHandle = SimpleMakeGESpecHandle(InCharacter, GSettings->EquipmentAttributeEffect);
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(AttributeSpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Health, Giver.Health);
 	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(AttributeSpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Attack, Giver.Attack);

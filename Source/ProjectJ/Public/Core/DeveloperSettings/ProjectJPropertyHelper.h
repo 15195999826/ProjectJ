@@ -17,17 +17,5 @@ class PROJECTJ_API UProjectJPropertyHelper : public UDeveloperSettings
 
 public:
 	UFUNCTION()
-	static TArray<FName> GetStarOneCharacters();
-	UFUNCTION()
-	static TArray<FName> GetStarTwoCharacters();
-	UFUNCTION()
-	static TArray<FName> GetStarThreeCharacters();
-	UFUNCTION()
-	static TArray<FName> GetStarFourCharacters();
-	UFUNCTION()
-	static TArray<FName> GetStarFiveCharacters();
-	UFUNCTION()
-	static TArray<FName> GetStarSixCharacters();
-	UFUNCTION()
-	static TArray<FName> GetAbilityRowNames();
+	static TArray<FName> GetAnimCustomKeys();
 };

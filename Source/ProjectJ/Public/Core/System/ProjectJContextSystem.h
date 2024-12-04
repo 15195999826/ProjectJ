@@ -7,6 +7,7 @@
 #include "Types/ProjectJLevelConfig.h"
 #include "ProjectJContextSystem.generated.h"
 
+class AProjectJEffectActor;
 class AProjectJBattleManager;
 class AProjectJPerformManager;
 class AProjectJLuaExecutor;
@@ -36,6 +37,15 @@ struct FProjectJGameContext
 
 	// 用于计算是否首次进入某个关卡
 	TArray<FName> HasEnteredLevels;
+};
+
+USTRUCT()
+struct FProjectJEffectContainer
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TArray<AProjectJEffectActor*> Pool;
 };
 
 /**
@@ -110,5 +120,14 @@ protected:
 	
 	void GeneralOnGet(AActor* InActor);
 	void GeneralOnRecycle(AActor* InActor);
-	
+
+	// ----- 特效池子 Start-----
+public:
+	AProjectJEffectActor* GetEffectActor(TSubclassOf<UObject> InEffectClass);
+	void RecycleEffectActor(AProjectJEffectActor* InEffectActor);
+
+protected:
+	UPROPERTY()
+	TMap<FName,FProjectJEffectContainer> EffectActorPool;
+	// ----- 特效池子 End-----	
 };

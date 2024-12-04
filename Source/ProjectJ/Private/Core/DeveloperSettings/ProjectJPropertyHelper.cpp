@@ -4,59 +4,9 @@
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
+#include "ProjectJ/ProjectJDWGlobal.h"
 
-TArray<FName> UProjectJPropertyHelper::GetStarOneCharacters()
+TArray<FName> UProjectJPropertyHelper::GetAnimCustomKeys()
 {
-	TArray<FName> Result;
-
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetStarTwoCharacters()
-{
-	TArray<FName> Result;
-
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetStarThreeCharacters()
-{
-	TArray<FName> Result;
-	
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetStarFourCharacters()
-{
-	TArray<FName> Result;
-	
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetStarFiveCharacters()
-{
-	TArray<FName> Result;
-	
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetStarSixCharacters()
-{
-	TArray<FName> Result;
-	
-	return Result;
-}
-
-TArray<FName> UProjectJPropertyHelper::GetAbilityRowNames()
-{
-	TArray<FName> Result;
-	auto AbilityTable = GetDefault<UProjectJDataTableSettings>()->AbilityTable.LoadSynchronous();
-	if (AbilityTable)
-	{
-		for (const auto& Row : AbilityTable->GetRowMap())
-		{
-			Result.Add(Row.Key);
-		}
-	}
-	return Result;
+	return ProjectJGlobal::AnimCustomKeys;
 }

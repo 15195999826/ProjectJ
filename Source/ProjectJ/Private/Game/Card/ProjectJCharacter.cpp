@@ -10,12 +10,15 @@
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/ProjectJEffectActor.h"
 #include "Game/ProjectJGameBPFL.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
+#include "Interface/ProjectJAttackEffectInterface.h"
 #include "ProjectJ/ProjectJDWGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Types/ProjectJCharacterConfig.h"
+#include "Types/Item/ProjectJEquipmentConfig.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
 
 // Sets default values
@@ -64,7 +67,7 @@ void AProjectJCharacter::Tick(float DeltaTime)
 				// }
 			}
 			break;
-		case EProjectJCardAnimState::AfterAttackHit:
+		case EProjectJCardAnimState::AfterDoAttack:
 			{
 				// 如果卡牌Z轴值大于1， 怎快速下落到1
 				if (GetActorLocation().Z > 1 || GetActorRotation().Pitch > 0.1f)
@@ -130,6 +133,29 @@ void AProjectJCharacter::PostAfterAttackHit()
 	EventSystem->AfterAttackHit.Broadcast(ID);
 }
 
+bool AProjectJCharacter::GetIsDead_Implementation()
+{
+	return IsDead();
+}
+
+bool AProjectJCharacter::GetIsAtTopTeam_Implementation()
+{
+	return IsAtTopTeam();
+}
+
+bool AProjectJCharacter::IsDead()
+{
+	auto Health = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetHealthAttribute());
+	auto Damage = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetDamageAttribute());
+	return Health <= Damage;
+}
+
+bool AProjectJCharacter::IsAtTopTeam()
+{
+	return static_cast<int32>(AbilitySystemComponent->GetNumericAttribute(
+		UProjectJCharacterAttributeSet::GetTeamAttribute())) == 1;
+}
+
 void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState InState,
                                                         const FProjectJCharacterAniData& InData)
 {
@@ -165,12 +191,17 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 		case EProjectJCardAnimState::AttackStart:
 			{
 				auto IsInTop = IsAtTopTeam();
+
+				// Todo: 以后实现， 武器AttackStart特效动画等配置
+				// auto WeaponConfig = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<
+				// 	FProjectJWeaponConfig>(TempWeaponRowName, TEXT("ChangeAnimState"));
+				
 				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
 				// Todo: 目前都用单体攻击
 				// 动画表现为： 卡牌快速向后向上移动，并且向下旋转10°
 				GeneralAniData = FProgramAttackData();
 				// 计算跟Target 0的角度差
-				auto TargetLocation = AniData.TargetCards[0]->GetActorLocation();
+				auto TargetLocation = AniData.LocationPayload;
 				auto TargetDirection = TargetLocation - GetActorLocation();
 				
 				auto TargetRotation = IsInTop ?
@@ -197,24 +228,105 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 			break;
 		case EProjectJCardAnimState::DoAttack:
 			{
-				auto IsInTop = IsAtTopTeam();
-				float Reverse = IsInTop ? -1 : 1;
-				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
-				GeneralAniData = FProgramAttackData();
-				GeneralAniData.TargetLocation = AniData.TargetCards[0]->GetActorLocation() + Reverse * LevelSettings->ProgramAnimationSettings.DoAttackTargetLocationOffset;
-				auto CurrentRotation = GetActorRotation();
-				GeneralAniData.TargetRotation = FRotator(0, CurrentRotation.Yaw, CurrentRotation.Roll);
-				GeneralAniData.StartLocation = GetActorLocation();
-				GeneralAniData.StartRotation = CurrentRotation;
-				GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
-				GeneralAniData.Duration = LevelSettings->ProgramAnimationSettings.DoAttackDuration;
-				AlreadyPlayWillHitMontage = false;
+				auto WeaponConfig = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<
+					FProjectJWeaponConfig>(TempWeaponRowName, TEXT("ChangeAnimState"));
+
+				float MaxDuration = 0;
+				if (WeaponConfig->AttackAbility.AnimationConfigs.Num() > 0)
+				{
+					for (const auto& AnimConfig: WeaponConfig->AttackAbility.AnimationConfigs)
+					{
+						if (AnimConfig.PerformStage == EProjectJBattleStage::CharacterDoAttack)
+						{
+							switch (AnimConfig.AnimationType) {
+								case EProjectJAbilityAnimationType::Program:
+									{
+										if (AnimConfig.CustomKV.Contains(ProjectJGlobal::Program_Ani_NameKey))
+										{
+											ProgramDoAttack(FName(*AnimConfig.CustomKV[ProjectJGlobal::Program_Ani_NameKey]));
+										}
+										else
+										{
+											ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
+										}
+
+										auto ProtectDuration = GeneralAniData.Duration + 0.067f;
+										if (ProtectDuration > MaxDuration)
+										{
+											MaxDuration = ProtectDuration;
+										}
+									}
+								break;
+								case EProjectJAbilityAnimationType::Effect:
+									{
+										// Todo: 暂时只实现， 在位置播放特效， 至于特效位置本身，通过调整特效Actor中对应组件的位置来实现
+										auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+
+										AProjectJEffectActor* GetConfigEffectActor = nullptr;
+										for (const auto& TargetCharacter: AniData.TargetCards)
+										{
+											AProjectJEffectActor* EffectActor = ContextSystem->GetEffectActor(
+												AnimConfig.Resource);
+											EffectActor->SetActorLocation(TargetCharacter->GetActorLocation());
+											EffectActor->StartEffect();
+
+											if (GetConfigEffectActor == nullptr)
+											{
+												GetConfigEffectActor = EffectActor;
+											}
+										}
+										
+										auto EffectDuration = GetConfigEffectActor->GetDuration();
+										if (EffectDuration > MaxDuration)
+										{
+											MaxDuration = EffectDuration;
+										}
+
+										if (AnimConfig.GiveAttackPoint)
+										{
+											
+											auto AttackPoint = IProjectJAttackEffectInterface::Execute_GetAttackPoint(GetConfigEffectActor);
+											if (EffectDuration <= AttackPoint)
+											{
+												UE_LOG(LogTemp, Error, TEXT("配置错误, Effect Duration: %f  less than AttackPoint:%f, Name: %s"), EffectDuration, AttackPoint, *AnimConfig.Resource->GetFName().ToString());
+												AttackPoint = EffectDuration;
+											}
+											
+											FTimerHandle UnUsedDelegate;
+											GetWorld()->GetTimerManager().SetTimer(
+												UnUsedDelegate,
+												[this]()
+												{
+													auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+													EventSystem->OnAttackHit.Broadcast(ID);
+												},
+												AttackPoint,
+												false
+											);
+										}
+									}
+									break;
+							}
+						}
+					}
+				}
+				else
+				{
+					ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
+					MaxDuration = GeneralAniData.Duration + 0.067f;
+				}
+				
+				// Animation ends
+				FTimerHandle UnUsedAfterAttackDelegate;
 				GetWorld()->GetTimerManager().SetTimer(
-					DoAttackTimerHandle,
-					this,
-					&AProjectJCharacter::UpdateDoAttackAnimation,
-					0.01f,
-					true
+					UnUsedAfterAttackDelegate,
+					[this]()
+					{
+						check(!ProgramDoAttackTimerHandle.IsValid());
+						ChangeAnimState(EProjectJCardAnimState::AfterDoAttack, FProjectJCharacterAniData::Empty);
+					},
+					MaxDuration,
+					false
 				);
 			}
 			break;
@@ -227,7 +339,7 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 				EventSystem->OnWaitingAttack.Broadcast(ID);
 			}
 			break;
-		case EProjectJCardAnimState::AfterAttackHit:
+		case EProjectJCardAnimState::AfterDoAttack:
 			{
 				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
 				if (LevelSettings->ProgramAnimationSettings.OnAttackHitDelayToNextStage > 0)
@@ -248,18 +360,6 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 			}
 			break;
 	}
-}
-
-bool AProjectJCharacter::IsDead()
-{
-	auto Health = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetHealthAttribute());
-	auto Damage = AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetDamageAttribute());
-	return Health <= Damage;
-}
-
-bool AProjectJCharacter::IsAtTopTeam()
-{
-	return static_cast<int32>(AbilitySystemComponent->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute())) == 1;
 }
 
 void AProjectJCharacter::UpdateStartAttackAnimation()
@@ -285,16 +385,41 @@ void AProjectJCharacter::UpdateStartAttackAnimation()
 	}
 }
 
-void AProjectJCharacter::UpdateDoAttackAnimation()
+void AProjectJCharacter::ProgramDoAttack(const FName& InName)
+{
+	if (InName == ProjectJGlobal::Program_Ani_Knock)
+	{
+		auto IsInTop = IsAtTopTeam();
+		float Reverse = IsInTop ? -1 : 1;
+		auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+		GeneralAniData = FProgramAttackData();
+		GeneralAniData.TargetLocation = AniData.TargetCards[0]->GetActorLocation() + Reverse * LevelSettings
+			->ProgramAnimationSettings.DoAttackTargetLocationOffset;
+		auto CurrentRotation = GetActorRotation();
+		GeneralAniData.TargetRotation = FRotator(0, CurrentRotation.Yaw, CurrentRotation.Roll);
+		GeneralAniData.StartLocation = GetActorLocation();
+		GeneralAniData.StartRotation = CurrentRotation;
+		GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
+		GeneralAniData.Duration = LevelSettings->ProgramAnimationSettings.DoAttackDuration;
+		AlreadyPostAttackHit = false;
+		GetWorld()->GetTimerManager().SetTimer(
+			ProgramDoAttackTimerHandle,
+			this,
+			&AProjectJCharacter::UpdateKnockAnimation,
+			0.01f,
+			true
+		);
+	}
+}
+
+void AProjectJCharacter::UpdateKnockAnimation()
 {
 	// 撞击到目标位置
 	auto CurrentTime = GetWorld()->GetTimeSeconds();
 	auto Alpha = (CurrentTime - GeneralAniData.StartTime) / GeneralAniData.Duration;
 	if (Alpha >= 1)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(DoAttackTimerHandle);
-		// Animation ends
-		ChangeAnimState(EProjectJCardAnimState::AfterAttackHit, FProjectJCharacterAniData::Empty);
+		GetWorld()->GetTimerManager().ClearTimer(ProgramDoAttackTimerHandle);
 	}
 	else
 	{
@@ -330,17 +455,18 @@ void AProjectJCharacter::UpdateDoAttackAnimation()
 				                          Reverse * LevelSettings->ProgramAnimationSettings.DoAttackMoveBackWorldPitch,
 				                          0, 0), GeneralAniData.TargetRotation, EasedAlpha);
 			
-			if (EasedAlpha >= LevelSettings->ProgramAnimationSettings.DoAttackPlayMontagePercent && !AlreadyPlayWillHitMontage)
+			if (!AlreadyPostAttackHit && EasedAlpha >= LevelSettings->ProgramAnimationSettings.DoAttackPlayMontagePercent)
 			{
+				// 发送命中事件
+				auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+				EventSystem->OnAttackHit.Broadcast(ID);
+				// 在BattleManager中已经计算了伤害，此时目标是否死亡已知
+				
 				// Play will hit montage
-				AlreadyPlayWillHitMontage = true;
+				AlreadyPostAttackHit = true;
 				auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
 				// PlayMontage
 				Mesh->GetAnimInstance()->Montage_Play(HitMontage);
-				// 目标也需要播放该动画
-				AniData.TargetCards[0]->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
-
-				// 发送命中事件
 			}
 		}
 

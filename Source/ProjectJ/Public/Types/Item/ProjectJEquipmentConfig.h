@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "ProjectJItemBase.h"
 #include "Types/ProjectJAttackRange.h"
+#include "Types/ProjectJBattleStage.h"
 #include "ProjectJEquipmentConfig.generated.h"
 
 USTRUCT(BlueprintType)
@@ -26,21 +27,56 @@ struct FProjectJAttributeGiver
 	int32 Armor;
 };
 
+UENUM()
+enum class EProjectJAbilityAnimationType : uint8
+{
+	Program UMETA(DisplayName="程序动画"),
+	Effect UMETA(DisplayName="特效")
+};
+
+USTRUCT(BlueprintType)
+struct FProjectJAttackAbilityAnimationConfig
+{
+	GENERATED_BODY()
+	
+	FProjectJAttackAbilityAnimationConfig()
+	{
+		
+	}
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="动画类型"))
+	EProjectJAbilityAnimationType AnimationType = EProjectJAbilityAnimationType::Program;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="表演阶段"))
+	EProjectJBattleStage PerformStage = EProjectJBattleStage::CharacterDoAttack;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="是否携带攻击点"))
+	bool GiveAttackPoint = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="资源", EditConditionHides, EditCondition="AnimationType != EProjectJAbilityAnimationType::Program"))
+	TSubclassOf<UObject> Resource;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="自定义字段(暂时没用)",GetKeyOptions="ProjectJ.ProjectJPropertyHelper.GetAnimCustomKeys"))
+	TMap<FName, FString> CustomKV; 
+};
+
 USTRUCT(BlueprintType)
 struct FProjectJAttackAbility
 {
 	GENERATED_BODY()
 
-	FProjectJAttackAbility(): AttackRange()
+	FProjectJAttackAbility(): TargetTeam(), AttackRange()
 	{
 	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="目标队伍"))
+	EProjectJTargetTeam TargetTeam;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="攻击范围"))
 	EProjectJAttackRange AttackRange;
 
-	// Todo: 自定义数据配置模板， 给与动画配置， Key Value只能是给定的值
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="普攻", meta=(DisplayName="攻击动画配置"))
-	TMap<FName, FString> AnimationConfig; 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="动画配置"))
+	TArray<FProjectJAttackAbilityAnimationConfig> AnimationConfigs;
 };
 
 

@@ -32,7 +32,7 @@ public:
 	
 	UPROPERTY(config, EditAnywhere, Category=GAS)
 	TSubclassOf<UProjectJAttackGA> AttackGAClass;
-
+	
 	// Todo: 技能通用的一个技能
 
 	UPROPERTY(config, EditAnywhere)

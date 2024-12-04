@@ -3,13 +3,20 @@
 
 #include "Game/ProjectJBattleManager.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Core/ProjectJBlueprintFunctionLibrary.h"
+#include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
+#include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/ProjectJGameBPFL.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
+#include "ProjectJ/ProjectJGameplayTags.h"
 #include "Types/ProjectJCardAnimState.h"
+#include "Types/Item/ProjectJEquipmentConfig.h"
 
 // Sets default values
 AProjectJBattleManager::AProjectJBattleManager()
@@ -25,6 +32,7 @@ void AProjectJBattleManager::BeginPlay()
 	Super::BeginPlay();
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 	EventSystem->OnWaitingAttack.AddUObject(this, &AProjectJBattleManager::OnWaitingAttack);
+	EventSystem->OnAttackHit.AddUObject(this, &AProjectJBattleManager::OnAttackHit);
 	EventSystem->AfterAttackHit.AddUObject(this, &AProjectJBattleManager::AfterAttackHit);
 	EventSystem->OnIdleReturnToPosition.AddUObject(this, &AProjectJBattleManager::OnIdleReturnToPosition);
 }
@@ -51,6 +59,39 @@ FVector AProjectJBattleManager::GetTeamPosition(int32 InTeamID, int32 InPosition
 	return TeamCenterPos + FVector(0, Offset, 0);
 }
 
+bool AProjectJBattleManager::IsBattleEnd()
+{
+	// 检查是否有一方全部死亡
+	bool TopHasAlive = false;
+	bool BottomHasAlive = false;
+	for (const auto& Tuple : BattleCharacterMap)
+	{
+		if (!Tuple.Value->IsDead())
+		{
+			if (Tuple.Value->IsAtTopTeam())
+			{
+				TopHasAlive = true;
+			}
+			else
+			{
+				BottomHasAlive = true;
+			}
+		}
+	}
+
+	if (!TopHasAlive || !BottomHasAlive)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+TWeakObjectPtr<AProjectJCharacter> AProjectJBattleManager::GetCurrentCharacter()
+{
+	return BattleContext.CurrentOrderIndex < BattleContext.OrderArray.Num() ? BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]] : nullptr;
+}
+
 // Called every frame
 void AProjectJBattleManager::Tick(float DeltaTime)
 {
@@ -73,17 +114,27 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 				{
 					if (BattleContext.OrderArray.Num() > 0)
 					{
-						ChangeStage(EProjectJBattleStage::CharacterPrepareAttack);
+						ChangeStage(EProjectJBattleStage::CharacterGetTurn);
 					}
 					else
 					{
+						UE_LOG(LogTemp, Error, TEXT("没有角色参与战斗，战斗结束"));
 						ChangeStage(EProjectJBattleStage::EndBattle);
 					}
 				}
 				break;
-			case EProjectJBattleStage::CharacterPrepareAttack:
+			case EProjectJBattleStage::CharacterGetTurn:
 				{
-					ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+					auto CurrentCharacter = GetCurrentCharacter();
+					if (CurrentCharacter->IsDead())
+					{
+						ChangeStage(EProjectJBattleStage::CharacterEndTurn);
+					}
+					else
+					{
+						ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+					}
+					
 				}
 				break;
 			case EProjectJBattleStage::CharacterStartAttack:
@@ -100,15 +151,7 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 				{
 					if (BattleContext.AttackTimes == BattleContext.AttackTotalTimes)
 					{
-						// 轮到下一个角色准备攻击
-						if (BattleContext.CurrentOrderIndex >= BattleContext.OrderArray.Num() - 1)
-						{
-							ChangeStage(EProjectJBattleStage::RoundEnd);
-						}
-						else
-						{
-							ChangeStage(EProjectJBattleStage::CharacterPrepareAttack);
-						}
+						ChangeStage(EProjectJBattleStage::CharacterEndTurn);
 					}
 					else
 					{
@@ -117,9 +160,37 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 					}
 				}
 				break;
+			case EProjectJBattleStage::CharacterEndTurn:
+				{
+					// 检测战斗是否结束
+					if (IsBattleEnd())
+					{
+						ChangeStage(EProjectJBattleStage::EndBattle);
+					}
+					else
+					{
+						// 轮到下一个角色准备攻击
+						if (BattleContext.CurrentOrderIndex >= BattleContext.OrderArray.Num() - 1)
+						{
+							ChangeStage(EProjectJBattleStage::RoundEnd);
+						}
+						else
+						{
+							ChangeStage(EProjectJBattleStage::CharacterGetTurn);
+						}
+					}
+				}
+				break;
 			case EProjectJBattleStage::RoundEnd:
 				{
-					ChangeStage(EProjectJBattleStage::RoundStart);
+					if (IsBattleEnd())
+					{
+						ChangeStage(EProjectJBattleStage::EndBattle);
+					}
+					else
+					{
+						ChangeStage(EProjectJBattleStage::RoundStart);
+					}
 				}
 				break;
 			case EProjectJBattleStage::EndBattle:
@@ -173,7 +244,7 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 			break;
 		case EProjectJBattleStage::RoundStart:
 			break;
-		case EProjectJBattleStage::CharacterPrepareAttack:
+		case EProjectJBattleStage::CharacterGetTurn:
 			break;
 		case EProjectJBattleStage::CharacterStartAttack:
 			break;
@@ -181,11 +252,13 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 			break;
 		case EProjectJBattleStage::CharacterEndAttack:
 			break;
+		case EProjectJBattleStage::CharacterEndTurn:
+			break;
 		case EProjectJBattleStage::RoundEnd:
 			break;
 		case EProjectJBattleStage::EndBattle:
 			break;
-
+	
 	}
 
 	switch (NewStage) {
@@ -196,7 +269,7 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				RoundStart();
 			}
 			break;
-		case EProjectJBattleStage::CharacterPrepareAttack:
+		case EProjectJBattleStage::CharacterGetTurn:
 			{
 				// Todo: 确定攻击次数
 				BattleContext.CurrentOrderIndex = BattleContext.CurrentOrderIndex + 1;
@@ -207,35 +280,111 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 			break;
 		case EProjectJBattleStage::CharacterStartAttack:
 			{
-				BattleContext.AttackTimes = BattleContext.AttackTimes + 1;
-				WaitSignals.Add(SignalSimplePending);
 				// 1. 先播放当前攻击者StartAttack动画
 				// 2. 等待动画播放完毕
 				// 3. 抛出战斗事件， XXX 攻击前， 检查是否触发了其它卡牌的技能
 				//   - 如果有技能动画， 要等待技能动画执行完毕
-				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
-				FProjectJCharacterAniData AniData;
-				// 选择最近的目标
-				auto SelfPosition = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
-				// 遍历敌方队伍，	Position相减，取绝对值，最小的就是最近的
+				auto CurrentCharacter = GetCurrentCharacter();
+				auto WeaponConfig = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<
+					FProjectJWeaponConfig>(CurrentCharacter->TempWeaponRowName, TEXT("ChangeAnimState"));
+
 				auto SelfTeam = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetTeamAttribute()));
-				const auto& TargetTeam = SelfTeam == 0 ? BattleContext.TopTeam : BattleContext.BottomTeam;
-				int32 MinDistance = INT32_MAX;
-				int32 MinTargetID = 0;
-				for (const auto& TargetID : TargetTeam)
-				{
-					auto TargetCharacter = BattleCharacterMap[TargetID];
-					auto TargetPosition = static_cast<int32>(TargetCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
-					auto Distance = FMath::Abs(SelfPosition - TargetPosition);
-					if (Distance < MinDistance)
-					{
-						MinDistance = Distance;
-						MinTargetID = TargetID;
-					}
+				TArray<int32> PossibleTargets;
+				switch (WeaponConfig->AttackAbility.TargetTeam) {
+					case EProjectJTargetTeam::Teammate:
+						PossibleTargets = SelfTeam == 0 ? BattleContext.BottomTeam : BattleContext.TopTeam;
+						break;
+					case EProjectJTargetTeam::Enemy:
+						PossibleTargets = SelfTeam == 0 ? BattleContext.TopTeam : BattleContext.BottomTeam;
+						break;
+					case EProjectJTargetTeam::Any:
+						{
+							// 合并TopTeam和BottomTeam
+							PossibleTargets.Append(BattleContext.TopTeam);
+							PossibleTargets.Append(BattleContext.BottomTeam);
+						}
+						break;
 				}
 
-				BattleContext.AttackTargets.Add(MinTargetID);
-				AniData.TargetCards.Add(BattleCharacterMap[MinTargetID].Get());
+				// 如果目标已经死亡， 移除
+				for (int32 i = PossibleTargets.Num() - 1; i >= 0; i--)
+				{
+					auto TargetCharacter = BattleCharacterMap[PossibleTargets[i]].Get();
+					if (TargetCharacter->IsDead())
+					{
+						PossibleTargets.RemoveAt(i);
+					}
+				}
+				
+				switch (WeaponConfig->AttackAbility.AttackRange) {
+					case EProjectJAttackRange::Closet:
+						{
+							// 选择最近的目标
+							auto SelfPosition = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+							// 遍历敌方队伍，	Position相减，取绝对值，最小的就是最近的
+							
+							int32 MinDistance = INT32_MAX;
+							int32 MinTargetID = 0;
+							for (const auto& TargetID : PossibleTargets)
+							{
+								auto TargetCharacter = BattleCharacterMap[TargetID];
+								auto TargetPosition = static_cast<int32>(TargetCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+								auto Distance = FMath::Abs(SelfPosition - TargetPosition);
+								if (Distance < MinDistance)
+								{
+									MinDistance = Distance;
+									MinTargetID = TargetID;
+								}
+							}
+
+							BattleContext.AttackTargets.Add(MinTargetID);
+						}
+						break;
+					case EProjectJAttackRange::Front:
+						break;
+					case EProjectJAttackRange::Back:
+						break;
+					case EProjectJAttackRange::AOE:
+						{
+							// 目标为全部PossibleTargets
+							BattleContext.AttackTargets = PossibleTargets;
+						}
+						break;
+					case EProjectJAttackRange::RandomOne:
+						break;
+				}
+
+				check(BattleContext.AttackTargets.Num() > 0);
+				
+				BattleContext.AttackTimes = BattleContext.AttackTimes + 1;
+				WaitSignals.Add(SignalSimplePending);
+				
+				FProjectJCharacterAniData AniData;
+				switch (WeaponConfig->AttackAbility.AttackRange) {
+					case EProjectJAttackRange::Closet:
+						{
+							auto TargetCharacter = BattleCharacterMap[BattleContext.AttackTargets[0]].Get();
+							AniData.LocationPayload = TargetCharacter->GetActorLocation();
+							AniData.TargetCards.Add(TargetCharacter);
+						}
+						break;
+					case EProjectJAttackRange::Front:
+						break;
+					case EProjectJAttackRange::Back:
+						break;
+					case EProjectJAttackRange::AOE:
+						{
+							AniData.LocationPayload = CurrentCharacter->GetActorLocation();
+							for (const auto& TargetID : BattleContext.AttackTargets)
+							{
+								AniData.TargetCards.Add(BattleCharacterMap[TargetID].Get());
+							}
+						}
+						break;
+					case EProjectJAttackRange::RandomOne:
+						break;
+				}
+				
 				
 				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::AttackStart, AniData);
 			}
@@ -246,9 +395,12 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				// 1. 当前卡牌播放DoAttack动画， 在ActionPoint执行造成伤害的功能
 				// 2. 等待动画播放完毕
 				// 3. 战斗中产生了, XXX受伤事件， XXX死亡，依次存入事件队列， 每次向一个角色发送， 如果该角色有技能，就先执行它的，再执行下一个人的。
-				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
+				auto CurrentCharacter = GetCurrentCharacter();
 				FProjectJCharacterAniData AniData;
-				AniData.TargetCards.Add(BattleCharacterMap[BattleContext.AttackTargets[0]].Get());
+				for (const auto& TargetID : BattleContext.AttackTargets)
+				{
+					AniData.TargetCards.Add(BattleCharacterMap[TargetID].Get());
+				}
 				
 				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::DoAttack, AniData);
 			}
@@ -259,14 +411,19 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				// 1. 当前卡牌动画切换会Idle状态
 				// 2. 等待动画播放完毕
 				// 3. 抛出战斗事件， XXX攻击后， 检查是否触发了其它卡牌的技能
-				auto CurrentCharacter = BattleCharacterMap[BattleContext.OrderArray[BattleContext.CurrentOrderIndex]];
+				auto CurrentCharacter = GetCurrentCharacter();
 				auto ASC = CurrentCharacter->GetAbilitySystemComponent();
 				auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 				auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
 				FProjectJCharacterAniData AniData;
 				// 返回发起攻击的位置
-				AniData.LocationPayload =  GetTeamPosition(TeamID, Position, TeamID == 0? BattleContext.BottomTeam.Num() : BattleContext.TopTeam.Num());
+				AniData.LocationPayload = GetTeamPosition(TeamID, Position, TeamID == 0? BattleContext.BottomTeam.Num() : BattleContext.TopTeam.Num());
 				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::Idle, AniData);
+			}
+			break;
+		case EProjectJBattleStage::CharacterEndTurn:
+			{
+				// Todo: 抛出行动结束事件， 如果角色死亡，则不抛出
 			}
 			break;
 		case EProjectJBattleStage::RoundEnd:
@@ -316,6 +473,40 @@ void AProjectJBattleManager::OnWaitingAttack(int InCharacterID)
 	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
 	check(WaitSignals.Contains(SignalSimplePending));
 	WaitSignals.Remove(SignalSimplePending);
+}
+
+void AProjectJBattleManager::OnAttackHit(int InCharacterID)
+{
+	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
+	// 攻击命中，造成伤害
+	auto Attacker = GetCurrentCharacter();
+	auto AttackASC = Attacker->GetAbilitySystemComponent();
+	auto AttackerAttack = AttackASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetAttackAttribute());
+	for (const auto& TargetID : BattleContext.AttackTargets)
+	{
+		auto Defender = BattleCharacterMap[TargetID];
+		// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
+		// 伤害计算流程
+		auto DamageGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
+		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, AttackerAttack);
+		AttackASC->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(), Defender->GetAbilitySystemComponent());
+	}
+
+	// 表演层，播放命中动画
+	// 目标也需要播放该动画
+	auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
+	for (const auto& TargetID : BattleContext.AttackTargets)
+	{
+		auto Target = BattleCharacterMap[TargetID];
+		if (Target->IsDead())
+		{
+			Target->ChangeAnimState(EProjectJCardAnimState::Death, FProjectJCharacterAniData::Empty);
+		}
+		else
+		{
+			Target->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
+		}
+	}
 }
 
 void AProjectJBattleManager::AfterAttackHit(int InCharacterID)

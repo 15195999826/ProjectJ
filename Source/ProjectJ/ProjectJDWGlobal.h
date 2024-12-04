@@ -8,6 +8,11 @@ namespace ProjectJGlobal
 
 	PROJECTJ_API extern const TArray<FName> RightTeams;
 	PROJECTJ_API extern const TMap<FName, int32> LeftTeamToPosition;
-
+	
+	PROJECTJ_API extern const FName Program_Ani_NameKey;
 	PROJECTJ_API extern const FName Program_Ani_LocationKey;
+
+	PROJECTJ_API extern const TArray<FName> AnimCustomKeys;
+
+	PROJECTJ_API extern const FName Program_Ani_Knock;
 }

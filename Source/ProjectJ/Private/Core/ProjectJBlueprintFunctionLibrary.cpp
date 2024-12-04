@@ -2,7 +2,6 @@
 
 
 #include "Core/ProjectJBlueprintFunctionLibrary.h"
-
 #include "Framework/Application/NavigationConfig.h"
 
 void UProjectJBlueprintFunctionLibrary::EnableUINav()

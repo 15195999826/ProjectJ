@@ -11,6 +11,13 @@ namespace ProjectJGlobal
 	const TMap<FName, int32> LeftTeamToPosition = {
 		
 	};
-
+	
+	const FName Program_Ani_NameKey = TEXT("Program_Ani_Name");
 	const FName Program_Ani_LocationKey = TEXT("Location");
+	
+	const TArray<FName> AnimCustomKeys = {
+		Program_Ani_NameKey
+	};
+
+	const FName Program_Ani_Knock = TEXT("Program_Ani_Knock");
 }
