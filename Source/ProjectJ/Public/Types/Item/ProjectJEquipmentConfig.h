@@ -28,6 +28,13 @@ struct FProjectJAttributeGiver
 };
 
 UENUM()
+enum class EProjectJAttackCapability : uint8
+{
+	Damage UMETA(DisplayName="伤害"),
+	Heal UMETA(DisplayName="治疗")
+};
+
+UENUM()
 enum class EProjectJAbilityAnimationType : uint8
 {
 	Program UMETA(DisplayName="程序动画"),
@@ -65,9 +72,13 @@ struct FProjectJAttackAbility
 {
 	GENERATED_BODY()
 
-	FProjectJAttackAbility(): TargetTeam(), AttackRange()
+	FProjectJAttackAbility(): AttackCapability(), TargetTeam(), AttackRange()
 	{
 	}
+
+	// Todo: 通过lua脚本实现攻击能力， 这样可以方便地制作各种攻击效果
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="攻击能力"))
+	EProjectJAttackCapability AttackCapability;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="目标队伍"))
 	EProjectJTargetTeam TargetTeam;

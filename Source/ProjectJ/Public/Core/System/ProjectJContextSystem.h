@@ -56,9 +56,8 @@ class PROJECTJ_API UProjectJContextSystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 
-	inline static FVector HiddenLocation = FVector(0, 0, -10000);
-
 public:
+	inline static FVector HiddenLocation = FVector(0, 0, -10000);
 	UPROPERTY()
 	TObjectPtr<AProjectJLevelSettingActor> LevelSettingActor;
 	UPROPERTY(BlueprintReadOnly)

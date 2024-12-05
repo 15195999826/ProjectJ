@@ -44,6 +44,24 @@ struct FProjectJBattleContext
 	TArray<int32> AttackTargets;
 };
 
+USTRUCT()
+struct FProjectJTeamFillData
+{
+	GENERATED_BODY()
+
+	FProjectJTeamFillData(): StartTime(0), Duration(0)
+	{
+	}
+
+	TMap<int32, FVector> TeamMovingFrom;
+
+	TMap<int32, FVector> TeamMovingTo;
+	
+	float StartTime;
+	float Duration;
+
+	FTimerHandle MovingTimerHandle;
+};
 
 UCLASS()
 class PROJECTJ_API AProjectJBattleManager : public AActor
@@ -82,6 +100,8 @@ private:
 	// -------缓存数据 Start-------
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UGameplayEffect> DamageEffect;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> HealEffect;
 
 	// -------缓存数据 End-------
 	
@@ -118,8 +138,14 @@ private:
 	void OnWaitingAttack(int InCharacterID);
 	void OnAttackHit(int InCharacterID);
 	void AfterAttackHit(int InCharacterID);
+	void BuildTeamResetCharacters(int32 TeamID, const TArray<int32>& InTeam, TMap<int32, FVector>& WriteMoving);
 	void OnIdleReturnToPosition(int InCharacterID);
-	
+
+	// --- 位置重置功能 Start ---
+	FProjectJTeamFillData TeamFillData;
+	void UpdateTeamFill();
+
+	// --- 位置重置功能 End ---
 	
 	
 };

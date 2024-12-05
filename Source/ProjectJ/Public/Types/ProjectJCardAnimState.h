@@ -42,6 +42,9 @@ struct FProjectJCharacterAniData
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector LocationPayload;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FloatPayload = -1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<FName, FString> AnimationKVs;
@@ -66,7 +69,9 @@ struct FProjectJProgramAnimationSettings
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category=AttackStart)
 	float AttackStartTargetPitch = -10.f;
-	
+
+	// Todo: 变量重命名
+	// ----- 这部分其实都是Knock动画的设置 Start -----
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category=DoAttack)
 	float DoAttackDuration = 0.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category=DoAttack)
@@ -79,11 +84,23 @@ struct FProjectJProgramAnimationSettings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category=DoAttack)
 	float DoAttackPlayMontagePercent = 0.3f;
 	
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=OnAttackHit)
+
+	// 表演层， 当卡牌攻击命中后， 动画状态切换到了AfterDoAttack， 此时在Tick中，卡牌会下落至地面和重置旋转
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Program|Konck")
 	float OnAttackHitDropDownSpeed = 100.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=OnAttackHit)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Program|Konck")
 	float OnAttackHitDropDownRotateSpeed = 100.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=OnAttackHit)
-	float OnAttackHitDelayToNextStage = 0.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Program|Konck", meta=(DisplayName="(后摇)撞击完毕后多久切换至AfterAttack动画状态"))
+	float KnockBackSwing = 0.5f;
+	
+	// ----- 这部分其实都是Knock动画的设置 end -----
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Dead, meta=(DisplayName="死亡后开始溶解延迟"))
+	float StartDissolveDelay = 0.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Dead, meta=(DisplayName="溶解持续时间"))
+	float DissolveDuration = 1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="重整队伍")
+	float TeamFillDuration = 1.5f;
+	
 };

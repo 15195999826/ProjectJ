@@ -54,6 +54,7 @@ protected:
 	FName ConfigRowName;
 	
 	FVector DragStartLocation;
+
 public:
 	// Start IProjectJDragInterface
 	virtual bool IsDraggable() override

@@ -202,6 +202,10 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 void AProjectJBattleManager::StartBattle()
 {
 	IsRunningBattle = true;
+	TeamFillData = FProjectJTeamFillData();
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	TeamFillData.Duration =ContextSystem->LevelSettingActor->ProgramAnimationSettings.TeamFillDuration;
+	
 	BattleContext = FProjectJBattleContext();
 	for (const auto& Tuple : BattleCharacterMap)
 	{
@@ -415,9 +419,17 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				auto ASC = CurrentCharacter->GetAbilitySystemComponent();
 				auto TeamID = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
 				auto Position = static_cast<int32>(ASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()));
+				int32 AliveCount = 0;
+				for (const auto& CharacterID : TeamID == 0 ? BattleContext.BottomTeam : BattleContext.TopTeam)
+				{
+					if (!BattleCharacterMap[CharacterID]->IsDead())
+					{
+						AliveCount++;
+					}
+				}
 				FProjectJCharacterAniData AniData;
 				// 返回发起攻击的位置
-				AniData.LocationPayload = GetTeamPosition(TeamID, Position, TeamID == 0? BattleContext.BottomTeam.Num() : BattleContext.TopTeam.Num());
+				AniData.LocationPayload = GetTeamPosition(TeamID, Position, AliveCount);
 				CurrentCharacter->ChangeAnimState(EProjectJCardAnimState::Idle, AniData);
 			}
 			break;
@@ -480,33 +492,59 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
 	// 攻击命中，造成伤害
 	auto Attacker = GetCurrentCharacter();
+	auto WeaponConfig = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<
+		FProjectJWeaponConfig>(Attacker->TempWeaponRowName, TEXT("OnAttackHit"));
 	auto AttackASC = Attacker->GetAbilitySystemComponent();
 	auto AttackerAttack = AttackASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetAttackAttribute());
 	for (const auto& TargetID : BattleContext.AttackTargets)
 	{
 		auto Defender = BattleCharacterMap[TargetID];
-		// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
-		// 伤害计算流程
-		auto DamageGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
-		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, AttackerAttack);
-		AttackASC->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(), Defender->GetAbilitySystemComponent());
+		switch (WeaponConfig->AttackAbility.AttackCapability)
+		{
+			case EProjectJAttackCapability::Damage:
+				{
+					// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
+					// 伤害计算流程
+					auto DamageGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
+					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+						DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, AttackerAttack);
+					AttackASC->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(),
+					                                           Defender->GetAbilitySystemComponent());
+				}
+				break;
+			case EProjectJAttackCapability::Heal:
+				{
+					auto HealGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), HealEffect);
+					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+						HealGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, -AttackerAttack);
+					AttackASC->ApplyGameplayEffectSpecToTarget(*HealGEHandle.Data.Get(),
+					                                           Defender->GetAbilitySystemComponent());
+				}
+				break;
+		}
 	}
 
 	// 表演层，播放命中动画
 	// 目标也需要播放该动画
-	auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
-	for (const auto& TargetID : BattleContext.AttackTargets)
+	if  (WeaponConfig->AttackAbility.AttackCapability == EProjectJAttackCapability::Damage)
 	{
-		auto Target = BattleCharacterMap[TargetID];
-		if (Target->IsDead())
+		auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
+		for (const auto& TargetID : BattleContext.AttackTargets)
 		{
-			Target->ChangeAnimState(EProjectJCardAnimState::Death, FProjectJCharacterAniData::Empty);
-		}
-		else
-		{
-			Target->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
+			auto Target = BattleCharacterMap[TargetID];
+			if (Target->IsDead())
+			{
+				Target->ChangeAnimState(EProjectJCardAnimState::Death, FProjectJCharacterAniData::Empty);
+				// 设置数据， 逻辑位置移动到-1
+				Target->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute(), -1);
+			}
+			else
+			{
+				Target->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
+			}
 		}
 	}
+	// Todo: Heal 效果特效
 }
 
 void AProjectJBattleManager::AfterAttackHit(int InCharacterID)
@@ -520,6 +558,94 @@ void AProjectJBattleManager::OnIdleReturnToPosition(int InCharacterID)
 {
 	check(InCharacterID == BattleContext.OrderArray[BattleContext.CurrentOrderIndex]);
 	check(WaitSignals.Contains(SignalSimplePending));
-	WaitSignals.Remove(SignalSimplePending);
+	// 攻击结束后， 此时卡牌已经回到原位， 检查是否需要调整站位
+	TeamFillData.TeamMovingTo.Empty();
+	TeamFillData.TeamMovingFrom.Empty();
+	BuildTeamResetCharacters(1, BattleContext.TopTeam, TeamFillData.TeamMovingTo);
+	BuildTeamResetCharacters(0, BattleContext.BottomTeam, TeamFillData.TeamMovingTo);
+	
+	if (TeamFillData.TeamMovingTo.Num() > 0)
+	{
+		TeamFillData.StartTime = GetWorld()->GetTimeSeconds();
+		check(!TeamFillData.MovingTimerHandle.IsValid());
+
+		// 构造移动起点数据
+		for (const auto& Tuple : TeamFillData.TeamMovingTo)
+		{
+			auto Character = BattleCharacterMap[Tuple.Key];
+			TeamFillData.TeamMovingFrom.Add(Character->ID, Character->GetActorLocation());
+		}
+		GetWorld()->GetTimerManager().SetTimer(TeamFillData.MovingTimerHandle, this, &AProjectJBattleManager::UpdateTeamFill, 0.01f, true);
+	}
+	else
+	{
+		WaitSignals.Remove(SignalSimplePending);
+	}
+}
+
+void AProjectJBattleManager::BuildTeamResetCharacters(int32 TeamID, const TArray<int32>& InTeam, TMap<int32, FVector>& WriteMoving)
+{
+	TArray<TWeakObjectPtr<AProjectJCharacter>> AliveCharacters;
+	for (const auto& CharacterID : InTeam)
+	{
+		if (BattleCharacterMap[CharacterID]->IsDead())
+		{
+			continue;
+		}
+		AliveCharacters.Add(BattleCharacterMap[CharacterID]);
+	}
+
+	// Sort by Position
+	AliveCharacters.Sort([](const TWeakObjectPtr<AProjectJCharacter>& A, const TWeakObjectPtr<AProjectJCharacter>& B) {
+		return A->GetAbilitySystemComponent()->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute()) <
+			B->GetAbilitySystemComponent()->GetNumericAttribute(UProjectJCharacterAttributeSet::GetPositionAttribute());
+	});
+	auto AliveCount = AliveCharacters.Num();
+	// 此时站位应该为0，1...AliveCharacter-1
+	for (int32 i = 0; i < AliveCharacters.Num(); i++)
+	{
+		auto Character = AliveCharacters[i];
+		Character->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute(), i);
+			
+		auto DesiredLocation = GetTeamPosition(TeamID, i, AliveCount);
+		auto CurrentLocation = Character->GetActorLocation();
+
+		if (FVector::Dist(DesiredLocation, CurrentLocation) > 5.f)
+		{
+			WriteMoving.Add(Character->ID, DesiredLocation);
+		}
+	}
+}
+
+void AProjectJBattleManager::UpdateTeamFill()
+{
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Alpha = (CurrentTime - TeamFillData.StartTime) / TeamFillData.Duration;
+
+	if (Alpha >= 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TeamFillData.MovingTimerHandle);
+
+		for (const auto& Tuple : TeamFillData.TeamMovingTo)
+		{
+			auto Character = BattleCharacterMap[Tuple.Key];
+			Character->SetActorLocation(Tuple.Value);
+		}
+
+		WaitSignals.Remove(SignalSimplePending);
+	}
+	else
+	{
+		// 
+		float EasedAlpha = FMath::InterpExpoInOut(0.0f, 1.0f, Alpha);
+
+		for (const auto& Tuple : TeamFillData.TeamMovingTo)
+		{
+			auto Character = BattleCharacterMap[Tuple.Key];
+			auto StartPosition = TeamFillData.TeamMovingFrom[Tuple.Key];
+			auto NewPosition = FMath::Lerp(StartPosition, Tuple.Value, EasedAlpha);
+			Character->SetActorLocation(NewPosition);
+		}
+	}
 }
 

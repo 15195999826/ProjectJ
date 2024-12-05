@@ -19,11 +19,11 @@ enum class EProgramAniAttackType
 };
 
 USTRUCT()
-struct FProgramAttackData
+struct FProgramAnimationData
 {
 	GENERATED_BODY()
 
-	FProgramAttackData(): StartTime(0), Duration(0)
+	FProgramAnimationData(): StartTime(0), Duration(0)
 	{
 	}
 
@@ -90,6 +90,9 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UProjectJCharacterAttributeSet> AttributeSet;
 
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<UMaterialInstanceDynamic> BackgroundDynamicMaterial;
+
 public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override
 	{
@@ -117,7 +120,7 @@ private:
 	EProjectJCardAnimState AnimState = EProjectJCardAnimState::Idle;
 
 	// 用于下列动画的相关数据
-	FProgramAttackData GeneralAniData;
+	FProgramAnimationData GeneralAniData;
 	// StartAttack动画
 	FTimerHandle StartAttackTimerHandle;
 	void UpdateStartAttackAnimation();
@@ -126,8 +129,8 @@ private:
 	FVector WaitingAttackOriginLocation;
 	float WaitingAttackTimer = 0;
 
-	// DoAttack动画
-	void ProgramDoAttack(const FName& InName);
+	// DoAttack动画, 返回后摇时长
+	float ProgramDoAttack(const FName& InName);
 	// Knock动画
 	FTimerHandle ProgramDoAttackTimerHandle;
 	void UpdateKnockAnimation();
@@ -136,4 +139,8 @@ private:
 	// Idle Return To Position Animation
 	FTimerHandle IdleReturnToPositionTimerHandle;
 	void UpdateIdleReturnToPositionAnimation();
+
+	// 卡背溶解动画
+	FTimerHandle DissolveTimerHandle;
+	void UpdateDissolveAnimation();
 };

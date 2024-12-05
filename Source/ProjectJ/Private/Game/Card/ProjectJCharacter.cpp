@@ -44,6 +44,8 @@ void AProjectJCharacter::BeginPlay()
 	Super::BeginPlay();
 	// 初始ASC
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	BackgroundDynamicMaterial = Mesh->CreateDynamicMaterialInstance(2);
 }
 
 // Called every frame
@@ -170,7 +172,7 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 				if (!InData.IsEmpty)
 				{
 					// 有动画数据，设置位置， 返回至数据中的位置
-					GeneralAniData = FProgramAttackData();
+					GeneralAniData = FProgramAnimationData();
 					GeneralAniData.TargetLocation = InData.LocationPayload;
 					GeneralAniData.TargetRotation = FRotator::ZeroRotator;
 					GeneralAniData.StartLocation = GetActorLocation();
@@ -199,7 +201,7 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
 				// Todo: 目前都用单体攻击
 				// 动画表现为： 卡牌快速向后向上移动，并且向下旋转10°
-				GeneralAniData = FProgramAttackData();
+				GeneralAniData = FProgramAnimationData();
 				// 计算跟Target 0的角度差
 				auto TargetLocation = AniData.LocationPayload;
 				auto TargetDirection = TargetLocation - GetActorLocation();
@@ -232,6 +234,7 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 					FProjectJWeaponConfig>(TempWeaponRowName, TEXT("ChangeAnimState"));
 
 				float MaxDuration = 0;
+				float MaxBackSwing = -1.f;
 				if (WeaponConfig->AttackAbility.AnimationConfigs.Num() > 0)
 				{
 					for (const auto& AnimConfig: WeaponConfig->AttackAbility.AnimationConfigs)
@@ -241,19 +244,25 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 							switch (AnimConfig.AnimationType) {
 								case EProjectJAbilityAnimationType::Program:
 									{
+										float BackSwing;
 										if (AnimConfig.CustomKV.Contains(ProjectJGlobal::Program_Ani_NameKey))
 										{
-											ProgramDoAttack(FName(*AnimConfig.CustomKV[ProjectJGlobal::Program_Ani_NameKey]));
+											BackSwing = ProgramDoAttack(FName(*AnimConfig.CustomKV[ProjectJGlobal::Program_Ani_NameKey]));
 										}
 										else
 										{
-											ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
+											BackSwing = ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
 										}
 
 										auto ProtectDuration = GeneralAniData.Duration + 0.067f;
 										if (ProtectDuration > MaxDuration)
 										{
 											MaxDuration = ProtectDuration;
+										}
+
+										if (BackSwing > MaxBackSwing)
+										{
+											MaxBackSwing = BackSwing;
 										}
 									}
 								break;
@@ -312,18 +321,21 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 				}
 				else
 				{
-					ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
+					MaxBackSwing = ProgramDoAttack(ProjectJGlobal::Program_Ani_Knock);
 					MaxDuration = GeneralAniData.Duration + 0.067f;
 				}
-				
+
+				// 播放动画或者特效， 或者都会播放， 然后在持续时间结束后，进入后摇阶段，目前后摇阶段用于将卡牌位置降落到地面与Pitch归零
 				// Animation ends
 				FTimerHandle UnUsedAfterAttackDelegate;
 				GetWorld()->GetTimerManager().SetTimer(
 					UnUsedAfterAttackDelegate,
-					[this]()
+					[this, MaxBackSwing]()
 					{
 						check(!ProgramDoAttackTimerHandle.IsValid());
-						ChangeAnimState(EProjectJCardAnimState::AfterDoAttack, FProjectJCharacterAniData::Empty);
+						FProjectJCharacterAniData AniData;
+						AniData.FloatPayload = MaxBackSwing;
+						ChangeAnimState(EProjectJCardAnimState::AfterDoAttack, AniData);
 					},
 					MaxDuration,
 					false
@@ -331,6 +343,30 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 			}
 			break;
 		case EProjectJCardAnimState::Death:
+			{
+				// Todo: 未来制作亡语技能时， 先播放亡语技能动画，再播放溶解特效
+				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+				GeneralAniData = FProgramAnimationData();
+				GeneralAniData.Duration =  LevelSettings->ProgramAnimationSettings.DissolveDuration;
+				auto StartDelay = LevelSettings->ProgramAnimationSettings.StartDissolveDelay;
+				FTimerHandle UnUsedDelegate;
+				GetWorld()->GetTimerManager().SetTimer(
+					UnUsedDelegate,
+					[this]()
+					{
+						GeneralAniData.StartTime = GetWorld()->GetTimeSeconds();
+						GetWorld()->GetTimerManager().SetTimer(
+							DissolveTimerHandle,
+							this,
+							&AProjectJCharacter::UpdateDissolveAnimation,
+							0.01f,
+							true
+						);
+					},
+					StartDelay,
+					false
+				);
+			}
 			break;
 		case EProjectJCardAnimState::WaitingAttack:
 			{
@@ -341,15 +377,14 @@ void AProjectJCharacter::ChangeAnimState_Implementation(EProjectJCardAnimState I
 			break;
 		case EProjectJCardAnimState::AfterDoAttack:
 			{
-				auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
-				if (LevelSettings->ProgramAnimationSettings.OnAttackHitDelayToNextStage > 0)
+				if (AniData.FloatPayload > 0)
 				{
 					FTimerHandle UnUsedDelegate;
 					GetWorld()->GetTimerManager().SetTimer(
 						UnUsedDelegate,
 						this,
 						&AProjectJCharacter::PostAfterAttackHit,
-						LevelSettings->ProgramAnimationSettings.OnAttackHitDelayToNextStage,
+						AniData.FloatPayload,
 						false
 					);
 				}
@@ -385,14 +420,14 @@ void AProjectJCharacter::UpdateStartAttackAnimation()
 	}
 }
 
-void AProjectJCharacter::ProgramDoAttack(const FName& InName)
+float AProjectJCharacter::ProgramDoAttack(const FName& InName)
 {
 	if (InName == ProjectJGlobal::Program_Ani_Knock)
 	{
 		auto IsInTop = IsAtTopTeam();
 		float Reverse = IsInTop ? -1 : 1;
 		auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
-		GeneralAniData = FProgramAttackData();
+		GeneralAniData = FProgramAnimationData();
 		GeneralAniData.TargetLocation = AniData.TargetCards[0]->GetActorLocation() + Reverse * LevelSettings
 			->ProgramAnimationSettings.DoAttackTargetLocationOffset;
 		auto CurrentRotation = GetActorRotation();
@@ -409,7 +444,11 @@ void AProjectJCharacter::ProgramDoAttack(const FName& InName)
 			0.01f,
 			true
 		);
+
+		return LevelSettings->ProgramAnimationSettings.KnockBackSwing;
 	}
+
+	return -1.f;
 }
 
 void AProjectJCharacter::UpdateKnockAnimation()
@@ -503,5 +542,21 @@ void AProjectJCharacter::UpdateIdleReturnToPositionAnimation()
 		SetActorRotation(NewRotation);
 	}
 	
+}
+
+void AProjectJCharacter::UpdateDissolveAnimation()
+{
+	auto CurrentTime = GetWorld()->GetTimeSeconds();
+	auto Alpha = (CurrentTime - GeneralAniData.StartTime) / GeneralAniData.Duration;
+	if (Alpha >= 1)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(DissolveTimerHandle);
+		SetActorLocation(UProjectJContextSystem::HiddenLocation);
+	}
+	else
+	{
+		auto DissolveAlpha = FMath::Lerp(0.0f, 1.0f, Alpha);
+		BackgroundDynamicMaterial->SetScalarParameterValue("Apperance", DissolveAlpha);
+	}
 }
 
