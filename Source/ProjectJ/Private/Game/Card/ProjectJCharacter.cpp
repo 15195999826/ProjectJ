@@ -9,6 +9,7 @@
 #include "Components/WidgetComponent.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJEffectActor.h"
 #include "Game/ProjectJGameBPFL.h"
@@ -20,6 +21,7 @@
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
+
 
 // Sets default values
 AProjectJCharacter::AProjectJCharacter()

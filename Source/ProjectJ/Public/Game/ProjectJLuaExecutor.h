@@ -23,7 +23,6 @@ public:
 	}
 
 	
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -36,5 +35,11 @@ public:
 	
 protected:
 	// UFUNCTION(BlueprintImplementableEvent)
-	
+
+
+	// ----- 战斗技能相关 Start -----
+public:
+	void CreateLuaAbilityInstance(int32 InCharacterID, int32 InEventID, const FName& InLuaScriptName);
+
+	// ----- 战斗技能相关 End -----
 };

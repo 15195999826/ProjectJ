@@ -3,6 +3,8 @@
 
 #include "Core/System/ProjectJContextSystem.h"
 
+#include "AbilitySystemComponent.h"
+#include "GameplayAbilitySpec.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Game/ProjectJCardBackendSystem.h"
 #include "Game/ProjectJEffectActor.h"
@@ -10,6 +12,7 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
+#include "Game/GAS/ProjectJLuaGameplayAbility.h"
 
 AProjectJSpell* UProjectJContextSystem::GetSpell()
 {
@@ -40,8 +43,16 @@ AProjectJCharacter* UProjectJContextSystem::GetCharacter()
 	}
 	else
 	{
-		auto CharacterClass = GetDefault<UProjectJGeneralSettings>()->CharacterClass;
+		auto GeneralSettings = GetDefault<UProjectJGeneralSettings>();
+		auto CharacterClass = GeneralSettings->CharacterClass;
 		Ret = GetWorld()->SpawnActor<AProjectJCharacter>(CharacterClass);
+
+		// 赋予常驻的被动技能
+		auto LuaAbilityClass = GeneralSettings->LuaAbilityClass;
+		FGameplayAbilitySpec Spec = FGameplayAbilitySpec(LuaAbilityClass, 1, 0, Ret);
+		auto ASC = Ret->GetAbilitySystemComponent();
+		auto SpecHandle = ASC->GiveAbilityAndActivateOnce(Spec);
+		Ret->LuaAbility = Cast<UProjectJLuaGameplayAbility>(ASC->FindAbilitySpecFromHandle(SpecHandle)->GetPrimaryInstance());
 	}
 	check(Ret);
 	

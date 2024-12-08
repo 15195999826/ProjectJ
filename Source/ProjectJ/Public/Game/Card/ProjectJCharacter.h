@@ -11,6 +11,8 @@
 #include "Types/ProjectJCardAnimState.h"
 #include "ProjectJCharacter.generated.h"
 
+class UProjectJLuaGameplayAbility;
+
 UENUM()
 enum class EProgramAniAttackType
 {
@@ -58,6 +60,9 @@ public:
 
 	// Todo: 临时方案，以后再从道具实例中读取
 	FName TempWeaponRowName = NAME_None;
+
+	UPROPERTY()
+	TObjectPtr<UProjectJLuaGameplayAbility> LuaAbility;
 
 protected:
 	// Called when the game starts or when spawned

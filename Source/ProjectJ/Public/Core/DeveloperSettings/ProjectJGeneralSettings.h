@@ -6,6 +6,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "ProjectJGeneralSettings.generated.h"
 
+class UProjectJLuaGameplayAbility;
 class UProjectJAttackGA;
 class AProjectJNavPointActor;
 class AProjectJSpell;
@@ -32,6 +33,9 @@ public:
 	
 	UPROPERTY(config, EditAnywhere, Category=GAS)
 	TSubclassOf<UProjectJAttackGA> AttackGAClass;
+
+	UPROPERTY(config, EditAnywhere, Category=GAS)
+	TSubclassOf<UProjectJLuaGameplayAbility> LuaAbilityClass;
 	
 	// Todo: 技能通用的一个技能
 
@@ -49,8 +53,7 @@ public:
 	
 	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJNavPointActor> NavPointClass;
-
-
+	
 	UPROPERTY(config, EditAnywhere, Category=Animations)
 	TSoftObjectPtr<UAnimMontage> HitMontage;
 };

@@ -5,10 +5,12 @@
 #include "CoreMinimal.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "GameplayEffectTypes.h"
+#include "Abilities/GameplayAbilityTypes.h"
 #include "Card/ProjectJCharacter.h"
-#include "Core/System/ProjectJContextSystem.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Types/ProjectJBattleEventData.h"
 #include "Types/Item/ProjectJItemBase.h"
+#include "Types/ProjectJValid.h"
 #include "ProjectJGameBPFL.generated.h"
 
 class UGameplayEffect;
@@ -30,4 +32,7 @@ public:
 	static FGameplayEffectSpecHandle SimpleMakeGESpecHandle(AActor* Source, TSubclassOf<UGameplayEffect> GEClass, float Level = 1.0f);
 	
 	static FActiveGameplayEffectHandle SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE, float Level = 1.0f);
+
+	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="OutValid"))
+	static FProjectJBattleEventData TryGetProjectJGameEventData(const FGameplayEventData& InData, EProjectJValid& OutValid);
 };

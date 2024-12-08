@@ -43,6 +43,33 @@ namespace ProjectJGameplayTags
 		{SetByCaller_Attribute_Battle_Armor, [](){return UProjectJCharacterAttributeSet::GetArmorAttribute();}},
 		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
 	};
+	
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Loose_OneDamageEachTime, "Feature.Loose.OneDamageEachTime", "Loose one damage each time.");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_None, "Feature.None", "No feature.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Stun, "Feature.Stun", "Stun feature.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Taunt, "Feature.Taunt", "Taunt feature.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Poison, "Feature.Poison", "Poison feature.");
+	
+	const TArray<FGameplayTag> BadFeatureTags = {
+		Feature_Stun,
+		Feature_Poison
+	};
+
+	const TArray<FGameplayTag> NeutralFeatureTags = {
+		Feature_Stun
+	};
+
+	const TArray<FGameplayTag> GoodFeatureTags = {
+		
+	};
+
+	const TArray<FGameplayTag> LooseFeatureTags = {
+		Feature_Loose_OneDamageEachTime
+	};
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_None, "Battle.Event.None", "None");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_RoundStart, "Battle.Event.RoundStart", "Round Start");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_RoundEnd, "Battle.Event.RoundEnd", "Round End");
@@ -52,6 +79,15 @@ namespace ProjectJGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetDamage, "Battle.Event.GetDamage", "Get Damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_Dead, "Battle.Event.Dead", "Dead");
+
+	const TArray<FGameplayTag> BattleEventPak = {
+		Battle_Event_RoundStart,
+		Battle_Event_RoundEnd,
+		Battle_Event_BeforeAttack,
+		Battle_Event_AfterAttack,
+		Battle_Event_GetDamage,
+		Battle_Event_Dead,
+	};
 	
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{

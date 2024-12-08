@@ -29,7 +29,5 @@ protected:
 	void CreateNewLandmark(const FName& InLandmarkName);
 	
 	void SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig);
-
-private:
-	void CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType);	
+	
 };

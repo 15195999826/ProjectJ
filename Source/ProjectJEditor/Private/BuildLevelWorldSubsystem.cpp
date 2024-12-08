@@ -6,6 +6,7 @@
 #include "DataTableEditorUtils.h"
 #include "FileHelpers.h"
 #include "IPythonScriptPlugin.h"
+#include "ProjectJEditorBFL.h"
 #include "PythonBridge.h"
 #include "BuildLevel/ProjectJBuildLevelGameMode.h"
 #include "Game/ProjectJGameMode.h"
@@ -73,7 +74,7 @@ void UBuildLevelWorldSubsystem::CreateNewLevel(const FName& InLevelName)
 	}
 
 	FString Pinyin = UPythonBridge::Get()->ToPinyin(InLevelName.ToString());
-	CreateLuaScript(InLevelName, Pinyin, EProjectJLuaInstanceType::Level);
+	UProjectJEditorBFL::CreateLuaScript(InLevelName, Pinyin, EProjectJLuaInstanceType::Level);
 	
 	FProjectJLevelConfig NewLevelConfig;
 	NewLevelConfig.LevelName = FText::FromName(InLevelName);
@@ -95,7 +96,7 @@ void UBuildLevelWorldSubsystem::CreateNewCharacter(const FName& InCharacterName)
 		return;
 	}
 	FString Pinyin = UPythonBridge::Get()->ToPinyin(InCharacterName.ToString());
-	CreateLuaScript(InCharacterName, Pinyin, EProjectJLuaInstanceType::Character);
+	UProjectJEditorBFL::CreateLuaScript(InCharacterName, Pinyin, EProjectJLuaInstanceType::Character);
 	
 	FProjectJCharacterConfig NewCharacterConfig;
 	NewCharacterConfig.Name = FText::FromName(InCharacterName);
@@ -116,7 +117,7 @@ void UBuildLevelWorldSubsystem::CreateNewLandmark(const FName& InLandmarkName)
 		return;
 	}
 	FString Pinyin = UPythonBridge::Get()->ToPinyin(InLandmarkName.ToString());
-	CreateLuaScript(InLandmarkName, Pinyin, EProjectJLuaInstanceType::Landmark);
+	UProjectJEditorBFL::CreateLuaScript(InLandmarkName, Pinyin, EProjectJLuaInstanceType::Landmark);
 	
 	FProjectJLandmarkConfig NewLandmarkConfig;
 	NewLandmarkConfig.Name = FText::FromName(InLandmarkName);
@@ -144,43 +145,4 @@ void UBuildLevelWorldSubsystem::SaveLevel(const FName& Name, const FProjectJLeve
 	LevelRow->NavPoints = ProjectJLevelConfig.NavPoints;
 	UEditorLoadingAndSavingUtils::SavePackages({ LevelTable->GetPackage() }, false);
 	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(LevelTable), FDataTableEditorUtils::EDataTableChangeInfo::RowData);
-}
-
-void UBuildLevelWorldSubsystem::CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType)
-{
-	FString GLuaSrcRelativePath;
-	const char* TemplateFilePath;
-	switch (InType) {
-		case EProjectJLuaInstanceType::Level:
-			GLuaSrcRelativePath = TEXT("Script/Levels/");
-			TemplateFilePath = "Config/LuaTemplates/LevelTemplate.lua";
-			break;
-		case EProjectJLuaInstanceType::Character:
-			GLuaSrcRelativePath = TEXT("Script/Characters/");
-			TemplateFilePath = "Config/LuaTemplates/CharacterTemplate.lua";
-			break;
-		case EProjectJLuaInstanceType::Landmark:
-			GLuaSrcRelativePath = TEXT("Script/Landmarks/");
-			TemplateFilePath = "Config/LuaTemplates/LandmarkTemplate.lua";
-			break;
-		default:
-			UE_LOG(LogTemp, Error, TEXT("Unknown LuaFileType %d"), (int32)InType);
-			return;
-	}
-
-	FString GLuaSrcFullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + GLuaSrcRelativePath);
-	auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *InLuaScriptName);
-	int32 SubIndex = 0;
-	while (FPaths::FileExists(FileName))
-	{
-		FileName = FString::Printf(TEXT("%s%s_%d.lua"), *GLuaSrcFullPath, *InLuaScriptName, SubIndex);
-	}
-
-	auto TemplateFileFullPath = FPaths::ProjectConfigDir() / TemplateFilePath;
-	FString Content;
-	FFileHelper::LoadFileToString(Content, *TemplateFileFullPath);
-
-	// 时间格式 YYYY-MM-DD
-	Content = Content.Replace(TEXT("{DateTime}"), *FDateTime::Now().ToString(TEXT("%Y-%m-%d"))).Replace(TEXT("{RowName}"), *InRowName.ToString());
-	FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }

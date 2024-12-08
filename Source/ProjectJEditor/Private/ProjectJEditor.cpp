@@ -4,6 +4,7 @@
 #include "ProjectJGameEditorStyle.h"
 #include "ProjectJLuaFunction.h"
 #include "GameplayAbilitiesEditorModule.h"
+#include "ProjectJEditorBFL.h"
 #include "PythonBridge.h"
 #include "Editor/UnrealEdEngine.h"
 #include "Engine/GameInstance.h"
@@ -12,6 +13,7 @@
 #include "ToolMenu.h"
 #include "ToolMenus.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
+#include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "UObject/UObjectIterator.h"
 
 #define LOCTEXT_NAMESPACE "FProjectJEditorModule"
@@ -439,6 +441,88 @@ static void MigrateAbilityTemplate()
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
 }
 
+static void CreateAbilityLuaScript()
+{
+	// 显示一个对话框，可以输入技能名字， 并且包含确定和取消按钮
+	TSharedRef<SWindow> Dialog = SNew(SWindow)
+        .Title(FText::FromString("Create Ability Lua Script"))
+        .ClientSize(FVector2D(400, 200))
+        .SupportsMinimize(false)
+        .SupportsMaximize(false);
+
+    TSharedPtr<SEditableTextBox> AbilityNameTextBox;
+
+    Dialog->SetContent(
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        [
+            SNew(STextBlock)
+            .Text(FText::FromString("Enter Ability Name:"))
+        ]
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        [
+            SAssignNew(AbilityNameTextBox, SEditableTextBox)
+        ]
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        .HAlign(HAlign_Right)
+        [
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            .Padding(5)
+            [
+                SNew(SButton)
+                .Text(FText::FromString("OK"))
+                .OnClicked_Lambda([Dialog, AbilityNameTextBox]()
+                {
+                    FString AbilityName = AbilityNameTextBox->GetText().ToString();
+                    if (!AbilityName.IsEmpty())
+                    {
+                    	// 转化为拼音
+                    	auto PythonBridge = UPythonBridge::Get();
+                    	FString Pinyin = PythonBridge->ToPinyin(AbilityName);
+                    	
+                        bool CreateSuccess = UProjectJEditorBFL::CreateLuaScript(FName(*AbilityName), Pinyin, EProjectJLuaInstanceType::Ability);
+                    	if (CreateSuccess)
+                    	{
+                    		// 更新PropertyHelper 中的静态变量
+                    		auto PropertyHelper = GetMutableDefault<UProjectJPropertyHelper>();
+                    		PropertyHelper->CHS2AbilityLuaScriptNameMap.Add(FName(*AbilityName), FName(*Pinyin));
+
+                    		// 如何让它只保存在在Config路径下的DefaultPropertyHelperEditor.ini中?
+                    		FString DefaultConfigFilePath  = PropertyHelper->GetDefaultConfigFilename();
+                    		PropertyHelper->SaveConfig(CPF_Config, *DefaultConfigFilePath);
+                    		
+                    		Dialog->RequestDestroyWindow();
+                    	}
+                    }
+                    return FReply::Handled();
+                })
+            ]
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            .Padding(5)
+            [
+                SNew(SButton)
+                .Text(FText::FromString("Cancel"))
+                .OnClicked_Lambda([Dialog]()
+                {
+                    Dialog->RequestDestroyWindow();
+                    return FReply::Handled();
+                })
+            ]
+        ]
+    );
+
+    FSlateApplication::Get().AddWindow(Dialog);
+}
+
 static void RegisterGameEditorMenus()
 {
 	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu");
@@ -474,6 +558,28 @@ static void RegisterGameEditorMenus()
 				LOCTEXT("ProjectJSubMenuEntry3_ToolTip", "检查脚本函数是否与模板相同(入参, 是否缺少某个函数, 是否多了某个函数)"),
 				FSlateIcon(),
 				FUIAction(FExecuteAction::CreateStatic(&MigrateAbilityTemplate))
+			);
+		})
+	);
+	
+	// 拓展DataTable工具栏， 创建一个新的菜单
+	UToolMenu* DataTableMenu = UToolMenus::Get()->ExtendMenu("AssetEditor.DataTableEditor.MainMenu");
+	FToolMenuSection& DataTableSection = DataTableMenu->AddSection("ProjectJDataTable", TAttribute<FText>(), FToolMenuInsert("Help", EToolMenuInsertType::After));
+    
+	DataTableSection.AddSubMenu(
+		"ProjectJDataTableSubMenu",
+		LOCTEXT("ProjectJDataTableSubMenu_Label", "ProjectJ DataTable"),
+		LOCTEXT("ProjectJDataTableSubMenu_ToolTip", "This is a submenu under ProjectJ DataTable"),
+		FNewToolMenuDelegate::CreateLambda([](UToolMenu* InMenu)
+		{
+			FToolMenuSection& SubSection = InMenu->AddSection("ProjectJDataTableSubSection");
+
+			SubSection.AddMenuEntry(
+				"ProjectJDataTableSubMenuEntry1",
+				LOCTEXT("ProjectJDataTableSubMenuEntry1_Label", "创建技能Lua脚本"),
+				LOCTEXT("ProjectJDataTableSubMenuEntry1_ToolTip", "创建技能Lua脚本"),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateStatic(&CreateAbilityLuaScript))
 			);
 		})
 	);

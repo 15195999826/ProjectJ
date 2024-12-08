@@ -87,3 +87,19 @@ FActiveGameplayEffectHandle UProjectJGameBPFL::SimpleApplyGEToSelf(AActor* Sourc
 	const FGameplayEffectSpecHandle EffectSpecHandle = ASC->MakeOutgoingSpec(GE, Level, EffectContextHandle);
 	return ASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
 }
+
+FProjectJBattleEventData UProjectJGameBPFL::TryGetProjectJGameEventData(const FGameplayEventData& InData,
+	EProjectJValid& OutValid)
+{
+	FGameplayAbilityTargetData* data = InData.TargetData.Data[0].Get();
+	// Valid check we have something to use :D
+	if(data == nullptr || data->GetScriptStruct() != FProjectJBattleEventData::StaticStruct())
+	{
+		OutValid = EProjectJValid::Invalid;
+		return FProjectJBattleEventData();
+	}
+	
+	FProjectJBattleEventData* CustomData = static_cast<FProjectJBattleEventData*>(data);
+	OutValid = EProjectJValid::Valid;
+	return *CustomData;
+}
