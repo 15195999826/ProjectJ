@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Engine/DeveloperSettings.h"
 #include "ProjectJGeneralSettings.generated.h"
 
@@ -56,4 +57,7 @@ public:
 	
 	UPROPERTY(config, EditAnywhere, Category=Animations)
 	TSoftObjectPtr<UAnimMontage> HitMontage;
+
+	UPROPERTY(config, EditAnywhere, Category = Gameplay)
+	TMap<FGameplayTag, TSubclassOf<UGameplayEffect>> FeatureGEMap;
 };

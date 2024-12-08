@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "UnLuaInterface.h"
 #include "GameFramework/Actor.h"
+#include "Types/ProjectJBattleEventData.h"
 #include "Types/ProjectJLuaInstanceType.h"
 #include "ProjectJLuaExecutor.generated.h"
 
@@ -39,7 +41,17 @@ protected:
 
 	// ----- 战斗技能相关 Start -----
 public:
+	UFUNCTION(BlueprintImplementableEvent)
 	void CreateLuaAbilityInstance(int32 InCharacterID, int32 InEventID, const FName& InLuaScriptName);
+	UFUNCTION(BlueprintImplementableEvent)
+	FGameplayTag GetExecTag(int32 OwnerID, int32 EventID);
+	UFUNCTION(BlueprintImplementableEvent)
+	TArray<FGameplayTag> GetFeatureTag(int32 OwnerID, int32 EventID);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteLuaAbility(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& AutoDwEventData);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveLuaAbilityInstance(int32 OwnerID, int32 EventID);
 	// ----- 战斗技能相关 End -----
 };
