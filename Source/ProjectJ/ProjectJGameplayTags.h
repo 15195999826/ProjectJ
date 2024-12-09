@@ -33,10 +33,11 @@ namespace ProjectJGameplayTags
 	PROJECTJ_API extern const TMap<FGameplayTag, TFunction<FGameplayAttribute()>> Tag2Attribute;
 
 	// 战斗特性Tag
+	
 	// 松散特性Tag， 用于快速实现一些逻辑功能，无表现, 也不会抛出事件
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Feature_Loose_OneDamageEachTime); // 每次只受到1点伤害
 	
-	// 特性Tag
+	// 特性Tag, 固定功能， 作为A类词条存在
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Feature_None); // 无特性
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Feature_Stun); // 眩晕
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Feature_Taunt); // 嘲讽
@@ -49,6 +50,7 @@ namespace ProjectJGameplayTags
 	
 
 	// 战斗事件
+	// 作为B类词条存在， 总是通过一些事件触发一些功能， A类词条的功能实现可以使用B类词条
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_None);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_RoundStart);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_RoundEnd);

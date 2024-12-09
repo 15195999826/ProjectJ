@@ -7,7 +7,7 @@
 #include "EngineUtils.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJBattleManager.h"
-#include "Game/ProjectJGameBPFL.h"
+#include "Game/ProjectJGameBFL.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/Item/ProjectJItemBase.h"
@@ -42,8 +42,8 @@ void AProjectJDebugBattleGameMode::RegisterTeamCharacter(int32 TeamID, const FSt
 	auto Character = ContextSystem->CreateCharacter(FName(*InCharacterRow));
 	Character->CanDrag = false;
 	// 装备武器和护甲
-	UProjectJGameBPFL::Equip(Character, FName(*InWeaponRow), EProjectJItemType::Weapon);
-	UProjectJGameBPFL::Equip(Character, FName(*InArmorRow), EProjectJItemType::Armor);
+	UProjectJGameBFL::Equip(Character, FName(*InWeaponRow), EProjectJItemType::Weapon);
+	UProjectJGameBFL::Equip(Character, FName(*InArmorRow), EProjectJItemType::Armor);
 
 	Character->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetTeamAttribute(), TeamID);
 	auto Position  = FCString::Atoi(*InPosition);

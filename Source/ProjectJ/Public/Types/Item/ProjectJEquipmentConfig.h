@@ -104,7 +104,10 @@ struct FProjectJEquipmentConfig : public FProjectJItemBase
 	FProjectJAttributeGiver AttributeGiver;
 	// 耐久度。 Todo: 考虑实现方案
 
-	// Todo: 考虑到可能存在刷装备词条的可能性， 技能放在另一张表里，这里用数组表示， 可能是表示装备可以随机到的技能池子
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="技能", GetOptions="ProjectJ.ProjectJPropertyHelper.GetFeatureNames"))
+	TArray<FName> Features;
+	
+	// Todo: 考虑到可能存在刷装备词条的可能性，这里用数组表示， 可能是表示装备可以随机到的技能脚本池子
 	// Todo: 选项如果需要搜索功能，以后做
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="技能", GetOptions="ProjectJ.ProjectJPropertyHelper.GetLuaAbilityScriptsNames"))
 	TArray<FName> AbilityLuaScriptNames;
@@ -121,7 +124,6 @@ struct FProjectJWeaponConfig : public FProjectJEquipmentConfig
 	}
 
 	
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="攻击配置"))
 	FProjectJAttackAbility AttackAbility;
 	// 耐久度。 Todo: 考虑实现方案

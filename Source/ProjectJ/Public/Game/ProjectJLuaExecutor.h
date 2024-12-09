@@ -45,8 +45,14 @@ public:
 	void CreateLuaAbilityInstance(int32 InCharacterID, int32 InEventID, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
 	FGameplayTag GetExecTag(int32 OwnerID, int32 EventID);
+	/**
+	 * 获取特性标签
+	 * @param OwnerID
+	 * @param EventID
+	 * @return Key:FeatureTag, Value:Count
+	 */
 	UFUNCTION(BlueprintImplementableEvent)
-	TArray<FGameplayTag> GetFeatureTag(int32 OwnerID, int32 EventID);
+	TMap<FGameplayTag, int32> GetFeatureTag(int32 OwnerID, int32 EventID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ExecuteLuaAbility(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& AutoDwEventData);

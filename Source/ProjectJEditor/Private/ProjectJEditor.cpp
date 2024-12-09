@@ -542,6 +542,14 @@ static void RegisterGameEditorMenus()
 			// 	FSlateIcon(),
 			// 	FUIAction(FExecuteAction::CreateStatic(&UpdateLuaAbilityDesc))
 			// );
+
+			SubSection.AddMenuEntry(
+				"ProjectJSubMenuEntry1",
+				LOCTEXT("ProjectJDataTableSubMenuEntry1_Label", "创建技能Lua脚本"),
+				LOCTEXT("ProjectJDataTableSubMenuEntry1_ToolTip", "创建技能Lua脚本"),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateStatic(&CreateAbilityLuaScript))
+			);
 			
 			SubSection.AddMenuEntry(
 				"ProjectJSubMenuEntry2",

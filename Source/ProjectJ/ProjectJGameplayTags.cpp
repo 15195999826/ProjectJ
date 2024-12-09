@@ -46,7 +46,6 @@ namespace ProjectJGameplayTags
 		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
 	};
 	
-
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Loose_OneDamageEachTime, "Feature.Loose.OneDamageEachTime", "Loose one damage each time.");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_None, "Feature.None", "No feature.");

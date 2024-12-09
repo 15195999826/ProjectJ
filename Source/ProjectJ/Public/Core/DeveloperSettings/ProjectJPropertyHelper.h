@@ -23,4 +23,7 @@ public:
 
 	UFUNCTION()
 	static TArray<FName> GetLuaAbilityScriptsNames();
+
+	UFUNCTION()
+	static TArray<FName> GetFeatureNames();
 };

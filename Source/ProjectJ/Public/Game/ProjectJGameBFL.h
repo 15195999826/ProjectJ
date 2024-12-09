@@ -11,14 +11,14 @@
 #include "Types/ProjectJBattleEventData.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "Types/ProjectJValid.h"
-#include "ProjectJGameBPFL.generated.h"
+#include "ProjectJGameBFL.generated.h"
 
 class UGameplayEffect;
 /**
  * 
  */
 UCLASS()
-class PROJECTJ_API UProjectJGameBPFL : public UBlueprintFunctionLibrary
+class PROJECTJ_API UProjectJGameBFL : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
@@ -30,8 +30,9 @@ public:
 	inline static FActiveGameplayEffectHandle EmptyActiveGameplayEffectHandle = FActiveGameplayEffectHandle();
 	
 	static FGameplayEffectSpecHandle SimpleMakeGESpecHandle(AActor* Source, TSubclassOf<UGameplayEffect> GEClass, float Level = 1.0f);
-	
-	static FActiveGameplayEffectHandle SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE, float Level = 1.0f);
+
+	UFUNCTION(BlueprintCallable)
+	static FActiveGameplayEffectHandle SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE, float Level = 1.0f, int32 Round = -1);
 
 	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="OutValid"))
 	static FProjectJBattleEventData TryGetProjectJGameEventData(const FGameplayEventData& InData, EProjectJValid& OutValid);

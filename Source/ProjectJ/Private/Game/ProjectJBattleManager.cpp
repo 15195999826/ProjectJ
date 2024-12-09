@@ -10,7 +10,7 @@
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
-#include "Game/ProjectJGameBPFL.h"
+#include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
@@ -505,7 +505,7 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 				{
 					// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
 					// 伤害计算流程
-					auto DamageGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
+					auto DamageGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
 					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
 						DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, AttackerAttack);
 					AttackASC->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(),
@@ -514,7 +514,7 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 				break;
 			case EProjectJAttackCapability::Heal:
 				{
-					auto HealGEHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(Attacker.Get(), HealEffect);
+					auto HealGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), HealEffect);
 					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
 						HealGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, -AttackerAttack);
 					AttackASC->ApplyGameplayEffectSpecToTarget(*HealGEHandle.Data.Get(),

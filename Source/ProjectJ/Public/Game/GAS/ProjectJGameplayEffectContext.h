@@ -4,29 +4,28 @@
 
 #include "ProjectJGameplayEffectContext.generated.h"
 
-// 完全不考虑网络情况下的序列化
+/**
+ * 它在整个效果执行过程中传递，因此它是跟踪有关执行的瞬态信息的好地方； 每次Apply, 即便是层数GE， 这个Context也都是新的， 因此没法保存持久化数据
+ */
 USTRUCT(BlueprintType)
 struct FProjectJGameplayEffectContext : public FGameplayEffectContext
 {
 	GENERATED_BODY()
+	
 public:
-	TMap<int32, int32> GetStackCountAtRoundMap() const { return StackCountAtRound; }
-
-	void AddStackCountAtRound(int32 Round, int32 StackCount)
+	void SetDuration(int32 InDuration)
 	{
-		if (StackCountAtRound.Contains(Round))
-		{
-			StackCountAtRound[Round] += StackCount;
-		}
-		else
-		{
-			StackCountAtRound.Add(Round, StackCount);
-		}
+		Duration = InDuration;
 	}
+
+	int32 GetDuration() const
+	{
+		return Duration;
+	}
+
 protected:
-	UPROPERTY(NotReplicated)
-	TMap<int32, int32> StackCountAtRound; // 在 Key 回合 获得了 Value 层
- 
+	int32 Duration = -1;
+	
 public:
 	/** Returns the actual struct used for serialization, subclasses must override this! */
 	virtual UScriptStruct* GetScriptStruct() const override
@@ -35,18 +34,19 @@ public:
 	}
  
 	/** Creates a copy of this context, used to duplicate for later modifications */
-	virtual FProjectJGameplayEffectContext* Duplicate() const override
-	{
-		FProjectJGameplayEffectContext* NewContext = new FProjectJGameplayEffectContext();
-		*NewContext = *this;
-		NewContext->AddActors(Actors);
-		if (GetHitResult())
-		{
-			// Does a deep copy of the hit result
-			NewContext->AddHitResult(*GetHitResult(), true);
-		}
-		return NewContext;
-	}
+	// virtual FProjectJGameplayEffectContext* Duplicate() const override
+	// {
+	// 	FProjectJGameplayEffectContext* NewContext = new FProjectJGameplayEffectContext();
+	// 	*NewContext = *this;
+	// 	// Todo: 基类中没有这行 复制Actors
+	//  NewContext->AddActors(Actors);
+	// 	if (GetHitResult())
+	// 	{
+	// 		// Does a deep copy of the hit result
+	// 		NewContext->AddHitResult(*GetHitResult(), true);
+	// 	}
+	// 	return NewContext;
+	// }
  
 	virtual bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess) override;
 };

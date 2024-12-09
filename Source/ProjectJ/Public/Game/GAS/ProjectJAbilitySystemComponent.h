@@ -19,6 +19,52 @@ struct FProjectJMontageEventData
 	int32 IntPayload;
 };
 
+/**
+ * 由于不存在一次性Apply多层GE的函数，每次GEStack Count 增加时， 数值只能是1
+ * GE每一层的数据， 在哪回合获得， 持续时间多久 
+ */
+USTRUCT(BlueprintType)
+struct FProjectJGELayerData
+{
+	GENERATED_BODY()
+	
+	FProjectJGELayerData()
+	{
+	}
+
+	UPROPERTY()
+	int32 LayerID = 0;
+
+	UPROPERTY()
+	int32 GetRound = 0;
+
+	UPROPERTY()
+	int32 Duration = 0;
+};
+
+// 运行时持久化的数据， 跟SpecHandle一一对应
+USTRUCT(BlueprintType)
+struct FProjectJCustomStackedGESpec
+{
+	GENERATED_BODY()
+	
+	FProjectJCustomStackedGESpec()
+	{
+	}
+	
+	FDelegateHandle StackCountChangedHandle;
+
+	int32 GLayerID = 0;
+	
+	/**
+	 * 只记录每一轮的StackCount的增加
+	 */
+	UPROPERTY()
+	TArray<FProjectJGELayerData> EachLayerData;
+	
+	UPROPERTY()
+	TMap<int32, int32> StackCountReduceAtRoundMap;
+};
 DECLARE_MULTICAST_DELEGATE_OneParam(FProjectJMontagePostDelegate, FProjectJMontageEventData*)
 /**
  * 
@@ -33,9 +79,10 @@ public:
 	
 	TMap<FGameplayTag, FProjectJMontagePostDelegate> MontageEventCallbacks;
 	void HandleMontagePostEvent(FGameplayTag EventTag, FProjectJMontageEventData EventData);
-
 private:
-	TMap<FGameplayTag, FDelegateHandle> GEStackCountListenerMap;
+	UPROPERTY()
+	TMap<FActiveGameplayEffectHandle, FProjectJCustomStackedGESpec> CustomStackedGESpecMap;
+
 	void OnGameplayEffectStackChange(FActiveGameplayEffectHandle InGEHandle, int32 NewStackCount, int32 OldStackCount);
 	void OnGEAppliedToSelf(UAbilitySystemComponent* SourceASC, const FGameplayEffectSpec& GameplayEffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
 	void OnGERemoved(const FActiveGameplayEffect& ActiveGameplayEffect);

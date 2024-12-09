@@ -12,8 +12,9 @@
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJEffectActor.h"
-#include "Game/ProjectJGameBPFL.h"
+#include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJLevelSettingActor.h"
+#include "Game/GAS/ProjectJAbilitySystemComponent.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Interface/ProjectJAttackEffectInterface.h"
 #include "ProjectJ/ProjectJDWGlobal.h"
@@ -34,7 +35,7 @@ AProjectJCharacter::AProjectJCharacter()
 	FloatWidgetComponent->SetupAttachment(Mesh, "Cube");
 
 
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent = CreateDefaultSubobject<UProjectJAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(false);
 
 	AttributeSet = CreateDefaultSubobject<UProjectJCharacterAttributeSet>(TEXT("AttributeSet"));
@@ -110,7 +111,7 @@ void AProjectJCharacter::BindConfig_Implementation(const FName& InRowName)
 	{
 		// 给予属性
 		auto GSettings = GetDefault<UProjectJGeneralSettings>();
-		auto InitAttributeGESpecHandle = UProjectJGameBPFL::SimpleMakeGESpecHandle(this, GSettings->InitAttributeEffect);
+		auto InitAttributeGESpecHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(this, GSettings->InitAttributeEffect);
 		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Health, Config->Health);
 		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Attack, Config->Attack);
 		UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(InitAttributeGESpecHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Speed, Config->Speed);

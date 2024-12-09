@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Game/ProjectJGameBPFL.h"
+#include "Game/ProjectJGameBFL.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
@@ -10,10 +10,11 @@
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Game/GAS/ProjectJAttackGA.h"
+#include "Game/GAS/ProjectJGameplayEffectContext.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
 
-void UProjectJGameBPFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, EProjectJItemType InType)
+void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, EProjectJItemType InType)
 {
 	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	auto ASC = InCharacter->GetAbilitySystemComponent();
@@ -56,11 +57,11 @@ void UProjectJGameBPFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, 
 	FloatWidget->BindEquipment(InRowName, InType);
 }
 
-void UProjectJGameBPFL::UnEquip()
+void UProjectJGameBFL::UnEquip()
 {
 }
 
-FGameplayEffectSpecHandle UProjectJGameBPFL::SimpleMakeGESpecHandle(AActor* Source,
+FGameplayEffectSpecHandle UProjectJGameBFL::SimpleMakeGESpecHandle(AActor* Source,
 	TSubclassOf<UGameplayEffect> GEClass, float Level)
 {
 	const auto ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Source);
@@ -71,8 +72,8 @@ FGameplayEffectSpecHandle UProjectJGameBPFL::SimpleMakeGESpecHandle(AActor* Sour
 	return ASC->MakeOutgoingSpec(GEClass, Level, EffectContextHandle);
 }
 
-FActiveGameplayEffectHandle UProjectJGameBPFL::SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE,
-	float Level)
+FActiveGameplayEffectHandle UProjectJGameBFL::SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE,
+	float Level, int32 Round)
 {
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Source);
 	if (ASC == nullptr)
@@ -85,10 +86,12 @@ FActiveGameplayEffectHandle UProjectJGameBPFL::SimpleApplyGEToSelf(AActor* Sourc
 	EffectContextHandle.AddInstigator(Source, Source);
 
 	const FGameplayEffectSpecHandle EffectSpecHandle = ASC->MakeOutgoingSpec(GE, Level, EffectContextHandle);
+	auto GEContext = static_cast<FProjectJGameplayEffectContext*>(EffectSpecHandle.Data->GetContext().Get());
+	GEContext->SetDuration(Round);
 	return ASC->ApplyGameplayEffectSpecToSelf(*EffectSpecHandle.Data.Get());
 }
 
-FProjectJBattleEventData UProjectJGameBPFL::TryGetProjectJGameEventData(const FGameplayEventData& InData,
+FProjectJBattleEventData UProjectJGameBFL::TryGetProjectJGameEventData(const FGameplayEventData& InData,
 	EProjectJValid& OutValid)
 {
 	FGameplayAbilityTargetData* data = InData.TargetData.Data[0].Get();
