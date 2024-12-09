@@ -146,6 +146,9 @@ private:
 	void UpdateTeamFill();
 
 	// --- 位置重置功能 End ---
-	
-	
+
+
+	// --- 外部获取数据 ---
+public:
+	int32 GetRound () const { return BattleContext.Round; }
 };

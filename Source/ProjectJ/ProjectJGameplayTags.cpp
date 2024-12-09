@@ -10,6 +10,8 @@
 namespace ProjectJGameplayTags
 {
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Test, "Test", "Test gameplay tag.");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Debug_Buff, "Debug.Buff", "Debug Buff");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint0, "Ability.ActionPoint0", "Action Point 0");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint1, "Ability.ActionPoint1", "Action Point 1");

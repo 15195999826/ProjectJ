@@ -10,6 +10,8 @@ namespace ProjectJGameplayTags
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Test)
 	
 	PROJECTJ_API FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString = false);
+	// Debug Tags
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debug_Buff);
 
 	// ActionPoints, 用于Montage动画抛出事件触发点
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint0);

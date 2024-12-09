@@ -29,6 +29,15 @@ class PROJECTJ_API UProjectJAbilitySystemComponent : public UAbilitySystemCompon
 	GENERATED_BODY()
 
 public:
+	UProjectJAbilitySystemComponent();
+	
 	TMap<FGameplayTag, FProjectJMontagePostDelegate> MontageEventCallbacks;
 	void HandleMontagePostEvent(FGameplayTag EventTag, FProjectJMontageEventData EventData);
+
+private:
+	TMap<FGameplayTag, FDelegateHandle> GEStackCountListenerMap;
+	void OnGameplayEffectStackChange(FActiveGameplayEffectHandle InGEHandle, int32 NewStackCount, int32 OldStackCount);
+	void OnGEAppliedToSelf(UAbilitySystemComponent* SourceASC, const FGameplayEffectSpec& GameplayEffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
+	void OnGERemoved(const FActiveGameplayEffect& ActiveGameplayEffect);
+	
 };

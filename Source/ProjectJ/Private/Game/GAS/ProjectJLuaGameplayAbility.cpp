@@ -44,10 +44,10 @@ int32 UProjectJLuaGameplayAbility::RegisterAbility(const FName& InLuaScriptCHSNa
 		}
 	}
 	
-	if (LooseFeatureTag.IsValid())
-	{
-		GetAbilitySystemComponentFromActorInfo()->AddLooseGameplayTag(LooseFeatureTag);
-	}
+	// if (LooseFeatureTag.IsValid())
+	// {
+	// 	GetAbilitySystemComponentFromActorInfo()->AddLooseGameplayTag(LooseFeatureTag);
+	// }
 	
 	return EventID;
 }
@@ -63,15 +63,15 @@ void UProjectJLuaGameplayAbility::ResetAbility()
 	{
 		for (auto& EventID : Pair.Value)
 		{
-			auto Owner = Cast<AProjectJCharacter>(GetAvatarActorFromActorInfo());
-			auto LuaAbilityExecutor = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LuaAbilityExecutor;
-			
-			FGameplayTag LooseFeatureTag = LuaAbilityExecutor->GetLooseFeatureTag(Owner->ID, EventID);
-			if (LooseFeatureTag.IsValid())
-			{
-				GetAbilitySystemComponentFromActorInfo()->RemoveLooseGameplayTag(LooseFeatureTag);
-			}
-			LuaAbilityExecutor->RemoveLuaAbilityInstance(Owner->ID, EventID);
+			// auto Owner = Cast<AProjectJCharacter>(GetAvatarActorFromActorInfo());
+			// auto LuaAbilityExecutor = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LuaAbilityExecutor;
+			//
+			// FGameplayTag LooseFeatureTag = LuaAbilityExecutor->GetLooseFeatureTag(Owner->ID, EventID);
+			// if (LooseFeatureTag.IsValid())
+			// {
+			// 	GetAbilitySystemComponentFromActorInfo()->RemoveLooseGameplayTag(LooseFeatureTag);
+			// }
+			// LuaAbilityExecutor->RemoveLuaAbilityInstance(Owner->ID, EventID);
 		}
 	}
 
