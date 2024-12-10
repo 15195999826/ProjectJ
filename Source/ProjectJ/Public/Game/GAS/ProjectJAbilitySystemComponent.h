@@ -79,9 +79,15 @@ public:
 	
 	TMap<FGameplayTag, FProjectJMontagePostDelegate> MontageEventCallbacks;
 	void HandleMontagePostEvent(FGameplayTag EventTag, FProjectJMontageEventData EventData);
+
+	UFUNCTION(BlueprintCallable, Category = GameplayEffects)
+	bool CustomRemoveActiveGameplayEffect(FActiveGameplayEffectHandle Handle, const TArray<int32> LayerIDs);
+	
 private:
 	UPROPERTY()
 	TMap<FActiveGameplayEffectHandle, FProjectJCustomStackedGESpec> CustomStackedGESpecMap;
+	UPROPERTY()
+	TMap<FActiveGameplayEffectHandle, FGameplayTag> Handle2FeatureTagMap;
 
 	void OnGameplayEffectStackChange(FActiveGameplayEffectHandle InGEHandle, int32 NewStackCount, int32 OldStackCount);
 	void OnGEAppliedToSelf(UAbilitySystemComponent* SourceASC, const FGameplayEffectSpec& GameplayEffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle);

@@ -196,6 +196,31 @@ void UProjectJContextSystem::RecycleCharacter(AProjectJCharacter* Character)
 {
 	auto ItemSystem = GetWorld()->GetSubsystem<UProjectJCardBackendSystem>();
 	ItemSystem->RemoveCharacterLogicSlots(Character->ID);
+
+	// 清除除了LuaAbility以外的所有GameplayAbility
+	// TArray<FGameplayAbilitySpecHandle> AllAbilities;
+	// AbilitySystemComponent->GetAllAbilities(AllAbilities);
+	// for (auto& Ability : AllAbilities)
+	// {
+	// 	if (Ability != LuaAbilityHandle)
+	// 	{
+	// 		AbilitySystemComponent->ClearAbility(Ability);
+	// 	}
+	// }
+	//
+	// LuaAbility->ResetAbility();
+	//
+	// // 清除全部GE	
+	// FGameplayEffectQuery Query;
+	// Query.CustomMatchDelegate.BindLambda([](const FActiveGameplayEffect& Effect)
+	// {
+	// 	FGameplayTagContainer AssetTags;
+	// 	Effect.Spec.GetAllAssetTags(AssetTags);
+	// 	bool NeverDelete = AssetTags.HasTagExact(AutoDWGameplayTags::Buff_NeverDelete.GetTag()) || Effect.Spec.GetDynamicAssetTags().HasTagExact(AutoDWGameplayTags::Buff_NeverDelete.GetTag());
+	// 	return !NeverDelete;
+	// });
+	// AbilitySystemComponent->RemoveActiveEffects(Query);
+	
 	UsingCharacters.Remove(Character->ID);
 	CharacterPool.Add(Character);
 	GeneralOnRecycle(Character);

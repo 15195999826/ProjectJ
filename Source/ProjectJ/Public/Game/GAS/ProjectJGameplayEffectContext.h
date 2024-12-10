@@ -23,8 +23,25 @@ public:
 		return Duration;
 	}
 
+	void SetRemovingLayerIDs(const TArray<int32>& InRemovingLayerIDs)
+	{
+		RemovingLayerIDs = InRemovingLayerIDs;
+	}
+
+	const TArray<int32>& GetRemovingLayerIDs() const
+	{
+		return RemovingLayerIDs;
+	}
+
+	void ClearRemovingLayerIDs()
+	{
+		RemovingLayerIDs.Empty();
+	}
+
 protected:
 	int32 Duration = -1;
+
+	TArray<int32> RemovingLayerIDs;
 	
 public:
 	/** Returns the actual struct used for serialization, subclasses must override this! */

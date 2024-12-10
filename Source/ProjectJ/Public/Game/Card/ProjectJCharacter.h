@@ -5,12 +5,14 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayAbilitySpecHandle.h"
+#include "GameplayTagContainer.h"
 #include "ProjectJCardBase.h"
 #include "Interface/ProjectJBattleInterface.h"
 #include "Interface/ProjectJCardInterface.h"
 #include "Types/ProjectJCardAnimState.h"
 #include "ProjectJCharacter.generated.h"
 
+class UProjectJAbilitySystemComponent;
 class UProjectJLuaGameplayAbility;
 
 UENUM()
@@ -60,10 +62,6 @@ public:
 
 	// Todo: 临时方案，以后再从道具实例中读取
 	FName TempWeaponRowName = NAME_None;
-
-	UPROPERTY()
-	TObjectPtr<UProjectJLuaGameplayAbility> LuaAbility;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -104,11 +102,16 @@ public:
 		return AbilitySystemComponent;
 	}
 	
-	// ------- 战斗相关 Start -------
+	// ------- 战斗相关 BattleInterface Start -------
 public:
 	// 普攻技能，未装备武器时需要设置默认值； 装备武器后替换为武器默认攻击
+	UPROPERTY()
+	TObjectPtr<UProjectJLuaGameplayAbility> LuaAbility;
+
 	FGameplayAbilitySpecHandle AttackAbilitySpecHandle;
 	TWeakObjectPtr<UProjectJAttackGA> AttackGA;
+	
+	TWeakObjectPtr<UProjectJAbilitySystemComponent> ProjectJASC;
 
 	bool GetIsDead_Implementation() override;
 	bool GetIsAtTopTeam_Implementation() override;
@@ -117,6 +120,26 @@ public:
 	bool IsAtTopTeam();
 
 	void PostAfterAttackHit();
+
+	// 特性(A类词条）
+	/**
+	 * 特性的功能实现
+	 * 1. 特性GE应当唯一存在
+	 * 2. 给与特性标签
+	 * 3. 检查是否存在对应的Lua脚本, 存在则RegisterAbility， 并将EventID额外记录到CachedFeatureEventIDs
+	 * 4. 区分LooseFeatureTags和FeatureGE的原因是:
+	 *	  -有些纯逻辑的功能， 非外显的词条Tag， 无需对应的GE， 简化功能制作流程
+	 *	  -特性Tag则总有一个对应的GE， 是游戏内定义好的词条
+	 * @param InFeatureTag
+	 * @param InCount
+	 * @param InRound 持续回合数， -1表示永久
+	 */
+	void GetFeature(const FGameplayTag& InFeatureTag, int32 InCount, int32 InRound);
+
+protected:
+	// 缓存的特性EventID， 只有该特性使用了Lua脚本实现， 这里才会存在对应的EventID 
+	TMap<FGameplayTag, int32> CachedFeatureEventIDs;
+	
 	// ------- 战斗相关 End -------
 
 	// 程序动画

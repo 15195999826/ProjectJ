@@ -26,6 +26,15 @@ void UProjectJAbilitySystemComponent::HandleMontagePostEvent(FGameplayTag EventT
 	}
 }
 
+bool UProjectJAbilitySystemComponent::CustomRemoveActiveGameplayEffect(FActiveGameplayEffectHandle Handle,
+	const TArray<int32> LayerIDs)
+{
+	auto GEContext = static_cast<FProjectJGameplayEffectContext*>(GetActiveGameplayEffect(Handle)->Spec.GetContext().Get());
+	GEContext->SetRemovingLayerIDs(LayerIDs);
+	auto Num = LayerIDs.Num();
+	return RemoveActiveGameplayEffect(Handle, Num);
+}
+
 void UProjectJAbilitySystemComponent::OnGEAppliedToSelf(UAbilitySystemComponent* SourceASC,
                                                         const FGameplayEffectSpec& GameplayEffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle)
 {
@@ -43,16 +52,18 @@ void UProjectJAbilitySystemComponent::OnGEAppliedToSelf(UAbilitySystemComponent*
 		!CustomStackedGESpecMap.Contains(ActiveGameplayEffectHandle))
 	{
 		auto GrantedTags = GameplayEffectSpec.Def->GetGrantedTags();
-		const auto& FirstAssetTag = GrantedTags.Num() > 0 ? GrantedTags.GetByIndex(0) : FGameplayTag();
+		const auto& FirstGrantedTag = GrantedTags.Num() > 0 ? GrantedTags.GetByIndex(0) : FGameplayTag();
 		// Todo: 暂时使用First GrantedTag来判断是否是我们自定义的Buff, 未来可能可以加专门的Tag, 防止一个GE配置了多个GrantedTag
 		UE_LOG(LogTemp, Warning, TEXT("[%s]AddListener, BuffName: %s, Self: %s, Handle: %s"),
-		       *FirstAssetTag.GetTagName().ToString(), *GameplayEffectSpec.Def.GetName(), *GetOwner()->GetName(),
+		       *FirstGrantedTag.GetTagName().ToString(), *GameplayEffectSpec.Def.GetName(), *GetOwner()->GetName(),
 		       *ActiveGameplayEffectHandle.ToString());
 		// 监听GE的StackCount的变化
-		if (ProjectJGameplayTags::GoodFeatureTags.Contains(FirstAssetTag) ||
-			ProjectJGameplayTags::BadFeatureTags.Contains(FirstAssetTag) ||
-			ProjectJGameplayTags::NeutralFeatureTags.Contains(FirstAssetTag))
+		if (ProjectJGameplayTags::GoodFeatureTags.Contains(FirstGrantedTag) ||
+			ProjectJGameplayTags::BadFeatureTags.Contains(FirstGrantedTag) ||
+			ProjectJGameplayTags::NeutralFeatureTags.Contains(FirstGrantedTag))
 		{
+			check(Handle2FeatureTagMap.Contains(ActiveGameplayEffectHandle) == false);
+			Handle2FeatureTagMap.Add(ActiveGameplayEffectHandle, FirstGrantedTag);
 			FProjectJCustomStackedGESpec StackedGECustomSpec;
 			CustomStackedGESpecMap.Add(ActiveGameplayEffectHandle, StackedGECustomSpec);
 			CustomStackedGESpecMap[ActiveGameplayEffectHandle].StackCountChangedHandle = OnGameplayEffectStackChangeDelegate(ActiveGameplayEffectHandle)->AddUObject(
@@ -77,19 +88,16 @@ void UProjectJAbilitySystemComponent::OnGERemoved(const FActiveGameplayEffect& A
 #endif
 	if (CustomStackedGESpecMap.Contains(ActiveGameplayEffect.Handle))
 	{
+		check(Handle2FeatureTagMap.Contains(ActiveGameplayEffect.Handle));
 		UE_LOG(LogTemp, Warning, TEXT("[%s]RemoveCustomSpec, Self: %s, Handle: %s"),
 		       *ActiveGameplayEffect.Spec.Def.GetName(), *GetOwner()->GetName(),
 		       *ActiveGameplayEffect.Handle.ToString());
 		CustomStackedGESpecMap[ActiveGameplayEffect.Handle].StackCountChangedHandle.Reset();
 		CustomStackedGESpecMap.Remove(ActiveGameplayEffect.Handle);
+		Handle2FeatureTagMap.Remove(ActiveGameplayEffect.Handle);
 	}
 
 	// Todo: 考虑其它非战斗的功能是否要用ASC来实现
-	// auto Character = Cast<AProjectJCharacter>(GetAvatarActor());
-	// if (Character)
-	// {
-	// 	Character->LuaAbility->RemoveFeature();
-	// }
 }
 
 void UProjectJAbilitySystemComponent::OnGameplayEffectStackChange(FActiveGameplayEffectHandle InGEHandle,
@@ -144,6 +152,4 @@ void UProjectJAbilitySystemComponent::OnGameplayEffectStackChange(FActiveGamepla
 		UE_LOG(LogTemp, Error, TEXT("数据记录错误, TotalStackCount: %d, NewStackCount: %d"), TotalStackCount, NewStackCount);
 	}
 	// Todo: 代码保留，获取自定义的Context的方式
-	
-	
 }

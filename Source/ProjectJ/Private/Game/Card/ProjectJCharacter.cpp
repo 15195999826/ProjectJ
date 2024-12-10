@@ -9,6 +9,7 @@
 #include "Components/WidgetComponent.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJEffectActor.h"
@@ -16,9 +17,12 @@
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/GAS/ProjectJAbilitySystemComponent.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
+#include "Game/GAS/ProjectJGameplayEffectContext.h"
+#include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Interface/ProjectJAttackEffectInterface.h"
 #include "ProjectJ/ProjectJDWGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
+#include "ProjectJ/ProjectJLogChannels.h"
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
@@ -47,6 +51,7 @@ void AProjectJCharacter::BeginPlay()
 	Super::BeginPlay();
 	// 初始ASC
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	ProjectJASC = CastChecked<UProjectJAbilitySystemComponent>(AbilitySystemComponent);
 
 	BackgroundDynamicMaterial = Mesh->CreateDynamicMaterialInstance(2);
 }
@@ -136,6 +141,45 @@ void AProjectJCharacter::PostAfterAttackHit()
 {
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 	EventSystem->AfterAttackHit.Broadcast(ID);
+}
+
+void AProjectJCharacter::GetFeature(const FGameplayTag& InFeatureTag, int32 InCount, int32 InRound)
+{
+	// 特性的功能必须是唯一的， 比如已经存在嘲讽特性， 那么就不能再添加嘲讽特性
+	// Todo: 如果我要给一个角色赋予X回合的嘲讽， 该怎么实现呢？
+	// Todo: 如果获得一个3回合的嘲讽，和一个4回合的嘲讽， 又该怎么办呢？
+	const auto& LuaScriptsMap = GetDefault<UProjectJPropertyHelper>()->CHS2AbilityLuaScriptNameMap;
+	// 给与对应的GE
+	const auto& FeatureGE = GetDefault<UProjectJGeneralSettings>()->FeatureGEMap;
+	if (FeatureGE.Contains(InFeatureTag))
+	{
+		// Todo: 特性暂定全是自己赋予自己的
+		const auto& Handle = UProjectJGameBFL::SimpleMakeGESpecHandle(this, FeatureGE[InFeatureTag]);
+		auto GEContext = static_cast<FProjectJGameplayEffectContext*>(Handle.Data->GetContext().Get());
+		GEContext->SetDuration(InRound);
+		for (int i = 0; i < InCount; i++)
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Handle.Data.Get());
+		}
+	}
+	else
+	{
+		UE_LOG(LogProjectJ, Error, TEXT("注册特性失败: %s, 配置字典中没有对应的GE"), *InFeatureTag.ToString());
+		return;
+	}
+
+	// 检查是否需要赋予对应的特性Lua技能
+	if (!CachedFeatureEventIDs.Contains(InFeatureTag))
+	{
+		const auto& TagName = InFeatureTag.GetTagName();
+		// 将.替换成_
+		auto LuaScriptName = FName(*TagName.ToString().Replace(TEXT("."), TEXT("_")));
+		if (LuaScriptsMap.Contains(LuaScriptName))
+		{
+			auto EventID = LuaAbility->RegisterAbility(LuaScriptName);
+			CachedFeatureEventIDs.Add(InFeatureTag, EventID);
+		}
+	}
 }
 
 bool AProjectJCharacter::GetIsDead_Implementation()

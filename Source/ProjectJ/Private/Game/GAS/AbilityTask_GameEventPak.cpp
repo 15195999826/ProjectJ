@@ -25,13 +25,6 @@ void UAbilityTask_GameEventPak::Activate()
 			});
 			GameEventHandleMap.Add(Tag, Handle);
 		}
-		// // Lambda function to handle the gameplay event
-		// auto Handle0 = ASC->GenericGameplayEventCallbacks.FindOrAdd(
-		// 	ProjectJGameplayTags::Game_Event_LevelUp).AddLambda([this](const FGameplayEventData* Payload)
-		// {
-		// 	GameplayEventCallback(ProjectJGameplayTags::Game_Event_LevelUp, Payload);
-		// });
-		// GameEventHandleMap.Add(ProjectJGameplayTags::Game_Event_LevelUp, Handle0);
 	}
 
 	

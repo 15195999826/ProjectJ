@@ -46,13 +46,14 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	FGameplayTag GetExecTag(int32 OwnerID, int32 EventID);
 	/**
-	 * 获取特性标签
+	 * 获取松散特性标签, 用于一些特殊功能实现， 只是简单的给角色添加松散Tag
+	 * Todo: 是否需要考虑层数的问题
 	 * @param OwnerID
 	 * @param EventID
-	 * @return Key:FeatureTag, Value:Count
+	 * @return 
 	 */
 	UFUNCTION(BlueprintImplementableEvent)
-	TMap<FGameplayTag, int32> GetFeatureTag(int32 OwnerID, int32 EventID);
+	TArray<FGameplayTag> GetLooseTag(int32 OwnerID, int32 EventID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ExecuteLuaAbility(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& AutoDwEventData);
