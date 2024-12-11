@@ -59,7 +59,7 @@ namespace ProjectJGameplayTags
 	};
 
 	const TArray<FGameplayTag> NeutralFeatureTags = {
-		Feature_Stun
+		Feature_Taunt
 	};
 
 	const TArray<FGameplayTag> GoodFeatureTags = {
@@ -79,6 +79,7 @@ namespace ProjectJGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_AfterAttack, "Battle.Event.AfterAttack", "After Attack");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetDamage, "Battle.Event.GetDamage", "Get Damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetHeal, "Battle.Event.GetHeal", "Get Heal");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_Dead, "Battle.Event.Dead", "Dead");
 
 	const TArray<FGameplayTag> BattleEventPak = {
@@ -87,6 +88,7 @@ namespace ProjectJGameplayTags
 		Battle_Event_BeforeAttack,
 		Battle_Event_AfterAttack,
 		Battle_Event_GetDamage,
+		Battle_Event_GetHeal,
 		Battle_Event_Dead,
 	};
 	

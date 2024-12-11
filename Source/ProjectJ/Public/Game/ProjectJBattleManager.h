@@ -63,6 +63,23 @@ struct FProjectJTeamFillData
 	FTimerHandle MovingTimerHandle;
 };
 
+USTRUCT()
+struct FProjectJEventExec
+{
+	GENERATED_BODY()
+
+	FProjectJEventExec()
+	{
+		
+	}
+	
+	UPROPERTY()
+	TWeakObjectPtr<AProjectJCharacter> Executor;
+
+	UPROPERTY()
+	FProjectJBattleEventData ProjectJEventData;
+};
+
 UCLASS()
 class PROJECTJ_API AProjectJBattleManager : public AActor
 {
@@ -74,7 +91,6 @@ public:
 	AProjectJBattleManager();
 
 protected:
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -85,14 +101,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartBattle();
 
-	UFUNCTION(BlueprintCallable)
-	FProjectJExecEventRet ExecuteEvent(const FProjectJBattleEventData& InEventData);
-
 	FVector GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount);
 protected:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJCharacter>> BattleCharacterMap;
-
+	
 private:
 	bool IsRunningBattle = false;
 	bool IsBattleEnd();
@@ -125,6 +138,8 @@ private:
 	
 	// Todo: Pending功能
 	inline static FName SignalSimplePending = TEXT("SimplePending");
+	// 广播事件， 执行期间的信号
+	inline static FName SignalEventExecPending = TEXT("EventExecPending");
 	TArray<FName> WaitSignals;
 	EProjectJBattleStage Stage = EProjectJBattleStage::EnterBattle;
 
@@ -147,6 +162,35 @@ private:
 
 	// --- 位置重置功能 End ---
 
+
+	// --- 词条功能 Start ---
+public:
+	
+	UFUNCTION()
+	FProjectJExecEventRet ExecuteEvent(const FProjectJBattleEventData& InEventData);
+
+	// 挨个抛出EventQueue中的事件， 并且一个一个角色轮流执行
+	UFUNCTION()
+	void ProcessEventQueue();
+	
+protected:
+	bool IsProcessingEventQueue = false;
+	bool IsSomeOneRunningEvent = false;
+
+	void PostLuaAbilityStatus(int InCharacterID, bool IsRunningEvent);
+	
+	
+	UPROPERTY()
+	TArray<FProjectJBattleEventData> EventQueue;
+	UPROPERTY()
+	TArray<FProjectJEventExec> EventExecQueue;
+
+	void RecursiveBroadcastEvent(const FProjectJBattleEventData& InEventData);
+	
+	void IntervalGetDamage(const FProjectJBattleEventData& InEventData);
+	void IntervalGetHeal(const FProjectJBattleEventData& InEventData);
+	// --- 词条功能 End ---
+	
 
 	// --- 外部获取数据 ---
 public:

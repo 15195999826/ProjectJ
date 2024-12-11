@@ -11,6 +11,12 @@ namespace ProjectJGlobal
 	const TMap<FName, int32> LeftTeamToPosition = {
 		
 	};
+
+	// ------BattleEventData Keys Start------
+	const FName Battle_DamageValueKey = TEXT("Battle_DamageValue");
+	const FName Battle_HealValueKey = TEXT("Battle_HealValue");
+
+	// ------BattleEventData Keys End------
 	
 	const FName Program_Ani_NameKey = TEXT("Program_Ani_Name");
 	const FName Program_Ani_LocationKey = TEXT("Location");

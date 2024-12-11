@@ -59,6 +59,7 @@ namespace ProjectJGameplayTags
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_AfterAttack);
 	
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_GetDamage);
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_GetHeal);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Battle_Event_Dead);
 	
 	PROJECTJ_API extern const TArray<FGameplayTag> BattleEventPak;

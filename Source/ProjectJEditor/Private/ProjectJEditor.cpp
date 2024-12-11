@@ -12,8 +12,10 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "ToolMenu.h"
 #include "ToolMenus.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
+#include "Game/ProjectJEffectActor.h"
 #include "UObject/UObjectIterator.h"
 
 #define LOCTEXT_NAMESPACE "FProjectJEditorModule"
@@ -142,6 +144,10 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 		case EProjectJLuaInstanceType::Landmark:
 			TemplateFilePath = "Config/LuaTemplates/LandmarkTemplate.lua";
 			GAbilityLuaSrcRelativePath = TEXT("Script/Landmarks/");
+			break;
+		case EProjectJLuaInstanceType::Ability:
+			TemplateFilePath = "Config/LuaTemplates/AbilityTemplate.lua";
+			GAbilityLuaSrcRelativePath = TEXT("Script/Abilities/");
 			break;
 		default:
 			return;
@@ -373,6 +379,43 @@ static void CreateStaticVariableLua()
 		ExternVariables.Add(FString::Printf(TEXT("_G.%s = \"%s\""), *VarName, *VarValue));
 	}
 
+	// 读取项目中全部的Montage文件
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	// Define a filter to search for UAnimMontage assets
+	FARFilter Filter;
+	Filter.ClassPaths.Add(UAnimMontage::StaticClass()->GetClassPathName());
+	Filter.bRecursiveClasses = true;
+
+	// Get the assets
+	TArray<FAssetData> AssetData;
+	AssetRegistry.GetAssets(Filter, AssetData);
+	for (const FAssetData& Data : AssetData)
+	{
+		// 获取TSoftObjectPtr<UAnimMontage>的路径
+		FString SoftPath = Data.ToSoftObjectPath().ToString();
+		ExternVariables.Add(FString::Printf(TEXT("_G.Montage_%s = \"%s\""), *Data.AssetName.ToString(), *SoftPath));
+	}
+
+	// 读取项目中全部的AProjectJEffectActor
+	FARFilter EffectFilter;
+	EffectFilter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+	EffectFilter.bRecursiveClasses = true;
+	EffectFilter.TagsAndValues.Add(TEXT("ParentClass"), FAssetData(AProjectJEffectActor::StaticClass()).GetExportTextName());
+
+	// Get the assets
+	AssetData.Empty();
+	AssetRegistry.GetAssets(EffectFilter, AssetData);
+
+	// Load the assets
+	for (const FAssetData& Data : AssetData)
+	{
+		FString SoftPath = Data.ToSoftObjectPath().ToString();
+		ExternVariables.Add(FString::Printf(TEXT("_G.Effect_%s = \"%s\""), *Data.AssetName.ToString(), *SoftPath));
+	}
+	
+	
 	// Append the extracted variables to the Lua content
 	FString Content = FString::Join(ExternVariables, TEXT("\n"));
 
@@ -439,6 +482,7 @@ static void MigrateAbilityTemplate()
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Level);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Character);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
+	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Ability);
 }
 
 static void CreateAbilityLuaScript()

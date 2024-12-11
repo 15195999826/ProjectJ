@@ -4,3 +4,58 @@
 --- DateTime: {DateTime}
 --- RowName：[[[{RowName}]]]
 ---
+
+local M={}
+
+--- 返回Tag， 用于注册到技能的事件监听中
+---[[[
+---@return FGameplayTag
+---]]]
+function M:GetExecTag()
+    local Ret = UE.FGameplayTag();
+    Ret.TagName = "Battle.Event.None";
+    return Ret;
+end
+
+--- 当Tag触发时， 返回是否允许执行； 有些条件无法用Tag表达， 于是这里增加一层判断
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param BattleManager AProjectJBattleManager
+---@return bool
+---]]]
+function M:IsTriggerTime(OwnerID, ProjectJEventData, BattleManager)
+    return TriggerHelper:NotDead(OwnerID, ProjectJEventData, BattleManager);
+end
+
+--- 返回技能执行信息
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param BattleManager AProjectJBattleManager
+---@return FProjectJLuaAbilityExecInfo
+---]]]
+function M:GetLuaAbilityExecInfo(OwnerID, ProjectJEventData, BattleManager)
+    return UE.FProjectJLuaAbilityExecInfo();
+end
+
+--- 技能效果
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param InTargets TArray<integer>
+---@param BattleManager AProjectJBattleManager
+---]]]
+function M:ExecuteLuaAbility(OwnerID, ProjectJEventData, InTargets, BattleManager)
+
+end
+
+--- 返回一个松散的Tag，用于实现一些特殊的功能；获得技能时给与Tag， 移除技能时移除Tag
+---[[[
+---@return TArray<FGameplayTag>
+---]]]
+function M:LooseFeatureTag()
+    return EmptyTagArray;
+end
+
+return M

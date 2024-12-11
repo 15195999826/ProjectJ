@@ -14,6 +14,8 @@
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
+#include "Game/GAS/ProjectJLuaGameplayAbility.h"
+#include "ProjectJ/ProjectJDWGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Types/ProjectJCardAnimState.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
@@ -35,15 +37,102 @@ void AProjectJBattleManager::BeginPlay()
 	EventSystem->OnAttackHit.AddUObject(this, &AProjectJBattleManager::OnAttackHit);
 	EventSystem->AfterAttackHit.AddUObject(this, &AProjectJBattleManager::AfterAttackHit);
 	EventSystem->OnIdleReturnToPosition.AddUObject(this, &AProjectJBattleManager::OnIdleReturnToPosition);
+
+	EventSystem->PostLuaAbilityStatus.AddUObject(this, &AProjectJBattleManager::PostLuaAbilityStatus);
 }
 
 FProjectJExecEventRet AProjectJBattleManager::ExecuteEvent(const FProjectJBattleEventData& InEventData)
 {
 	FProjectJExecEventRet Ret;
 
-	
+	if (InEventData.EventTag == ProjectJGameplayTags::Battle_Event_GetDamage)
+	{
+		IntervalGetDamage(InEventData);
+	}
+	else if (InEventData.EventTag == ProjectJGameplayTags::Battle_Event_GetHeal)
+	{
+		IntervalGetHeal(InEventData);
+	}
+
+	EventQueue.Add(InEventData);
+
+	// PostExecuteEvent
+	if (InEventData.EventTag == ProjectJGameplayTags::Battle_Event_GetDamage)
+	{
+		// 检查Target角色是否死亡
+		auto TargetCharacter = BattleCharacterMap[InEventData.TargetID];
+		if (TargetCharacter->IsDead())
+		{
+			FProjectJBattleEventData DeadEvent;
+			DeadEvent.ExecutorID = InEventData.TargetID;
+			DeadEvent.TargetID = InEventData.TargetID;
+			DeadEvent.EventTag = ProjectJGameplayTags::Battle_Event_Dead;
+			EventQueue.Add(DeadEvent);
+			
+			TargetCharacter->ChangeAnimState(EProjectJCardAnimState::Death, FProjectJCharacterAniData::Empty);
+			// 设置数据， 逻辑位置移动到-1
+			TargetCharacter->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute(), -1);
+		}
+	}
 	
 	return Ret;
+}
+
+void AProjectJBattleManager::ProcessEventQueue()
+{
+	if (EventQueue.IsEmpty())
+	{
+		return;
+	}
+
+	const auto& EventData = EventQueue[0];
+	
+}
+
+void AProjectJBattleManager::PostLuaAbilityStatus(int InCharacterID, bool IsRunningEvent)
+{
+	// Todo: 暂时没必要记录谁在执行事件
+	IsSomeOneRunningEvent = IsRunningEvent;
+}
+
+void AProjectJBattleManager::RecursiveBroadcastEvent(const FProjectJBattleEventData& InEventData)
+{
+}
+
+void AProjectJBattleManager::IntervalGetDamage(const FProjectJBattleEventData& InEventData)
+{
+	// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
+	// 伤害计算流程
+	auto Attacker = BattleCharacterMap[InEventData.ExecutorID];
+	auto Defender = BattleCharacterMap[InEventData.TargetID];
+	check(InEventData.EventKVs.Contains(ProjectJGlobal::Battle_DamageValueKey));
+	auto Damage = FCString::Atof(*InEventData.EventKVs[ProjectJGlobal::Battle_DamageValueKey]);
+	auto DamageGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+		DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, Damage);
+	Attacker->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(),
+											   Defender->GetAbilitySystemComponent());
+
+	// 受击特效
+	// Todo: 目前使用通用受击动画， 以后考虑通过Key传入
+	if (!Defender->IsDead())
+	{
+		auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
+		Defender->Mesh->GetAnimInstance()->Montage_Play(HitMontage);	
+	}
+}
+
+void AProjectJBattleManager::IntervalGetHeal(const FProjectJBattleEventData& InEventData)
+{
+	auto Attacker = BattleCharacterMap[InEventData.ExecutorID];
+	auto Defender = BattleCharacterMap[InEventData.TargetID];
+	check(InEventData.EventKVs.Contains(ProjectJGlobal::Battle_HealValueKey));
+	auto Heal = FCString::Atof(*InEventData.EventKVs[ProjectJGlobal::Battle_HealValueKey]);
+	auto HealGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), HealEffect);
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+		HealGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, -Heal);
+	Attacker->GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget(*HealGEHandle.Data.Get(),
+											   Defender->GetAbilitySystemComponent());
 }
 
 FVector AProjectJBattleManager::GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount)
@@ -100,6 +189,70 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 	{
 		return;
 	}
+
+	if (!IsProcessingEventQueue && !EventQueue.IsEmpty())
+	{
+		IsProcessingEventQueue = true;
+		check(!WaitSignals.Contains(SignalEventExecPending));
+		WaitSignals.Add(SignalEventExecPending);
+	}
+
+	if (IsProcessingEventQueue)
+	{
+		// 当无人正在执行事件， 并且没有人还需要执行事件时， 从事件队列中取出最前面的事件
+		if (!IsSomeOneRunningEvent && EventExecQueue.Num() == 0)
+		{
+			if (EventQueue.Num() == 0)
+			{
+				// Todo: 事件执行完毕
+			}
+			else
+			{
+				// 一次只抛出一个事件执行队列
+				const auto& FirstProjectJEventData = EventQueue[0];
+	
+				// 遍历全部角色， 检查它们是否有对应Tag的功能
+				for (const auto& Tuple : BattleCharacterMap)
+				{
+					// 这里不论死亡都会Cache， 但是在执行时， 会检查是否死亡
+					auto LuaAbility = Tuple.Value->LuaAbility;
+					if (LuaAbility->HasEventAtTag(FirstProjectJEventData.EventTag))
+					{
+						FProjectJEventExec EventExec;
+						EventExec.Executor = Tuple.Value;
+						EventExec.ProjectJEventData = FirstProjectJEventData;
+						EventExecQueue.Add(EventExec);
+					}
+				}
+				EventQueue.RemoveAt(0);
+			}
+		}
+		
+
+		// 逐个执行EventQueue中的事件, IsSomeOneRunningEvent将通过EventSystem获取事件来进行更新
+		int32 ProtectCount = 0;
+		while (!IsSomeOneRunningEvent && EventExecQueue.Num() > 0 && ProtectCount <= 1000)
+		{
+			ProtectCount++;
+			const auto& FirstExec = EventExecQueue[0];
+
+			// Todo: 亡语需要单独处理，增加判断Tag
+			if (!FirstExec.Executor->IsDead())
+			{
+				FProjectJBattleEventData* InEventData = new FProjectJBattleEventData();
+				InEventData->ExecutorID = FirstExec.ProjectJEventData.ExecutorID;
+				InEventData->TargetID = FirstExec.ProjectJEventData.TargetID;
+				InEventData->EventKVs = FirstExec.ProjectJEventData.EventKVs;
+				InEventData->EventTag = FirstExec.ProjectJEventData.EventTag;
+				FGameplayEventData GASEventData;
+				GASEventData.TargetData = FGameplayAbilityTargetDataHandle(InEventData);
+				FirstExec.Executor->GetAbilitySystemComponent()->HandleGameplayEvent(InEventData->EventTag, &GASEventData);
+			}
+			
+			EventExecQueue.RemoveAt(0);
+		}
+	}
+	
 
 	if (WaitSignals.Num() == 0)
 	{
@@ -496,52 +649,34 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 		FProjectJWeaponConfig>(Attacker->TempWeaponRowName, TEXT("OnAttackHit"));
 	auto AttackASC = Attacker->GetAbilitySystemComponent();
 	auto AttackerAttack = AttackASC->GetNumericAttribute(UProjectJCharacterAttributeSet::GetAttackAttribute());
+
+
 	for (const auto& TargetID : BattleContext.AttackTargets)
 	{
+
 		auto Defender = BattleCharacterMap[TargetID];
 		switch (WeaponConfig->AttackAbility.AttackCapability)
 		{
 			case EProjectJAttackCapability::Damage:
 				{
-					// Todo: 伤害计算规则： 护甲值每次战斗后都会恢复， HP则必须用药物恢复； 受到伤害，先直接扣除护甲值， 然后还遗留剩余的伤害，则添加GE_Damage， 更新Damage； UI上显示的HP, 始终为Health - Damage
-					// 伤害计算流程
-					auto DamageGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), DamageEffect);
-					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
-						DamageGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, AttackerAttack);
-					AttackASC->ApplyGameplayEffectSpecToTarget(*DamageGEHandle.Data.Get(),
-					                                           Defender->GetAbilitySystemComponent());
+					FProjectJBattleEventData DamageEvent;
+					DamageEvent.EventTag = ProjectJGameplayTags::Battle_Event_GetDamage;
+					DamageEvent.ExecutorID = InCharacterID;
+					DamageEvent.TargetID = TargetID;
+					DamageEvent.EventKVs.Add(ProjectJGlobal::Battle_DamageValueKey, FString::Printf(TEXT("%f"), AttackerAttack));
+					ExecuteEvent(DamageEvent);
 				}
-				break;
+			break;
 			case EProjectJAttackCapability::Heal:
 				{
-					auto HealGEHandle = UProjectJGameBFL::SimpleMakeGESpecHandle(Attacker.Get(), HealEffect);
-					UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
-						HealGEHandle, ProjectJGameplayTags::SetByCaller_Attribute_Battle_Damage, -AttackerAttack);
-					AttackASC->ApplyGameplayEffectSpecToTarget(*HealGEHandle.Data.Get(),
-					                                           Defender->GetAbilitySystemComponent());
+					FProjectJBattleEventData HealEvent;
+					HealEvent.EventTag = ProjectJGameplayTags::Battle_Event_GetHeal;
+					HealEvent.ExecutorID = InCharacterID;
+					HealEvent.TargetID = TargetID;
+					HealEvent.EventKVs.Add(ProjectJGlobal::Battle_HealValueKey, FString::Printf(TEXT("%f"), AttackerAttack));
+					ExecuteEvent(HealEvent);
 				}
-				break;
-		}
-	}
-
-	// 表演层，播放命中动画
-	// 目标也需要播放该动画
-	if  (WeaponConfig->AttackAbility.AttackCapability == EProjectJAttackCapability::Damage)
-	{
-		auto HitMontage = GetDefault<UProjectJGeneralSettings>()->HitMontage.LoadSynchronous();
-		for (const auto& TargetID : BattleContext.AttackTargets)
-		{
-			auto Target = BattleCharacterMap[TargetID];
-			if (Target->IsDead())
-			{
-				Target->ChangeAnimState(EProjectJCardAnimState::Death, FProjectJCharacterAniData::Empty);
-				// 设置数据， 逻辑位置移动到-1
-				Target->GetAbilitySystemComponent()->SetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute(), -1);
-			}
-			else
-			{
-				Target->Mesh->GetAnimInstance()->Montage_Play(HitMontage);
-			}
+			break;
 		}
 	}
 	// Todo: Heal 效果特效

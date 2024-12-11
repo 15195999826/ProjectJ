@@ -14,6 +14,7 @@
 DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJNameLevelConfigDelegate, const FName&, const FProjectJLevelConfig&);
 DECLARE_MULTICAST_DELEGATE_OneParam(FProjectJOneCardDelegate, class AProjectJCardBase*);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJOneStageChangeDelegate, EProjectJGameStage, EProjectJGameStage);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJPostLuaAbilityStatusDelegate, int32 /* CharacterID */, bool /* IsRunning */);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJStoryRecordSignature, const FProjectJStoryRecord&, Record);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FProjectJFocusEquipmentSlotSignature, bool , IsFocus,const FName& , RowName, EProjectJItemType, ItemType); 
@@ -59,6 +60,7 @@ public:
 	FOnProjectJOneIntParamDelegate OnAttackHit;
 	FOnProjectJOneIntParamDelegate AfterAttackHit;
 	FOnProjectJOneIntParamDelegate OnIdleReturnToPosition;
+	FProjectJPostLuaAbilityStatusDelegate PostLuaAbilityStatus;
 	
 	// -----------------战斗事件 End-----------------
 };

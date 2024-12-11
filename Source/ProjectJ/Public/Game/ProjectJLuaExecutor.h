@@ -7,6 +7,7 @@
 #include "UnLuaInterface.h"
 #include "GameFramework/Actor.h"
 #include "Types/ProjectJBattleEventData.h"
+#include "Types/ProjectJLuaAbilityExecInfo.h"
 #include "Types/ProjectJLuaInstanceType.h"
 #include "ProjectJLuaExecutor.generated.h"
 
@@ -42,9 +43,9 @@ protected:
 	// ----- 战斗技能相关 Start -----
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void CreateLuaAbilityInstance(int32 InCharacterID, int32 InEventID, const FName& InLuaScriptName);
+	void CreateLuaAbilityInstance(int32 InOwnerID, int32 InEventID, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
-	FGameplayTag GetExecTag(int32 OwnerID, int32 EventID);
+	FGameplayTag GetExecTag(int32 InOwnerID, int32 EventID);
 	/**
 	 * 获取松散特性标签, 用于一些特殊功能实现， 只是简单的给角色添加松散Tag
 	 * Todo: 是否需要考虑层数的问题
@@ -53,12 +54,18 @@ public:
 	 * @return 
 	 */
 	UFUNCTION(BlueprintImplementableEvent)
-	TArray<FGameplayTag> GetLooseTag(int32 OwnerID, int32 EventID);
+	TArray<FGameplayTag> GetLooseTag(int32 InOwnerID, int32 EventID);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ExecuteLuaAbility(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& AutoDwEventData);
+	bool IsTriggerTime(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& ProjectJEventData);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void RemoveLuaAbilityInstance(int32 OwnerID, int32 EventID);
+	FProjectJLuaAbilityExecInfo GetLuaAbilityExecInfo(int32 InOwnerID, int EventID, const FProjectJBattleEventData& ProjectJEventData);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteLuaAbility(int32 InOwnerID, int32 EventID, const FProjectJBattleEventData& ProjectJEventData, const TArray<int32>& InTargets);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveLuaAbilityInstance(int32 InOwnerID, int32 EventID);
 	// ----- 战斗技能相关 End -----
 };

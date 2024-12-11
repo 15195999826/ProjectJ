@@ -253,6 +253,7 @@ void UProjectJContextSystem::GeneralOnRecycle(AActor* InActor)
 AProjectJEffectActor* UProjectJContextSystem::GetEffectActor(TSubclassOf<UObject> InEffectClass)
 {
 	FName EffectName = InEffectClass->GetClass()->GetFName();
+	// UE_LOG(LogTemp, Warning, TEXT("GetEffectActor: %s"), *EffectName.ToString());
 	if (EffectActorPool.Contains(EffectName))
 	{
 		auto Pool = EffectActorPool[EffectName].Pool;

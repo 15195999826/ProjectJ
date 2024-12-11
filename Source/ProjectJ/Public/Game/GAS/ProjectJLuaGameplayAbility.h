@@ -4,52 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
-#include "Types/Item/ProjectJEquipmentConfig.h"
+#include "Types/ProjectJBattleEventData.h"
+#include "Types/ProjectJLuaAbilityExecInfo.h"
 #include "ProjectJLuaGameplayAbility.generated.h"
 
+class AProjectJEffectActor;
 
-
-USTRUCT(BlueprintType)
-struct FProjectJLuaAbilityAnimation
-{
-	GENERATED_BODY()
-	
-	FProjectJLuaAbilityAnimation()
-	{
-		
-	}
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="动画类型"))
-	EProjectJAbilityAnimationType AnimationType = EProjectJAbilityAnimationType::Program;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="资源", EditConditionHides, EditCondition="AnimationType != EProjectJAbilityAnimationType::Program"))
-	TSubclassOf<UObject> Resource;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="自定义字段(暂时没用)",GetKeyOptions="ProjectJ.ProjectJPropertyHelper.GetAnimCustomKeys"))
-	TMap<FName, FString> CustomKV; 
-};
-
-USTRUCT(BlueprintType)
-struct FProjectJLuaAbilityExecInfo
+USTRUCT()
+struct FProjectJLuaAbilityExecInfoCache
 {
 	GENERATED_BODY()
 
-	FProjectJLuaAbilityExecInfo()
-	{
-		
-	}
-	
-	UPROPERTY()
-	TArray<FProjectJLuaAbilityAnimation> Animations;
-
-	// 触发功能的时间点
-	UPROPERTY()
-	float TriggerPoint = 0.f;
+	int32 EventID;
 
 	UPROPERTY()
-	
+	FProjectJLuaAbilityExecInfo ExecInfo;
 };
-
 
 /**
  * 角色技能
@@ -64,11 +34,28 @@ public:
 	void RemoveBattleEvent(int32 InEventID);
 	void ResetAbility();
 
+	bool HasEventAtTag(const FGameplayTag& InTag);
+
 protected:
 	int32 SelfEventID = 0;
 	
 	TMap<FGameplayTag, TArray<int32>> GameEvents;
-	
+
 	UFUNCTION(BlueprintCallable)
 	void ReceiveBattleEvent(const FGameplayEventData& InBattleEventPayload);
+
+	UPROPERTY()
+	FProjectJBattleEventData CacheProjectJEventData;
+	UPROPERTY()
+	TArray<FProjectJLuaAbilityExecInfoCache> CachedExecInfos;
+	int32 CurrentExecInfoIndex = 0;
+
+	void NextExec();
+	void TriggerExec();
+	FTimerHandle ExecOverTimerHandle;
+	FTimerHandle ExecTriggerTimerHandle;
+
+private:
+	static UAnimMontage* LoadMontageFromString(const FString& MontageSoftPath);
+	static AProjectJEffectActor* LoadEffectActorFromString(const FString& EffectSoftPath);
 };
