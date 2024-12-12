@@ -20,7 +20,7 @@
 #include "Game/GAS/ProjectJGameplayEffectContext.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Interface/ProjectJAttackEffectInterface.h"
-#include "ProjectJ/ProjectJDWGlobal.h"
+#include "ProjectJ/ProjectJGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "ProjectJ/ProjectJLogChannels.h"
 #include "Types/ProjectJCharacterConfig.h"

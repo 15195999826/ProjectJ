@@ -62,7 +62,7 @@ bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& 
 
 	// 时间格式 YYYY-MM-DD
 	Content = Content.Replace(TEXT("{DateTime}"), *FDateTime::Now().ToString(TEXT("%Y-%m-%d"))).Replace(
-		TEXT("{RowName}"), *InRowName.ToString());
+		TEXT("{RowName}"), *InRowName.ToString()).Replace(TEXT("{LuaScriptName}"), *InLuaScriptName);
 	FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 	return true;
 }

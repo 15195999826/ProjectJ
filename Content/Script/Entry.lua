@@ -12,6 +12,7 @@ require("TableRows")
 
 _G.TargetHelper = require("TargetHelper")
 _G.TriggerHelper = require("TriggerHelper")
+_G.BattleEventHelper = require("BattleEventHelper")
 
 ---Unlua本地化逻辑： lua脚本中使用LOCTEXT("key", "value")来编写代码， Editor中实现功能：读取lua脚本中的LOCTEXT，将Key和Value写入Config文件中
 _G.GetLuaLocText = UE.UProjectJBlueprintFunctionLibrary.GetLocText

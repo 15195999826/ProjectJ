@@ -9,12 +9,10 @@ local M = {}
 
 ---大部分情况的判断条件是自己没有死
 ---@param OwnerID integer
----@param ProjectJEventData FProjectJBattleEventData
 ---@param BattleManager AProjectJBattleManager
 ---@return bool
-function M:NotDead(OwnerID, ProjectJEventData, BattleManager)
-    --- Todo:
-    return false;
+function M:NotDead(OwnerID, BattleManager)
+    return not BattleManager:IsCharacterDead(OwnerID);
 end
 --
 -----无论是否因为本次伤害死亡，都会执行

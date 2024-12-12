@@ -25,7 +25,7 @@ public:
 		return TEXT("ProjectJLuaExecutor");
 	}
 
-	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -42,6 +42,9 @@ protected:
 
 	// ----- 战斗技能相关 Start -----
 public:
+	UFUNCTION(BlueprintImplementableEvent)
+	FText GetLuaAbilityDesc(const FName& InLuaScriptName);
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void CreateLuaAbilityInstance(int32 InOwnerID, int32 InEventID, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)

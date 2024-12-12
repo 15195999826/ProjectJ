@@ -236,9 +236,12 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 				if (TemplateFunction.FunctionName == LuaFunction.FunctionName)
 				{
 					bFunctionFound = true;
-					if (TemplateFunction.Parameters != LuaFunction.Parameters || TemplateFunction.Comment != LuaFunction
-						.Comment)
+					if (TemplateFunction.Parameters != LuaFunction.Parameters || TemplateFunction.Comment != LuaFunction.Comment)
 					{
+						// 打印Parameters 和 Comment
+						UE_LOG(LogTemp, Warning, TEXT("-------LuaFile: %s NotMatch-------"), *LuaFile);
+						UE_LOG(LogTemp, Warning, TEXT("TemplateFunction: %s, Parameters: %s, Comment: %s"), *TemplateFunction.FunctionName, *FString::Join(TemplateFunction.Parameters, TEXT(", ")), *TemplateFunction.Comment);
+						UE_LOG(LogTemp, Warning, TEXT("LuaFunction: %s, Parameters: %s, Comment: %s"), *LuaFunction.FunctionName, *FString::Join(LuaFunction.Parameters, TEXT(", ")), *LuaFunction.Comment);
 						CompareResults.Add(EProjectJCompareResult::NotMatch);
 					}
 					else
@@ -253,7 +256,6 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 			{
 				CompareResults.Add(EProjectJCompareResult::Missing);
 			}
-			
 		}
 
 		// 根据CompareResults， 更新Lua文件， 如果结果是NotMatch， 更新Parameters和Comment， 如果是Missing， 添加新的Function
@@ -277,8 +279,25 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 								*FString::Join(TemplateFunction.Parameters, TEXT(", ")));
 							LuaContent = LuaContent.Replace(*UpdateMatcher.GetCaptureGroup(0), *NewFunction);
 
-							const FProjectJLuaFunction& LuaFunction = LuaFunctions[i];
-							LuaContent = LuaContent.Replace(*LuaFunction.Comment, *TemplateFunction.Comment);
+							int32 LuaFuncIndex = -1;
+							for (int32 m = 0; m < LuaFunctions.Num(); ++m)
+							{
+								if (LuaFunctions[m].FunctionName == TemplateFunction.FunctionName)
+								{
+									LuaFuncIndex = m;
+									break;
+								}
+							}
+
+							if (LuaFuncIndex != -1)
+							{
+								const FProjectJLuaFunction& LuaFunction = LuaFunctions[LuaFuncIndex];
+								LuaContent = LuaContent.Replace(*LuaFunction.Comment, *TemplateFunction.Comment);
+							}
+							else
+							{
+								UE_LOG(LogTemp, Error, TEXT("LuaFunction Not Found: %s"), *TemplateFunction.FunctionName);
+							}
 						}
 						break;
 					}

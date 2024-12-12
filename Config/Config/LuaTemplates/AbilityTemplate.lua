@@ -7,13 +7,22 @@
 
 local M={}
 
+--- 返回技能描述
+---[[[
+---@return string
+---]]]
+function M:GetDesc()
+    ---Key由程序生成
+    return NSLOCTEXT("Unlua", "{LuaScriptName}", "");
+end
+
 --- 返回Tag， 用于注册到技能的事件监听中
 ---[[[
 ---@return FGameplayTag
 ---]]]
 function M:GetExecTag()
     local Ret = UE.FGameplayTag();
-    Ret.TagName = "Battle.Event.None";
+    Ret.TagName = Battle_Event_None;
     return Ret;
 end
 
@@ -25,7 +34,7 @@ end
 ---@return bool
 ---]]]
 function M:IsTriggerTime(OwnerID, ProjectJEventData, BattleManager)
-    return TriggerHelper:NotDead(OwnerID, ProjectJEventData, BattleManager);
+    return TriggerHelper:NotDead(OwnerID, BattleManager);
 end
 
 --- 返回技能执行信息
@@ -36,7 +45,8 @@ end
 ---@return FProjectJLuaAbilityExecInfo
 ---]]]
 function M:GetLuaAbilityExecInfo(OwnerID, ProjectJEventData, BattleManager)
-    return UE.FProjectJLuaAbilityExecInfo();
+    local Ret = UE.FProjectJLuaAbilityExecInfo();
+    return Ret;
 end
 
 --- 技能效果
@@ -54,7 +64,7 @@ end
 ---[[[
 ---@return TArray<FGameplayTag>
 ---]]]
-function M:LooseFeatureTag()
+function M:LooseTagArray()
     return EmptyTagArray;
 end
 

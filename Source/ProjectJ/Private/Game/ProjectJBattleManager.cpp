@@ -15,7 +15,7 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
-#include "ProjectJ/ProjectJDWGlobal.h"
+#include "ProjectJ/ProjectJGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Types/ProjectJCardAnimState.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
@@ -784,3 +784,51 @@ void AProjectJBattleManager::UpdateTeamFill()
 	}
 }
 
+bool AProjectJBattleManager::IsCharacterDead(int32 InCharacterID)
+{
+	if (BattleCharacterMap.Contains(InCharacterID))
+	{
+		return BattleCharacterMap[InCharacterID]->IsDead();
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("CharacterID: %d not found"), InCharacterID);
+	return true;
+}
+
+TArray<int32> AProjectJBattleManager::GetOpponentTeam(int32 InCharacterID)
+{
+	TArray<int32> Ret;
+	if (BattleCharacterMap.Contains(InCharacterID))
+	{
+		auto TeamID = static_cast<int32>(BattleCharacterMap[InCharacterID]->GetAbilitySystemComponent()->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
+		const auto& Team = TeamID == 0 ? BattleContext.TopTeam : BattleContext.BottomTeam;
+		for (const auto& CharacterID : Team)
+		{
+			if (!BattleCharacterMap[CharacterID]->IsDead())
+			{
+				Ret.Add(CharacterID);
+			}
+		}
+	}
+
+	return Ret;
+}
+
+TArray<int32> AProjectJBattleManager::GetTeammateTeam(int32 InCharacterID)
+{
+	TArray<int32> Ret;
+	if (BattleCharacterMap.Contains(InCharacterID))
+	{
+		auto TeamID = static_cast<int32>(BattleCharacterMap[InCharacterID]->GetAbilitySystemComponent()->GetNumericAttribute(UProjectJCharacterAttributeSet::GetTeamAttribute()));
+		const auto& Team = TeamID == 0 ? BattleContext.BottomTeam : BattleContext.TopTeam;
+		for (const auto& CharacterID : Team)
+		{
+			if (!BattleCharacterMap[CharacterID]->IsDead())
+			{
+				Ret.Add(CharacterID);
+			}
+		}
+	}
+
+	return Ret;
+}

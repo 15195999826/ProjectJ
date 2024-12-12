@@ -43,6 +43,14 @@ function M:EnterLevel(RowName)
     LevelInstance[RowName]:EnterLevel(ContextSystem, EventSystem);
 end
 
+
+---@param InLuaScriptName string
+---@return string
+function M:GetLuaAbilityDesc(InLuaScriptName) 
+    local Module = require("Abilities." .. InLuaScriptName);
+    return Module:GetDesc();
+end
+
 ---@param InOwnerID integer
 ---@param InEventID integer
 ---@param InLuaScriptName string
@@ -85,7 +93,7 @@ end
 ---@param EventID integer
 ---@param ProjectJEventData FProjectJBattleEventData
 ---@return FProjectJLuaAbilityExecInfo
-function AProjectJLuaExecutor:GetLuaAbilityExecInfo(InOwnerID, EventID, ProjectJEventData)
+function M:GetLuaAbilityExecInfo(InOwnerID, EventID, ProjectJEventData)
     local Instance = EventInstances[InOwnerID][EventID];
     if Instance == nil then
         return UE.FProjectJLuaAbilityExecInfo();
@@ -109,7 +117,7 @@ function M:GetLooseTag(InOwnerID, EventID)
         return EmptyTagArray;
     end
 
-    return Instance:LooseTag();
+    return Instance:LooseTagArray();
 end
 
 

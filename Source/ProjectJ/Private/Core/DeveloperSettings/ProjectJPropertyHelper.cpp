@@ -2,7 +2,7 @@
 
 
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
-#include "ProjectJ/ProjectJDWGlobal.h"
+#include "ProjectJ/ProjectJGlobal.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 
 TArray<FName> UProjectJPropertyHelper::GetAnimCustomKeys()

@@ -4,3 +4,92 @@
 --- DateTime: 2024-12-12
 --- RowName：[[[回合前造成1点伤害]]]
 ---
+---
+local M = {}
+
+---[[[
+---@return string
+---]]]
+function M:GetDesc()
+    ---Key由程序生成
+    return NSLOCTEXT("Unlua", "HuiHeQianZaoCheng1DianShangHai", "回合前->造成1点伤害");
+end
+
+---[[[
+---@return FGameplayTag
+---]]]
+function M:GetExecTag()
+    local Ret = UE.FGameplayTag();
+    Ret.TagName = Battle_Event_RoundStart;
+    return Ret;
+end
+
+
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param BattleManager AProjectJBattleManager
+---@return bool
+---]]]
+function M:IsTriggerTime(OwnerID, ProjectJEventData, BattleManager)
+    return TriggerHelper:NotDead(OwnerID, BattleManager);
+end
+
+
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param BattleManager AProjectJBattleManager
+---@return FProjectJLuaAbilityExecInfo
+---]]]
+function M:GetLuaAbilityExecInfo(OwnerID, ProjectJEventData, BattleManager)
+    local Ret = UE.FProjectJLuaAbilityExecInfo();
+    ---目标是全部对手
+    Ret.TargetIDs = BattleManager:GetOpponentTeam(OwnerID);
+    ---在对手身上播放默认特效
+    for i = 1, Ret.TargetIDs:Num() do
+        local TargetID = Ret.TargetIDs[i];
+        local AniData = UE.FProjectJLuaAbilityAnimation();
+        AniData.AnimationType = UE.EProjectJAbilityAnimationType.Effect;
+        AniData.ResourceSoftPath = Effect_BP_Effect_Default;
+        AniData.TargetID = TargetID;
+        Ret.Animations:Add(AniData);
+    end
+    ---自己播放一个受击蒙太奇
+    local AniData = UE.FProjectJLuaAbilityAnimation();
+    AniData.AnimationType = UE.EProjectJAbilityAnimationType.Montage;
+    AniData.ResourceSoftPath = Montage_GameCard_OnHit_Montage;
+    AniData.TargetID = OwnerID;
+    Ret.Animations:Add(AniData);
+
+    Ret.Duration = 1;
+    Ret.TriggerPoint = 0.5;
+    
+    return Ret;
+end
+
+
+---[[[
+---@param OwnerID integer
+---@param ProjectJEventData FProjectJBattleEventData
+---@param InTargets TArray<integer>
+---@param BattleManager AProjectJBattleManager
+---]]]
+function M:ExecuteLuaAbility(OwnerID, ProjectJEventData, InTargets, BattleManager)
+    --- 对Targets 造成1点伤害
+    for i = 1, InTargets:Num() do
+        local TargetID = InTargets[i];
+        BattleEventHelper:GetDamage(OwnerID, TargetID, 1, BattleManager);
+    end
+end
+
+
+---[[[
+---@return TArray<FGameplayTag>
+---]]]
+function M:LooseTagArray()
+    return EmptyTagArray;
+end
+
+
+return M

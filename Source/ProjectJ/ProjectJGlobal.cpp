@@ -1,4 +1,4 @@
-#include "ProjectJDWGlobal.h"
+#include "ProjectJGlobal.h"
 
 namespace ProjectJGlobal
 {

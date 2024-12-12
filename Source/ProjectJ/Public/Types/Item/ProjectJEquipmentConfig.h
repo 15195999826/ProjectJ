@@ -105,6 +105,7 @@ struct FProjectJEquipmentConfig : public FProjectJItemBase
 	FProjectJAttributeGiver AttributeGiver;
 	// 耐久度。 Todo: 考虑实现方案
 
+	/* 词条 理论上层数词条不应该在这里直接赋予 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DisplayName="A类词条", GetOptions="ProjectJ.ProjectJPropertyHelper.GetFeatureNames"))
 	TArray<FName> Features;
 	

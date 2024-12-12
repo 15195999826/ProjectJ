@@ -192,7 +192,32 @@ protected:
 	// --- 词条功能 End ---
 	
 
-	// --- 外部获取数据 ---
+	// --- 外部获取数据 Start---
 public:
 	int32 GetRound () const { return BattleContext.Round; }
+
+	// --- 外部获取数据 End---
+
+
+	// --- Only For Lua Start ---
+	UFUNCTION(BlueprintCallable)
+	bool IsCharacterDead(int32 InCharacterID);
+
+	/**
+	 * 获取对手队伍, 只返回存活的
+	 * @param InCharacterID
+	 * @return
+	 */
+	UFUNCTION(BlueprintCallable)
+	TArray<int32> GetOpponentTeam(int32 InCharacterID);
+
+	/**
+	 * 获取队友队伍, 只返回存活的
+	 * @param InCharacterID
+	 * @return
+	 */
+	UFUNCTION(BlueprintCallable)
+	TArray<int32> GetTeammateTeam(int32 InCharacterID);
+	
+	// --- Only For Lua End ---
 };

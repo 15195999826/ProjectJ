@@ -8,9 +8,12 @@
 #include "Components/WidgetComponent.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Core/System/ProjectJContextSystem.h"
+#include "Game/ProjectJLuaExecutor.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
 #include "Game/GAS/ProjectJAttackGA.h"
 #include "Game/GAS/ProjectJGameplayEffectContext.h"
+#include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
 
@@ -18,6 +21,8 @@ void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, E
 {
 	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	auto ASC = InCharacter->GetAbilitySystemComponent();
+	TArray<FName> GivenFeature;
+	TArray<FName> GivenLuaAbilityScripts;
 	FProjectJAttributeGiver Giver;
 	// Todo: 临时处理方案吧，最后思考怎么统一放到System处理
 	// 设置角色的武器或者装备，应用属性变化；如果是武器，给与普攻技能
@@ -27,6 +32,8 @@ void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, E
 				InCharacter->TempWeaponRowName = InRowName;
 				auto Config = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous()->FindRow<FProjectJWeaponConfig>(InRowName, TEXT("Equip Weapon"));
 				Giver = Config->AttributeGiver;
+				GivenFeature = Config->Features;
+				GivenLuaAbilityScripts = Config->AbilityLuaScriptNames;
 				// 赋予攻击攻击技能
 				InCharacter->AttackAbilitySpecHandle = ASC->GiveAbility(FGameplayAbilitySpec(GSettings->AttackGAClass, 1));
 				auto InstancedAbility = Cast<UProjectJAttackGA>(ASC->FindAbilitySpecFromHandle(InCharacter->AttackAbilitySpecHandle)->GetPrimaryInstance());
@@ -38,12 +45,27 @@ void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, E
 			{
 				auto Config = GetDefault<UProjectJDataTableSettings>()->ArmorTable.LoadSynchronous()->FindRow<FProjectJArmorConfig>(InRowName, TEXT("Equip Armor"));
 				Giver = Config->AttributeGiver;
+				GivenFeature = Config->Features;
+				GivenLuaAbilityScripts = Config->AbilityLuaScriptNames;
 			}
 			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("Equip Type Error: %d"), static_cast<int32>(InType));
 			Giver = FProjectJAttributeGiver();
 			break;
+	}
+
+	// 给与持续无限回合的特性
+	for (const auto& Feature : GivenFeature)
+	{
+		auto Tag = UGameplayTagsManager::Get().RequestGameplayTag(Feature);
+		InCharacter->GetFeature(Tag, 1, -1);
+	}
+
+	// 给予B类词条对应的技能
+	for (const auto& LuaScript : GivenLuaAbilityScripts)
+	{
+		InCharacter->LuaAbility->RegisterAbility(LuaScript);
 	}
 	
 	auto AttributeSpecHandle = SimpleMakeGESpecHandle(InCharacter, GSettings->EquipmentAttributeEffect);
@@ -72,8 +94,20 @@ FGameplayEffectSpecHandle UProjectJGameBFL::SimpleMakeGESpecHandle(AActor* Sourc
 	return ASC->MakeOutgoingSpec(GEClass, Level, EffectContextHandle);
 }
 
+FText UProjectJGameBFL::GetLuaAbilityDesc(const UObject* WorldContextObject, const FName& InLuaScriptCHSName)
+{
+	auto LuaExecutor = WorldContextObject->GetWorld()->GetSubsystem<UProjectJContextSystem>()->LuaExecutor;
+	if (LuaExecutor)
+	{
+		return LuaExecutor->GetLuaAbilityDesc(InLuaScriptCHSName);
+	}
+
+
+	return FText();
+}
+
 FActiveGameplayEffectHandle UProjectJGameBFL::SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE,
-	float Level, int32 Round)
+                                                                  float Level, int32 Round)
 {
 	UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Source);
 	if (ASC == nullptr)
