@@ -145,7 +145,8 @@ private:
 
 	void ChangeStage(EProjectJBattleStage NewStage);
 	void OnStageChange(EProjectJBattleStage OldStage, EProjectJBattleStage NewStage);
-	
+	void PostRoundStart();
+
 	// --- 战斗状态机相关 End ---
 
 	void RoundStart();
@@ -165,7 +166,6 @@ private:
 
 	// --- 词条功能 Start ---
 public:
-	
 	UFUNCTION()
 	FProjectJExecEventRet ExecuteEvent(const FProjectJBattleEventData& InEventData);
 
@@ -189,6 +189,8 @@ protected:
 	
 	void IntervalGetDamage(const FProjectJBattleEventData& InEventData);
 	void IntervalGetHeal(const FProjectJBattleEventData& InEventData);
+	void IntervalGetFeature(const FProjectJBattleEventData& InEventData);
+	
 	// --- 词条功能 End ---
 	
 

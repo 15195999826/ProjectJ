@@ -12,6 +12,9 @@ namespace ProjectJGlobal
 	// ------BattleEventData Keys Start------
 	PROJECTJ_API extern const FName Battle_DamageValueKey;
 	PROJECTJ_API extern const FName Battle_HealValueKey;
+	PROJECTJ_API extern const FName Battle_GetFeatureKey;
+	PROJECTJ_API extern const FName Battle_GetFeatureRoundKey;
+	PROJECTJ_API extern const FName Battle_GetFeatureLayerCountKey;
 
 	// ------BattleEventData Keys End------
 	PROJECTJ_API extern const FName Program_Ani_NameKey;

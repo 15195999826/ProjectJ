@@ -8,6 +8,7 @@
 #include "Components/WidgetComponent.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJLuaExecutor.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
@@ -15,6 +16,7 @@
 #include "Game/GAS/ProjectJGameplayEffectContext.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
+#include "Game/GAS/ProjectJGameplayEffectUIData.h"
 #include "UI/SpecialUI/ProjectJCharacterFloatPanel.h"
 
 void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, EProjectJItemType InType)
@@ -61,7 +63,7 @@ void UProjectJGameBFL::Equip(AProjectJCharacter* InCharacter, FName InRowName, E
 		auto Tag = UGameplayTagsManager::Get().RequestGameplayTag(Feature);
 		InCharacter->GetFeature(Tag, 1, -1);
 	}
-
+	
 	// 给予B类词条对应的技能
 	for (const auto& LuaScript : GivenLuaAbilityScripts)
 	{
@@ -99,11 +101,15 @@ FText UProjectJGameBFL::GetLuaAbilityDesc(const UObject* WorldContextObject, con
 	auto LuaExecutor = WorldContextObject->GetWorld()->GetSubsystem<UProjectJContextSystem>()->LuaExecutor;
 	if (LuaExecutor)
 	{
-		return LuaExecutor->GetLuaAbilityDesc(InLuaScriptCHSName);
+		const auto& LuaScriptsMap = GetDefault<UProjectJPropertyHelper>()->CHS2AbilityLuaScriptNameMap;
+		if (LuaScriptsMap.Contains(InLuaScriptCHSName))
+		{
+			return LuaExecutor->GetLuaAbilityDesc(LuaScriptsMap[InLuaScriptCHSName]);
+		}
 	}
 
-
-	return FText();
+	// 返回错误配置
+	return FText::FromString(TEXT("Error LuaScriptCHSName"));
 }
 
 FActiveGameplayEffectHandle UProjectJGameBFL::SimpleApplyGEToSelf(AActor* Source, TSubclassOf<UGameplayEffect> GE,
@@ -139,4 +145,27 @@ FProjectJBattleEventData UProjectJGameBFL::TryGetProjectJGameEventData(const FGa
 	FProjectJBattleEventData* CustomData = static_cast<FProjectJBattleEventData*>(data);
 	OutValid = EProjectJValid::Valid;
 	return *CustomData;
+}
+
+const UProjectJGameplayEffectUIData* UProjectJGameBFL::GetGEUIData(const FGameplayTag& InTag, EProjectJValid& OutValid)
+{
+	auto GSettings = GetDefault<UProjectJGeneralSettings>();
+	if (GSettings->FeatureGEMap.Contains(InTag))
+	{
+		auto GEClass = GSettings->FeatureGEMap[InTag];
+		auto GE = GEClass.GetDefaultObject();
+		auto Com = GE->FindComponent<UProjectJGameplayEffectUIData>();
+		if (Com)
+		{
+			OutValid = EProjectJValid::Valid;
+			return Com;
+		}
+	}
+	OutValid = EProjectJValid::Invalid;
+	return nullptr;
+}
+
+FGameplayTag UProjectJGameBFL::RequestGameplayTag(const FName& InTagName)
+{
+	return UGameplayTagsManager::Get().RequestGameplayTag(InTagName, false);
 }

@@ -48,7 +48,7 @@ end
 ---@param Value integer
 ---@param BattleManager AProjectJBattleManager
 function M:GetDamage(ExecutorID, TargetID, Value, BattleManager)
-    local GiveDamageEvent = UE.FProjectJGameEventData();
+    local GiveDamageEvent = UE.FProjectJBattleEventData();
     GiveDamageEvent.ExecutorID = ExecutorID;
     GiveDamageEvent.TargetID = TargetID;
     GiveDamageEvent.EventKVs:Add(Battle_DamageValueKey, tostring(Value));
@@ -58,18 +58,20 @@ end
 
 ---获得特性
 ---@param ExecutorID integer
----@param TriggeredID integer
 ---@param TargetID integer
----@param Value string
+---@param Feature string
+---@param Round integer
+---@param LayerCount integer
 ---@param BattleManager AProjectJBattleManager
-function M:GetFeature(ExecutorID, TriggeredID, TargetID, Value, BattleManager)
-    --local GiveFeatureEvent = UE.FProjectJGameEventData();
-    --GiveFeatureEvent.ExecutorID = ExecutorID;
-    --GiveFeatureEvent.TriggeredID = TriggeredID;
-    --GiveFeatureEvent.TargetID = TargetID;
-    --GiveFeatureEvent.EventKVs:Add(FeatureKey, Value);
-    --GiveFeatureEvent.EventTag.TagName = Game_Event_GetFeature;
-    --BattleManager:ExecuteEvent(GiveFeatureEvent);
+function M:GetFeature(ExecutorID, TargetID, Feature, Round, LayerCount,BattleManager)
+    local GetFeatureEvent = UE.FProjectJBattleEventData();
+    GetFeatureEvent.ExecutorID = ExecutorID;
+    GetFeatureEvent.TargetID = TargetID;
+    GetFeatureEvent.EventKVs:Add(Battle_GetFeatureKey, Feature);
+    GetFeatureEvent.EventKVs:Add(Battle_GetFeatureRoundKey, tostring(Round));
+    GetFeatureEvent.EventKVs:Add(Battle_GetFeatureLayerCountKey, tostring(LayerCount));
+    GetFeatureEvent.EventTag.TagName = Battle_Event_GetFeature;
+    BattleManager:ExecuteEvent(GetFeatureEvent);
 end
 
 return M

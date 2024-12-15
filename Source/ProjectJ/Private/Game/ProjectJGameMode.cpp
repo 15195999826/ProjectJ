@@ -13,6 +13,7 @@
 #include "Game/ProjectJLuaExecutor.h"
 #include "Game/ProjectJPerformManager.h"
 #include "Game/ProjectJBattleManager.h"
+#include "Game/ProjectJSpellArea.h"
 
 void AProjectJGameMode::BeginPlay()
 {
@@ -53,6 +54,13 @@ void AProjectJGameMode::BeginPlay()
 		ContextSystem->BattleManager = *ActorItr;
 		break;
 	}
+
+	for (TActorIterator<AProjectJSpellArea> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->SpellArea = *ActorItr;
+		break;
+	}
+	
 	Super::BeginPlay();
 
 	// FString FilePath = FPaths::SourceConfigDir() + "/Config/Unlua_LocText.ini";

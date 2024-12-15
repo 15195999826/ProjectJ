@@ -36,5 +36,5 @@ public:
 	virtual void OnCancelDrag() override;
 
 private:
-	FTransform DragStartRelativeTransform;
+	FTransform DragStartTransform;
 };

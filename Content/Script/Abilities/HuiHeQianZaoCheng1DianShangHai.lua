@@ -12,7 +12,7 @@ local M = {}
 ---]]]
 function M:GetDesc()
     ---Key由程序生成
-    return NSLOCTEXT("Unlua", "HuiHeQianZaoCheng1DianShangHai", "回合前->造成1点伤害");
+    return NSLOCTEXT("Unlua", "HuiHeQianZaoCheng1DianShangHai", "回合前->对所有敌人造成1点伤害");
 end
 
 ---[[[
@@ -51,7 +51,7 @@ function M:GetLuaAbilityExecInfo(OwnerID, ProjectJEventData, BattleManager)
         local TargetID = Ret.TargetIDs[i];
         local AniData = UE.FProjectJLuaAbilityAnimation();
         AniData.AnimationType = UE.EProjectJAbilityAnimationType.Effect;
-        AniData.ResourceSoftPath = Effect_BP_Effect_Default;
+        AniData.ResourceSoftPath = Effect_Default;
         AniData.TargetID = TargetID;
         Ret.Animations:Add(AniData);
     end
@@ -62,8 +62,8 @@ function M:GetLuaAbilityExecInfo(OwnerID, ProjectJEventData, BattleManager)
     AniData.TargetID = OwnerID;
     Ret.Animations:Add(AniData);
 
-    Ret.Duration = 1;
-    Ret.TriggerPoint = 0.5;
+    Ret.Duration = 0.5;
+    Ret.TriggerPoint = 0.15;
     
     return Ret;
 end

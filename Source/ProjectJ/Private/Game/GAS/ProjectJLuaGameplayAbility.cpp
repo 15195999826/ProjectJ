@@ -129,6 +129,7 @@ void UProjectJLuaGameplayAbility::NextExec()
 	if (CurrentExecInfoIndex >= CachedExecInfos.Num())
 	{
 		// 执行完毕
+		CachedExecInfos.Empty();
 		auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 		EventSystem->PostLuaAbilityStatus.Broadcast(Cast<AProjectJCharacter>(GetAvatarActorFromActorInfo())->ID, false);
 		return;
@@ -152,8 +153,8 @@ void UProjectJLuaGameplayAbility::NextExec()
 				break;
 			case EProjectJAbilityAnimationType::Effect:
 				{
-					auto EffectActorClass = LoadEffectActorFromString(Anim.ResourceSoftPath)->GetClass();
-					auto EffectActor = ContextSystem->GetEffectActor(EffectActorClass);
+					auto PropertyHelper = GetDefault<UProjectJPropertyHelper>();
+					auto EffectActor = ContextSystem->GetEffectActor(PropertyHelper->EffectActorClassMap[Anim.ResourceSoftPath]);
 					// Todo: Attach To Target, 等放置方式
 					EffectActor->SetActorLocation(Target->GetActorLocation());
 					EffectActor->StartEffect();
@@ -172,21 +173,29 @@ void UProjectJLuaGameplayAbility::NextExec()
 				break;
 		}
 	}
+	if (Cache.ExecInfo.Duration <= 0)
+	{
+		TriggerExec();
+		NextExec();
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			ExecOverTimerHandle,
+			this,
+			&UProjectJLuaGameplayAbility::NextExec,
+			Cache.ExecInfo.Duration,
+			false
+		);
+		GetWorld()->GetTimerManager().SetTimer(
+			ExecTriggerTimerHandle,
+			this,
+			&UProjectJLuaGameplayAbility::TriggerExec,
+			Cache.ExecInfo.TriggerPoint,
+			false
+		);
+	}
 	
-	GetWorld()->GetTimerManager().SetTimer(
-		ExecOverTimerHandle,
-		this,
-		&UProjectJLuaGameplayAbility::NextExec,
-		Cache.ExecInfo.Duration,
-		true
-	);
-	GetWorld()->GetTimerManager().SetTimer(
-		ExecTriggerTimerHandle,
-		this,
-		&UProjectJLuaGameplayAbility::TriggerExec,
-		Cache.ExecInfo.Duration,
-		true
-	);
 }
 
 void UProjectJLuaGameplayAbility::TriggerExec()
@@ -212,21 +221,4 @@ UAnimMontage* UProjectJLuaGameplayAbility::LoadMontageFromString(const FString& 
 		UE_LOG(LogTemp, Error, TEXT("Load Montage Failed: %s"), *MontageSoftPath);
 	}
 	return Montage;
-}
-
-AProjectJEffectActor* UProjectJLuaGameplayAbility::LoadEffectActorFromString(const FString& EffectSoftPath)
-{
-	if (EffectSoftPath.IsEmpty())
-	{
-		return nullptr;
-	}
-	
-	FSoftObjectPath SoftObjectPath(EffectSoftPath);
-	
-	AProjectJEffectActor* EffectActor = Cast<AProjectJEffectActor>(SoftObjectPath.TryLoad());
-	if (EffectActor == nullptr)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Load EffectActor Failed: %s"), *EffectSoftPath);
-	}
-	return EffectActor;
 }

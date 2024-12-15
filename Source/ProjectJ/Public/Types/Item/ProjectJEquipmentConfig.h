@@ -73,7 +73,7 @@ struct FProjectJAttackAbility
 {
 	GENERATED_BODY()
 
-	FProjectJAttackAbility(): AttackCapability(), TargetTeam(), AttackRange()
+	FProjectJAttackAbility(): AttackCapability(EProjectJAttackCapability::Damage), TargetTeam(EProjectJTargetTeam::Enemy), AttackRange(EProjectJAttackRange::Closet)
 	{
 	}
 

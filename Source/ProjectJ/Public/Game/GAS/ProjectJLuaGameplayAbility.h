@@ -57,5 +57,4 @@ protected:
 
 private:
 	static UAnimMontage* LoadMontageFromString(const FString& MontageSoftPath);
-	static AProjectJEffectActor* LoadEffectActorFromString(const FString& EffectSoftPath);
 };

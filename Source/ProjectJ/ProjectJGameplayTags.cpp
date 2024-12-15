@@ -76,19 +76,23 @@ namespace ProjectJGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_RoundEnd, "Battle.Event.RoundEnd", "Round End");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_BeforeAttack, "Battle.Event.BeforeAttack", "Before Attack");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_AttackHit, "Battle.Event.AttackHit", "Attack Hit");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_AfterAttack, "Battle.Event.AfterAttack", "After Attack");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetDamage, "Battle.Event.GetDamage", "Get Damage");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetHeal, "Battle.Event.GetHeal", "Get Heal");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_GetFeature, "Battle.Event.GetFeature", "Get Feature");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Battle_Event_Dead, "Battle.Event.Dead", "Dead");
 
 	const TArray<FGameplayTag> BattleEventPak = {
 		Battle_Event_RoundStart,
 		Battle_Event_RoundEnd,
 		Battle_Event_BeforeAttack,
+		Battle_Event_AttackHit,
 		Battle_Event_AfterAttack,
 		Battle_Event_GetDamage,
 		Battle_Event_GetHeal,
+		Battle_Event_GetFeature,
 		Battle_Event_Dead,
 	};
 	

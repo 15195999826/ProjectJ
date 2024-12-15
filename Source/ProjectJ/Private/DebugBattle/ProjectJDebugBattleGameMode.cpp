@@ -12,6 +12,7 @@
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "Game/ProjectJLevelSettingActor.h"
+#include "Game/ProjectJLuaExecutor.h"
 
 void AProjectJDebugBattleGameMode::BeginPlay()
 {
@@ -27,6 +28,13 @@ void AProjectJDebugBattleGameMode::BeginPlay()
 	{
 		auto LevelSetting = *It;
 		ContextSystem->LevelSettingActor = LevelSetting;
+		break;
+	}
+
+	for (TActorIterator<AProjectJLuaExecutor> It(GetWorld()); It; ++It)
+	{
+		auto LuaExec = *It;
+		ContextSystem->LuaExecutor = LuaExec;
 		break;
 	}
 	

@@ -17,7 +17,8 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJOneStageChangeDelegate, EProjectJG
 DECLARE_MULTICAST_DELEGATE_TwoParams(FProjectJPostLuaAbilityStatusDelegate, int32 /* CharacterID */, bool /* IsRunning */);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJStoryRecordSignature, const FProjectJStoryRecord&, Record);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FProjectJFocusEquipmentSlotSignature, bool , IsFocus,const FName& , RowName, EProjectJItemType, ItemType); 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FProjectJFocusEquipmentSlotSignature, bool , IsFocus,const FName& , RowName, EProjectJItemType, ItemType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FProjectJFocusFeatureBoxSignature, bool, IsFocus, const FGameplayTag&, FeatureTag);
 /**
  * 
  */
@@ -44,6 +45,8 @@ public:
 	// ----------------- UI事件 Start-----------------
 	UPROPERTY(BlueprintCallable, BlueprintAssignable)
 	FProjectJFocusEquipmentSlotSignature OnFocusEquipmentSlot;
+	UPROPERTY(BlueprintCallable, BlueprintAssignable)
+	FProjectJFocusFeatureBoxSignature OnFocusFeatureBox;
 	// ----------------- UI事件 End-----------------
 
 	

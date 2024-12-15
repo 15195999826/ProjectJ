@@ -14,7 +14,14 @@ local M = {}
 function M:NotDead(OwnerID, BattleManager)
     return not BattleManager:IsCharacterDead(OwnerID);
 end
---
+
+-----@param OwnerID integer
+-----@param ProjectJEventData FProjectJBattleEventData
+-----@return bool
+function M:IsSelfAttack(OwnerID, ProjectJEventData)
+    return OwnerID == ProjectJEventData.ExecutorID;
+end
+
 -----无论是否因为本次伤害死亡，都会执行
 -----@param OwnerID integer
 -----@param ProjectJEventData FProjectJBattleEventData
@@ -23,12 +30,7 @@ end
 --    return OwnerID == ProjectJEventData.TargetID;
 --end
 --
------@param OwnerID integer
------@param ProjectJEventData FProjectJBattleEventData
------@return bool
---function M:IsSelfFight(OwnerID, ProjectJEventData)
---    return OwnerID == ProjectJEventData.ExecutorID;
---end
+
 --
 -----自己昏厥时
 -----@param OwnerID integer

@@ -21,7 +21,8 @@ FName AProjectJSpell::GetConfigRowName_Implementation()
 void AProjectJSpell::OnDragStart()
 {
 	Super::OnDragStart();
-	DragStartRelativeTransform = GetActorTransform().GetRelativeTransform(GetAttachParentActor()->GetActorTransform());
+	// DragStartTransform = GetActorTransform().GetRelativeTransform(GetAttachParentActor()->GetActorTransform());
+	DragStartTransform = GetActorTransform();
 }
 
 void AProjectJSpell::OnDrop(float InDuration)
@@ -63,5 +64,7 @@ void AProjectJSpell::OnDrop(float InDuration)
 void AProjectJSpell::OnCancelDrag()
 {
 	SetActorEnableCollision(true);
-	SetActorTransform(DragStartRelativeTransform * GetAttachParentActor()->GetActorTransform());
+	// SetActorTransform(DragStartTransform * GetAttachParentActor()->GetActorTransform());
+	SetActorTransform(DragStartTransform);
 }
+

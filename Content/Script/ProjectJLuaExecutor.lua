@@ -48,6 +48,7 @@ end
 ---@return string
 function M:GetLuaAbilityDesc(InLuaScriptName) 
     local Module = require("Abilities." .. InLuaScriptName);
+    print("GetModule")
     return Module:GetDesc();
 end
 

@@ -15,6 +15,9 @@ namespace ProjectJGlobal
 	// ------BattleEventData Keys Start------
 	const FName Battle_DamageValueKey = TEXT("Battle_DamageValue");
 	const FName Battle_HealValueKey = TEXT("Battle_HealValue");
+	const FName Battle_GetFeatureKey = TEXT("Battle_GetFeature");
+	const FName Battle_GetFeatureRoundKey = TEXT("Battle_GetFeatureRound");
+	const FName Battle_GetFeatureLayerCountKey = TEXT("Battle_GetFeatureLayerCount");
 
 	// ------BattleEventData Keys End------
 	

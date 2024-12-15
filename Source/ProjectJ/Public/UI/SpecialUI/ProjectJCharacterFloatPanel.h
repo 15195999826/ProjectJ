@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJCharacterFloatPanel.generated.h"
@@ -29,6 +30,17 @@ public:
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void BindEquipment(const FName& InRowName, EProjectJItemType InType);
-
+	
 	void BindCharacter(AProjectJCharacter* InCharacter);
+
+protected:
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnGetFeature(const FGameplayTag& InFeatureTag);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnLoseFeature(const FGameplayTag& InFeatureTag);
+	
+private:
+	void OnGameplayEffectApplied(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayEffectSpec& GameplayEffectSpec, FActiveGameplayEffectHandle ActiveGameplayEffectHandle);
+	void OnGameplayEffectRemoved(const FActiveGameplayEffect& ActiveGameplayEffect);
 };

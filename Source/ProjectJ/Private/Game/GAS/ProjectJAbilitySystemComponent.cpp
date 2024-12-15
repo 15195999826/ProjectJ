@@ -26,13 +26,55 @@ void UProjectJAbilitySystemComponent::HandleMontagePostEvent(FGameplayTag EventT
 	}
 }
 
-bool UProjectJAbilitySystemComponent::CustomRemoveActiveGameplayEffect(FActiveGameplayEffectHandle Handle,
+bool UProjectJAbilitySystemComponent::CustomRemoveActiveGameplayEffect(const FGameplayTag& InFeatureTag,
 	const TArray<int32> LayerIDs)
 {
-	auto GEContext = static_cast<FProjectJGameplayEffectContext*>(GetActiveGameplayEffect(Handle)->Spec.GetContext().Get());
-	GEContext->SetRemovingLayerIDs(LayerIDs);
-	auto Num = LayerIDs.Num();
-	return RemoveActiveGameplayEffect(Handle, Num);
+	if (LayerIDs.Num() == 0)
+	{
+		return false;
+	}
+	
+	for (const auto& Pair : Handle2FeatureTagMap)
+	{
+		if (Pair.Value == InFeatureTag)
+		{
+			auto GEContext = static_cast<FProjectJGameplayEffectContext*>(GetActiveGameplayEffect(Pair.Key)->Spec.GetContext().Get());
+			GEContext->SetRemovingLayerIDs(LayerIDs);
+			auto Num = LayerIDs.Num();
+			// 传入Num = 0, 会移除所有层
+			return RemoveActiveGameplayEffect(Pair.Key, Num);
+		}
+	}
+	
+	return false;
+}
+
+const FProjectJCustomStackedGESpec* UProjectJAbilitySystemComponent::GetCustomStackedGESpec(
+	const FGameplayTag& InFeatureTag)
+{
+	for (const auto& Pair : Handle2FeatureTagMap)
+	{
+		if (Pair.Value == InFeatureTag)
+		{
+			return &CustomStackedGESpecMap[Pair.Key];
+		}
+	}
+
+	return &EmptyCustomStackedGESpec;
+}
+
+int32 UProjectJAbilitySystemComponent::GetStackCount(const FGameplayTag& FeatureTag)
+{
+	for (const auto& Pair : Handle2FeatureTagMap)
+	{
+		if (Pair.Value == FeatureTag)
+		{
+			auto StackCount = GetActiveGameplayEffect(Pair.Key)->Spec.GetStackCount();
+			return StackCount;
+		}
+	}
+
+	return 0;
 }
 
 void UProjectJAbilitySystemComponent::OnGEAppliedToSelf(UAbilitySystemComponent* SourceASC,

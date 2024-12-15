@@ -416,24 +416,12 @@ static void CreateStaticVariableLua()
 		FString SoftPath = Data.ToSoftObjectPath().ToString();
 		ExternVariables.Add(FString::Printf(TEXT("_G.Montage_%s = \"%s\""), *Data.AssetName.ToString(), *SoftPath));
 	}
-
-	// 读取项目中全部的AProjectJEffectActor
-	FARFilter EffectFilter;
-	EffectFilter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
-	EffectFilter.bRecursiveClasses = true;
-	EffectFilter.TagsAndValues.Add(TEXT("ParentClass"), FAssetData(AProjectJEffectActor::StaticClass()).GetExportTextName());
-
-	// Get the assets
-	AssetData.Empty();
-	AssetRegistry.GetAssets(EffectFilter, AssetData);
-
-	// Load the assets
-	for (const FAssetData& Data : AssetData)
-	{
-		FString SoftPath = Data.ToSoftObjectPath().ToString();
-		ExternVariables.Add(FString::Printf(TEXT("_G.Effect_%s = \"%s\""), *Data.AssetName.ToString(), *SoftPath));
-	}
 	
+	auto PropertyHelper = GetDefault<UProjectJPropertyHelper>();
+	for (const auto& Pair : PropertyHelper->EffectActorClassMap)
+	{
+		ExternVariables.Add(FString::Printf(TEXT("_G.%s = \"%s\""), *Pair.Key, *Pair.Key));
+	}
 	
 	// Append the extracted variables to the Lua content
 	FString Content = FString::Join(ExternVariables, TEXT("\n"));

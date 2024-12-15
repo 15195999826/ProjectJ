@@ -6,6 +6,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "ProjectJPropertyHelper.generated.h"
 
+class AProjectJEffectActor;
 /**
  * 
  */
@@ -17,6 +18,9 @@ class PROJECTJ_API UProjectJPropertyHelper : public UDeveloperSettings
 public:
 	UPROPERTY(Config, EditAnywhere, Category=Cache)
 	TMap<FName, FName> CHS2AbilityLuaScriptNameMap;
+	
+	UPROPERTY(Config, EditAnywhere, Category=Cache)
+	TMap<FString, TSubclassOf<AProjectJEffectActor>> EffectActorClassMap;
 	
 	UFUNCTION()
 	static TArray<FName> GetAnimCustomKeys();

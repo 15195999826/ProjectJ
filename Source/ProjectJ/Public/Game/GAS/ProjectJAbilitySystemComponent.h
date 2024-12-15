@@ -74,6 +74,8 @@ class PROJECTJ_API UProjectJAbilitySystemComponent : public UAbilitySystemCompon
 {
 	GENERATED_BODY()
 
+	inline static FProjectJCustomStackedGESpec EmptyCustomStackedGESpec = FProjectJCustomStackedGESpec();
+	
 public:
 	UProjectJAbilitySystemComponent();
 	
@@ -81,8 +83,11 @@ public:
 	void HandleMontagePostEvent(FGameplayTag EventTag, FProjectJMontageEventData EventData);
 
 	UFUNCTION(BlueprintCallable, Category = GameplayEffects)
-	bool CustomRemoveActiveGameplayEffect(FActiveGameplayEffectHandle Handle, const TArray<int32> LayerIDs);
-	
+	bool CustomRemoveActiveGameplayEffect(const FGameplayTag& InFeatureTag, const TArray<int32> LayerIDs);
+
+	const FProjectJCustomStackedGESpec* GetCustomStackedGESpec(const FGameplayTag& InFeatureTag);
+	int32 GetStackCount(const FGameplayTag& FeatureTag);
+
 private:
 	UPROPERTY()
 	TMap<FActiveGameplayEffectHandle, FProjectJCustomStackedGESpec> CustomStackedGESpecMap;

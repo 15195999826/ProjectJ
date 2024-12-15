@@ -13,6 +13,7 @@
 #include "Types/ProjectJValid.h"
 #include "ProjectJGameBFL.generated.h"
 
+class UProjectJGameplayEffectUIData;
 class UGameplayEffect;
 /**
  * 
@@ -42,4 +43,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="OutValid"))
 	static FProjectJBattleEventData TryGetProjectJGameEventData(const FGameplayEventData& InData, EProjectJValid& OutValid);
+
+	UFUNCTION(BlueprintCallable, meta=(ExpandEnumAsExecs="OutValid"))
+	static const UProjectJGameplayEffectUIData* GetGEUIData(const FGameplayTag& InTag, EProjectJValid& OutValid);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FGameplayTag RequestGameplayTag(const FName& InTagName);
 };

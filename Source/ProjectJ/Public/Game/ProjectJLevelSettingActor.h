@@ -39,8 +39,6 @@ public:
 	FVector HandSpellCardStartLocation;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
 	FVector HandSpellCardOffset;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
-	FRotator HandSpellCardRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
 	FVector TalkWidgetOffset;

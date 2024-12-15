@@ -13,6 +13,7 @@
 #include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/Card/ProjectJCharacter.h"
+#include "Game/GAS/ProjectJAbilitySystemComponent.h"
 #include "Game/GAS/ProjectJCharacterAttributeSet.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "ProjectJ/ProjectJGlobal.h"
@@ -52,6 +53,10 @@ FProjectJExecEventRet AProjectJBattleManager::ExecuteEvent(const FProjectJBattle
 	else if (InEventData.EventTag == ProjectJGameplayTags::Battle_Event_GetHeal)
 	{
 		IntervalGetHeal(InEventData);
+	}
+	else if (InEventData.EventTag == ProjectJGameplayTags::Battle_Event_GetFeature)
+	{
+		IntervalGetFeature(InEventData);
 	}
 
 	EventQueue.Add(InEventData);
@@ -135,6 +140,16 @@ void AProjectJBattleManager::IntervalGetHeal(const FProjectJBattleEventData& InE
 											   Defender->GetAbilitySystemComponent());
 }
 
+void AProjectJBattleManager::IntervalGetFeature(const FProjectJBattleEventData& InEventData)
+{
+	auto Feature = UGameplayTagsManager::Get().RequestGameplayTag(FName(*InEventData.EventKVs[ProjectJGlobal::Battle_GetFeatureKey]));
+	auto Round = FCString::Atoi(*InEventData.EventKVs[ProjectJGlobal::Battle_GetFeatureRoundKey]);
+	auto LayerCount = FCString::Atoi(*InEventData.EventKVs[ProjectJGlobal::Battle_GetFeatureLayerCountKey]);
+
+	auto Target = BattleCharacterMap[InEventData.TargetID];
+	Target->GetFeature(Feature, LayerCount, Round); 
+}
+
 FVector AProjectJBattleManager::GetTeamPosition(int32 InTeamID, int32 InPosition, int32 InTotalCount)
 {
 	auto LevelSettingActor = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
@@ -205,6 +220,8 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 			if (EventQueue.Num() == 0)
 			{
 				// Todo: 事件执行完毕
+				IsProcessingEventQueue = false;
+				WaitSignals.Remove(SignalEventExecPending);
 			}
 			else
 			{
@@ -227,100 +244,106 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 				EventQueue.RemoveAt(0);
 			}
 		}
-		
 
-		// 逐个执行EventQueue中的事件, IsSomeOneRunningEvent将通过EventSystem获取事件来进行更新
-		int32 ProtectCount = 0;
-		while (!IsSomeOneRunningEvent && EventExecQueue.Num() > 0 && ProtectCount <= 1000)
+		if (IsProcessingEventQueue)
 		{
-			ProtectCount++;
-			const auto& FirstExec = EventExecQueue[0];
-
-			// Todo: 亡语需要单独处理，增加判断Tag
-			if (!FirstExec.Executor->IsDead())
+			// 逐个执行EventQueue中的事件, IsSomeOneRunningEvent将通过EventSystem获取事件来进行更新
+			int32 ProtectCount = 0;
+			while (!IsSomeOneRunningEvent && EventExecQueue.Num() > 0 && ProtectCount <= 1000)
 			{
-				FProjectJBattleEventData* InEventData = new FProjectJBattleEventData();
-				InEventData->ExecutorID = FirstExec.ProjectJEventData.ExecutorID;
-				InEventData->TargetID = FirstExec.ProjectJEventData.TargetID;
-				InEventData->EventKVs = FirstExec.ProjectJEventData.EventKVs;
-				InEventData->EventTag = FirstExec.ProjectJEventData.EventTag;
-				FGameplayEventData GASEventData;
-				GASEventData.TargetData = FGameplayAbilityTargetDataHandle(InEventData);
-				FirstExec.Executor->GetAbilitySystemComponent()->HandleGameplayEvent(InEventData->EventTag, &GASEventData);
-			}
+				ProtectCount++;
+				const auto& FirstExec = EventExecQueue[0];
+
+				// Todo: 亡语需要单独处理，增加判断Tag
+				if (!FirstExec.Executor->IsDead())
+				{
+					FProjectJBattleEventData* InEventData = new FProjectJBattleEventData();
+					InEventData->ExecutorID = FirstExec.ProjectJEventData.ExecutorID;
+					InEventData->TargetID = FirstExec.ProjectJEventData.TargetID;
+					InEventData->EventKVs = FirstExec.ProjectJEventData.EventKVs;
+					InEventData->EventTag = FirstExec.ProjectJEventData.EventTag;
+					FGameplayEventData GASEventData;
+					GASEventData.TargetData = FGameplayAbilityTargetDataHandle(InEventData);
+					FirstExec.Executor->GetAbilitySystemComponent()->HandleGameplayEvent(InEventData->EventTag, &GASEventData);
+				}
 			
-			EventExecQueue.RemoveAt(0);
+				EventExecQueue.RemoveAt(0);
+			}
 		}
+		else
+		{
+			check(EventExecQueue.Num() == 0);
+			check(!IsSomeOneRunningEvent);
+		}
+		
 	}
 	
 
 	if (WaitSignals.Num() == 0)
 	{
-		switch (Stage)
+		if (IsBattleEnd())
 		{
-			case EProjectJBattleStage::EnterBattle:
-				{
-					ChangeStage(EProjectJBattleStage::RoundStart);
-				}
-				break;
-			case EProjectJBattleStage::RoundStart:
-				{
-					if (BattleContext.OrderArray.Num() > 0)
+			ChangeStage(EProjectJBattleStage::EndBattle);
+		}
+		else
+		{
+			switch (Stage)
+			{
+				case EProjectJBattleStage::EnterBattle:
 					{
-						ChangeStage(EProjectJBattleStage::CharacterGetTurn);
+						ChangeStage(EProjectJBattleStage::RoundStart);
 					}
-					else
+					break;
+				case EProjectJBattleStage::RoundStart:
 					{
-						UE_LOG(LogTemp, Error, TEXT("没有角色参与战斗，战斗结束"));
-						ChangeStage(EProjectJBattleStage::EndBattle);
+						if (BattleContext.OrderArray.Num() > 0)
+						{
+							ChangeStage(EProjectJBattleStage::CharacterGetTurn);
+						}
+						else
+						{
+							UE_LOG(LogTemp, Error, TEXT("没有角色参与战斗，战斗结束"));
+							ChangeStage(EProjectJBattleStage::EndBattle);
+						}
 					}
-				}
-				break;
-			case EProjectJBattleStage::CharacterGetTurn:
-				{
-					auto CurrentCharacter = GetCurrentCharacter();
-					if (CurrentCharacter->IsDead())
+					break;
+				case EProjectJBattleStage::CharacterGetTurn:
 					{
-						ChangeStage(EProjectJBattleStage::CharacterEndTurn);
+						auto CurrentCharacter = GetCurrentCharacter();
+						if (CurrentCharacter->IsDead())
+						{
+							ChangeStage(EProjectJBattleStage::CharacterEndTurn);
+						}
+						else
+						{
+							ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+						}
 					}
-					else
+					break;
+				case EProjectJBattleStage::CharacterStartAttack:
 					{
-						ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+						ChangeStage(EProjectJBattleStage::CharacterDoAttack);
 					}
-					
-				}
-				break;
-			case EProjectJBattleStage::CharacterStartAttack:
-				{
-					ChangeStage(EProjectJBattleStage::CharacterDoAttack);
-				}
-				break;
-			case EProjectJBattleStage::CharacterDoAttack:
-				{
-					ChangeStage(EProjectJBattleStage::CharacterEndAttack);
-				}
-				break;
-			case EProjectJBattleStage::CharacterEndAttack:
-				{
-					if (BattleContext.AttackTimes == BattleContext.AttackTotalTimes)
+					break;
+				case EProjectJBattleStage::CharacterDoAttack:
 					{
-						ChangeStage(EProjectJBattleStage::CharacterEndTurn);
+						ChangeStage(EProjectJBattleStage::CharacterEndAttack);
 					}
-					else
+					break;
+				case EProjectJBattleStage::CharacterEndAttack:
 					{
-						// 依然时当前角色攻击
-						ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+						if (BattleContext.AttackTimes == BattleContext.AttackTotalTimes)
+						{
+							ChangeStage(EProjectJBattleStage::CharacterEndTurn);
+						}
+						else
+						{
+							// 依然时当前角色攻击
+							ChangeStage(EProjectJBattleStage::CharacterStartAttack);
+						}
 					}
-				}
-				break;
-			case EProjectJBattleStage::CharacterEndTurn:
-				{
-					// 检测战斗是否结束
-					if (IsBattleEnd())
-					{
-						ChangeStage(EProjectJBattleStage::EndBattle);
-					}
-					else
+					break;
+				case EProjectJBattleStage::CharacterEndTurn:
 					{
 						// 轮到下一个角色准备攻击
 						if (BattleContext.CurrentOrderIndex >= BattleContext.OrderArray.Num() - 1)
@@ -332,22 +355,15 @@ void AProjectJBattleManager::Tick(float DeltaTime)
 							ChangeStage(EProjectJBattleStage::CharacterGetTurn);
 						}
 					}
-				}
-				break;
-			case EProjectJBattleStage::RoundEnd:
-				{
-					if (IsBattleEnd())
-					{
-						ChangeStage(EProjectJBattleStage::EndBattle);
-					}
-					else
+					break;
+				case EProjectJBattleStage::RoundEnd:
 					{
 						ChangeStage(EProjectJBattleStage::RoundStart);
 					}
-				}
-				break;
-			case EProjectJBattleStage::EndBattle:
-				break;
+					break;
+				case EProjectJBattleStage::EndBattle:
+					break;
+			}
 		}
 	}
 }
@@ -476,6 +492,22 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 				switch (WeaponConfig->AttackAbility.AttackRange) {
 					case EProjectJAttackRange::Closet:
 						{
+							// 二重筛选， 如果PossibleTargets中有人有嘲讽状态，那么只能从嘲讽目标中选择
+							TArray<int32> TauntTargets;
+							for (const auto& TargetID : PossibleTargets)
+							{
+								auto TargetCharacter = BattleCharacterMap[TargetID].Get();
+								if (TargetCharacter->GetAbilitySystemComponent()->HasMatchingGameplayTag(ProjectJGameplayTags::Feature_Taunt))
+								{
+									TauntTargets.Add(TargetID);
+								}
+							}
+
+							if (TauntTargets.Num() > 0)
+							{
+								PossibleTargets = TauntTargets;
+							}
+							
 							// 选择最近的目标
 							auto SelfPosition = static_cast<int32>(CurrentCharacter->GetAbilitySystemComponent()->GetNumericAttributeBase(UProjectJCharacterAttributeSet::GetPositionAttribute()));
 							// 遍历敌方队伍，	Position相减，取绝对值，最小的就是最近的
@@ -598,7 +630,7 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 			break;
 		case EProjectJBattleStage::EndBattle:
 			{
-				
+				IsRunningBattle = false;
 			}
 			break;
 	}
@@ -606,6 +638,75 @@ void AProjectJBattleManager::OnStageChange(EProjectJBattleStage OldStage, EProje
 
 void AProjectJBattleManager::RoundStart()
 {
+	BattleContext.Round += 1;
+
+	// 先结算中毒
+	TArray<int32> PoisonCharacters;
+	for (const auto& Tuple : BattleCharacterMap)
+	{
+		auto Character = Tuple.Value;
+		if (Character->IsDead())
+		{
+			continue;
+		}
+		
+		if (Character->GetAbilitySystemComponent()->HasMatchingGameplayTag(ProjectJGameplayTags::Feature_Poison))
+		{
+			auto StackCount =  Character->ProjectJASC->GetStackCount(ProjectJGameplayTags::Feature_Poison);
+			FProjectJBattleEventData PoisonDamageEvent;
+			PoisonDamageEvent.EventTag = ProjectJGameplayTags::Battle_Event_GetDamage;
+			PoisonDamageEvent.ExecutorID = Tuple.Key;
+			PoisonDamageEvent.TargetID = Tuple.Key;
+			PoisonDamageEvent.EventKVs.Add(ProjectJGlobal::Battle_DamageValueKey, FString::Printf(TEXT("%f"),StackCount * 2.0f));
+			ExecuteEvent(PoisonDamageEvent);
+			PoisonCharacters.Add(Tuple.Key);
+		}
+	}
+
+	// 清理到期的中毒
+	for (const auto& CharacterID : PoisonCharacters)
+	{
+		auto Character = BattleCharacterMap[CharacterID];
+		if (Character->IsDead())
+		{
+			continue;
+		}
+
+		auto PoisonStack = Character->ProjectJASC->GetCustomStackedGESpec(ProjectJGameplayTags::Feature_Poison);
+		// 遍历每一次， 对比开始回合数和当前回合， 是否到期
+		TArray<int32> ToRemoveLayers;
+		for (const auto& PoisonLayer : PoisonStack->EachLayerData)
+		{
+			if (BattleContext.Round - PoisonLayer.GetRound == PoisonLayer.Duration)
+			{
+				UE_LOG(LogTemp, Error, TEXT("ToRemove: %d, PoisonLayer GetRound: %d, Duration: %d, CurrentRound: %d"), PoisonLayer.LayerID, PoisonLayer.GetRound, PoisonLayer.Duration, BattleContext.Round);
+				ToRemoveLayers.Add(PoisonLayer.LayerID);
+			}
+		}
+
+		Character->ProjectJASC->CustomRemoveActiveGameplayEffect(ProjectJGameplayTags::Feature_Poison, ToRemoveLayers);
+	}
+
+	if (PoisonCharacters.Num() > 0)
+	{
+		// 等待0.5s后 PostRoundStart
+		WaitSignals.Add(SignalSimplePending);
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AProjectJBattleManager::PostRoundStart, 0.5f, false);
+	}
+	else
+	{
+		PostRoundStart();
+	}
+}
+
+void AProjectJBattleManager::PostRoundStart()
+{
+	if (WaitSignals.Contains(SignalSimplePending))
+	{
+		WaitSignals.Remove(SignalSimplePending);
+	}
+	
 	BattleContext.OrderArray.Empty();
 	// Todo: 评价身法，决定队伍先手, 目前攻击顺序总是， 玩家0，1，2，3，敌人0，1，2，3
 	for (const auto& CharacterID : BattleContext.BottomTeam)
@@ -630,8 +731,11 @@ void AProjectJBattleManager::RoundStart()
 
 	BattleContext.CurrentOrderIndex = -1;
 	
-	// Todo: 回合开始事件
+	// 回合开始事件
+	static FProjectJBattleEventData RoundStartEvent{ProjectJGameplayTags::Battle_Event_RoundStart};
+	ExecuteEvent(RoundStartEvent);
 }
+
 
 void AProjectJBattleManager::OnWaitingAttack(int InCharacterID)
 {
@@ -653,8 +757,6 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 
 	for (const auto& TargetID : BattleContext.AttackTargets)
 	{
-
-		auto Defender = BattleCharacterMap[TargetID];
 		switch (WeaponConfig->AttackAbility.AttackCapability)
 		{
 			case EProjectJAttackCapability::Damage:
@@ -677,6 +779,18 @@ void AProjectJBattleManager::OnAttackHit(int InCharacterID)
 					ExecuteEvent(HealEvent);
 				}
 			break;
+		}
+	}
+
+	for (const auto& TargetID : BattleContext.AttackTargets)
+	{
+		if (WeaponConfig->AttackAbility.AttackCapability == EProjectJAttackCapability::Damage)
+		{
+			FProjectJBattleEventData HitEvent;
+			HitEvent.EventTag = ProjectJGameplayTags::Battle_Event_AttackHit;
+			HitEvent.ExecutorID = InCharacterID;
+			HitEvent.TargetID = TargetID;
+			ExecuteEvent(HitEvent);
 		}
 	}
 	// Todo: Heal 效果特效

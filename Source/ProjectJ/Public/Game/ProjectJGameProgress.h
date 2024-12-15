@@ -59,7 +59,7 @@ public:
 	
 private:
 	void OnLevelPrepared();
-	void SpellCardToHand(AProjectJCardBase* InCard, int32 Index, const FVector& StartLocation, const FVector& Offset, const FRotator& Rotation);
+	void SpellCardToArea(AProjectJCardBase* InCard, int32 Index, const FVector& CenterLocation, const FVector& Offset);
 
 	void OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload);
 	void ChangeStage(EProjectJGameStage NewStage, const FProjectJChangeStagePayload& Payload);

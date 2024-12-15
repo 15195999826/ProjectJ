@@ -7,6 +7,7 @@
 #include "Types/ProjectJLevelConfig.h"
 #include "ProjectJContextSystem.generated.h"
 
+class AProjectJSpellArea;
 class AProjectJEffectActor;
 class AProjectJBattleManager;
 class AProjectJPerformManager;
@@ -70,6 +71,9 @@ public:
 	TObjectPtr<AProjectJLuaExecutor> LuaExecutor;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AProjectJBattleManager> BattleManager;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AProjectJSpellArea> SpellArea;
+	
 	// RuntimeData
 public:
 	UPROPERTY()

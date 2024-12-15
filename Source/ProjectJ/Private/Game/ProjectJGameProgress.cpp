@@ -12,6 +12,7 @@
 #include "Game/ProjectJNavPointActor.h"
 #include "Game/ProjectJPerformManager.h"
 #include "Game/ProjectJSceneUIManager.h"
+#include "Game/ProjectJSpellArea.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
@@ -79,12 +80,12 @@ void AProjectJGameProgress::OnLevelPrepared()
 {
 }
 
-void AProjectJGameProgress::SpellCardToHand(AProjectJCardBase* InCard, int32 Index, const FVector& StartLocation,
-	const FVector& Offset, const FRotator& Rotation)
+void AProjectJGameProgress::SpellCardToArea(AProjectJCardBase* InCard, int32 Index, const FVector& CenterLocation,
+	const FVector& Offset)
 {
-	InCard->AttachToActor(GetWorld()->GetFirstPlayerController()->GetViewTarget(), FAttachmentTransformRules::KeepRelativeTransform);
-	InCard->SetActorRelativeLocation(StartLocation + Offset * Index);
-	InCard->SetActorRelativeRotation(Rotation);
+	// 总共4张牌， 居中摆放, 1和2在中间，0和3在两侧
+	FVector NewLocation = CenterLocation + Offset * (Index - 1.5f);
+	InCard->SetActorLocation(NewLocation);
 }
 
 void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload)
@@ -100,7 +101,7 @@ void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJC
 				// 观察卡牌返回手牌
 				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[0]];
 				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToHand(Card.Get(), 0, LevelSettingActor->HandSpellCardStartLocation, LevelSettingActor->HandSpellCardOffset, LevelSettingActor->HandSpellCardRotation);
+				SpellCardToArea(Card.Get(), 0, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Checking:
@@ -108,7 +109,7 @@ void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJC
 				// 检查卡牌返回手牌
 				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[1]];
 				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToHand(Card.Get(), 1, LevelSettingActor->HandSpellCardStartLocation, LevelSettingActor->HandSpellCardOffset, LevelSettingActor->HandSpellCardRotation);
+				SpellCardToArea(Card.Get(), 1, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Hiding:
@@ -116,7 +117,7 @@ void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJC
 				// 隐藏卡牌返回手牌
 				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[2]];
 				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToHand(Card.Get(), 2, LevelSettingActor->HandSpellCardStartLocation, LevelSettingActor->HandSpellCardOffset, LevelSettingActor->HandSpellCardRotation);
+				SpellCardToArea(Card.Get(), 2, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Ambushing:
@@ -124,7 +125,7 @@ void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJC
 				// 偷袭卡牌返回手牌
 				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[3]];
 				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToHand(Card.Get(), 3, LevelSettingActor->HandSpellCardStartLocation, LevelSettingActor->HandSpellCardOffset, LevelSettingActor->HandSpellCardRotation);
+				SpellCardToArea(Card.Get(), 3, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 	}
@@ -144,15 +145,13 @@ void AProjectJGameProgress::StartNewGame()
 	auto Spell4 = ContextSystem->CreateSpell(TEXT("偷袭"));
 	ContextSystem->GameContext.HandSpellCards.Add(Spell4->ID);
 	// 放到手牌位置, Attach To MainCamera
-	auto MainCamera = GetWorld()->GetFirstPlayerController()->GetViewTarget();
 	auto LevelSettingActor = ContextSystem->LevelSettingActor;
-	auto HandSpellCardStartLocation = LevelSettingActor->HandSpellCardStartLocation;
+	auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
 	auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
-	auto HandSpellCardRotation = LevelSettingActor->HandSpellCardRotation;
-	SpellCardToHand(Spell1, 0, HandSpellCardStartLocation, HandSpellCardOffset, HandSpellCardRotation);
-	SpellCardToHand(Spell2, 1, HandSpellCardStartLocation, HandSpellCardOffset, HandSpellCardRotation);
-	SpellCardToHand(Spell3, 2, HandSpellCardStartLocation, HandSpellCardOffset, HandSpellCardRotation);
-	SpellCardToHand(Spell4, 3, HandSpellCardStartLocation, HandSpellCardOffset, HandSpellCardRotation);
+	SpellCardToArea(Spell1, 0, HandSpellCardStartLocation, HandSpellCardOffset);
+	SpellCardToArea(Spell2, 1, HandSpellCardStartLocation, HandSpellCardOffset);
+	SpellCardToArea(Spell3, 2, HandSpellCardStartLocation, HandSpellCardOffset);
+	SpellCardToArea(Spell4, 3, HandSpellCardStartLocation, HandSpellCardOffset);
 	
 	EnterLevel(StartLevel.RowName);
 }
