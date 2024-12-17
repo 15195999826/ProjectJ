@@ -73,6 +73,8 @@ public:
 	TObjectPtr<AProjectJBattleManager> BattleManager;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AProjectJSpellArea> SpellArea;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<class AProjectJCardExecuteArea> ExecuteArea;
 	
 	// RuntimeData
 public:
@@ -91,7 +93,11 @@ public:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJLandmark>> UsingLandmarks;
 	UPROPERTY()
+	TMap<int32, TWeakObjectPtr<AProjectJLandmark>> UsingItems;
+	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJNavPointActor>> UsingNavPoints;
+	
+	TArray<TObjectPtr<AProjectJCardBase>> GetUsingCards();
 	
 	
 	AProjectJSpell* CreateSpell(const FName& Config);

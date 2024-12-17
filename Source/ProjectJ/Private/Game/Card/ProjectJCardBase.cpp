@@ -6,6 +6,8 @@
 #include "PaperSpriteComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Core/System/ProjectJContextSystem.h"
 
 // Sets default values
 AProjectJCardBase::AProjectJCardBase()
@@ -76,7 +78,41 @@ void AProjectJCardBase::OnDragStart()
 
 void AProjectJCardBase::OnDrop(float InDuration)
 {
+	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	// 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
+	auto AllCards = ContextSystem->GetUsingCards();
+	
+	for (auto& Card : AllCards)
+	{
+		if (Card == this)
+		{
+			continue;
+		}
+		// Todo: 这里没有区分是不是执行区， 位置稍有误差
+		
+		auto CardLocation = Card->GetActorLocation();
+		auto CardSize = GSettings->CardSize;
+		// Check if the current card overlaps with another card
+		if (FMath::Abs(CardLocation.X - GetActorLocation().X) < CardSize.X &&
+			FMath::Abs(CardLocation.Y - GetActorLocation().Y) < CardSize.Y)
+		{
+			// Adjust the position of the overlapping card
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("压到了卡牌"));
+			Card->FrameSprite->SetVisibility(true);
+			FTimerHandle TimerHandle;
+			GetWorld()->GetTimerManager().SetTimer(
+				TimerHandle,
+				[Card]()
+				{
+					Card->FrameSprite->SetVisibility(false);
+				},
+				3,
+				false
+			);
+		}
+	}
 	
 	SetActorEnableCollision(true);
 	GetWorld()->GetTimerManager().SetTimer(

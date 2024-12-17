@@ -14,6 +14,7 @@
 #include "Game/ProjectJPerformManager.h"
 #include "Game/ProjectJBattleManager.h"
 #include "Game/ProjectJSpellArea.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 
 void AProjectJGameMode::BeginPlay()
 {
@@ -58,6 +59,12 @@ void AProjectJGameMode::BeginPlay()
 	for (TActorIterator<AProjectJSpellArea> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
 		ContextSystem->SpellArea = *ActorItr;
+		break;
+	}
+
+	for (TActorIterator<AProjectJCardExecuteArea> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->ExecuteArea = *ActorItr;
 		break;
 	}
 	

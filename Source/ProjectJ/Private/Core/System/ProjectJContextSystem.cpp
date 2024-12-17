@@ -13,6 +13,7 @@
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 
 AProjectJSpell* UProjectJContextSystem::GetSpell()
 {
@@ -82,6 +83,7 @@ AProjectJLandmark* UProjectJContextSystem::GetLandMark()
 	Ret->ID = GID++;
 	GeneralOnGet(Ret);
 	UsingLandmarks.Add(Ret->ID, Ret);
+
 #if WITH_EDITOR
 	Ret->SetFolderPath(TEXT("UsingLandmarks"));
 #endif
@@ -108,6 +110,42 @@ AProjectJNavPointActor* UProjectJContextSystem::GetNavPoint()
 #if WITH_EDITOR
 	Ret->SetFolderPath(TEXT("UsingNavPoints"));
 #endif
+	return Ret;
+}
+
+TArray<TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards()
+{
+	TArray<TObjectPtr<AProjectJCardBase>> Ret;
+	for (auto& Pair : UsingSpells)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingCharacters)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingLandmarks)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingItems)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Value.Get());
+		}
+	}
+	Ret.Add(ExecuteArea);
+
 	return Ret;
 }
 
