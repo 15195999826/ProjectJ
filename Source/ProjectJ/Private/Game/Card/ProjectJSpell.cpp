@@ -33,7 +33,7 @@ void AProjectJSpell::OnDrop(float InDuration)
 	auto FocusCard = ContextSystem->WeakFocusCard.Get();
 	auto FocusCardLocation = FocusCard->GetActorLocation();
 	FocusCard->SetActorLocation(FVector(FocusCardLocation.X, FocusCardLocation.Y, 15.f));
-	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	
 	SetActorLocation(FVector(FocusCardLocation.X + 70.f, FocusCardLocation.Y, 1.f));
 	SetActorRotation(FocusCard->GetActorRotation());
 	

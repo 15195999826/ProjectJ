@@ -26,7 +26,7 @@ AProjectJCardBase::AProjectJCardBase()
 	FrameSprite->SetupAttachment(Collider);
 
 	Title = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Title"));
-	Title->SetupAttachment(Mesh, "Cube");
+	Title->SetupAttachment(Mesh, TEXT("立方体"));
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +34,26 @@ void AProjectJCardBase::BeginPlay()
 {
 	Super::BeginPlay();
 	FrameSprite->SetVisibility(false);
+}
+
+void AProjectJCardBase::PrintMeshSize()
+{
+	const auto Bound = Mesh->Bounds;
+	auto LeftTop = Bound.Origin + FVector(-Bound.BoxExtent.X, Bound.BoxExtent.Y, Bound.BoxExtent.Z);
+	auto RightTop = Bound.Origin + FVector(Bound.BoxExtent.X, Bound.BoxExtent.Y, Bound.BoxExtent.Z);
+	auto RightBottom = Bound.Origin + FVector(Bound.BoxExtent.X, -Bound.BoxExtent.Y, Bound.BoxExtent.Z);
+	// 在bound的中心和左右上角绘制DebugSphere
+	DrawDebugSphere(GetWorld(), Bound.Origin, 10.f, 12, FColor::Red, false, 5.f);
+	DrawDebugSphere(GetWorld(), LeftTop, 10.f, 12, FColor::Red, false, 5.f);
+	DrawDebugSphere(GetWorld(), RightBottom, 10.f, 12, FColor::Red, false, 5.f);
+	// Calculate width and height based on the bounding box extents
+	// 绘制DebugLine， 左上带右上
+	DrawDebugLine(GetWorld(), LeftTop, RightTop, FColor::Red, false, 5.f);
+	// 绘制DebugLine， 右上带右下
+	DrawDebugLine(GetWorld(), RightTop, RightBottom, FColor::Red, false, 5.f);
+	auto Width = (LeftTop - RightTop).Size();
+	auto Length = (RightTop - RightBottom).Size();
+	UE_LOG(LogTemp, Warning, TEXT("Width: %f, Length: %f"), Width, Length);
 }
 
 // Called every frame
@@ -56,6 +76,8 @@ void AProjectJCardBase::OnDragStart()
 
 void AProjectJCardBase::OnDrop(float InDuration)
 {
+	// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
+	
 	SetActorEnableCollision(true);
 	GetWorld()->GetTimerManager().SetTimer(
 		DropOnGroundTimerHandle,

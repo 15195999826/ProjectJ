@@ -37,6 +37,12 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category=GAS)
 	TSubclassOf<UProjectJLuaGameplayAbility> LuaAbilityClass;
+
+	UPROPERTY(config, EditAnywhere, Category=GAS)
+	FVector CardSize;
+
+	UPROPERTY(config, EditAnywhere, Category=GAS)
+	FVector ExecutorSize;
 	
 	// Todo: 技能通用的一个技能
 

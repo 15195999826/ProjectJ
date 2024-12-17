@@ -36,9 +36,8 @@ AProjectJCharacter::AProjectJCharacter()
 
 	FloatWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("FloatWidgetComponent"));
 	// 手动设置ReceiveHardwareInput为true
-	FloatWidgetComponent->SetupAttachment(Mesh, "Cube");
-
-
+	FloatWidgetComponent->SetupAttachment(Mesh, TEXT("立方体"));
+	
 	AbilitySystemComponent = CreateDefaultSubobject<UProjectJAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	AbilitySystemComponent->SetIsReplicated(false);
 

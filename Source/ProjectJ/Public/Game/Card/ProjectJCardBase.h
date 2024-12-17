@@ -45,6 +45,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UFUNCTION(CallInEditor)
+	void PrintMeshSize();
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -67,19 +70,16 @@ public:
 	virtual void OnCancelDrag() override;
 	// End IProjectJDragInterface
 
-
 	void OnSpellFocus();
 	void OnLoseSpellFocus();
 	
 	////// 程序动画 ////
 private:
 	
-
 	// 1. 拖拽卡牌
 	FTimerHandle DropOnGroundTimerHandle;
 	float DropOnGroundStartTime;
 	float DropOnGroundDuration = 0.5f;
 	FVector DropOnGroundStartLocation;
 	void UpdateDropOnGroundAnimation();
-	
 };

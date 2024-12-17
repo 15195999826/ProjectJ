@@ -65,7 +65,7 @@ void AProjectJPlayerControllerBase::Tick(float DeltaSeconds)
 				CanHitActor = HitActor;
 			}
 
-			// UE_LOG(LogProjectJ, Log, TEXT("HitActor: %s"), *HitActor->GetName());
+			UE_LOG(LogProjectJ, Log, TEXT("HitActor: %s"), *HitActor->GetName());
 		}
 	}
 	

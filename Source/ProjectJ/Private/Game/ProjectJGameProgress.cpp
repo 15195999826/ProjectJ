@@ -184,7 +184,7 @@ void AProjectJGameProgress::EnterLevel(const FName& LevelRowName)
 	{
 		auto LandmarkActor = ContextSystem->CreateLandMark(Landmark.RowName);
 		LandmarkActor->SetActorLocation(Landmark.Location);
-		LandmarkActor->CanDrag = false;
+		LandmarkActor->CanDrag = true;
 		ContextSystem->GameContext.LevelLandmarks.Add(LandmarkActor->ID);
 	}
 	
@@ -193,7 +193,7 @@ void AProjectJGameProgress::EnterLevel(const FName& LevelRowName)
 	{
 		auto Char = ContextSystem->CreateCharacter(Character.RowName);
 		Char->SetActorLocation(Character.Location);
-		Char->CanDrag = false;
+		Char->CanDrag = true;
 		ContextSystem->GameContext.LevelCharacters.Add(Char->ID);
 	}
 	// 生成NavPoint
