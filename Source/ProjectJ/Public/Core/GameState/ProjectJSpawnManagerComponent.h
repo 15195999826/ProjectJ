@@ -31,8 +31,8 @@ private:
 	// AActor* ChoosePlayerStart(AController* Player);
 	friend class AProjectJGameModeBase; // Friend class to allow the game mode to call the ChoosePlayerStart function
 	
-	UPROPERTY(Transient)
-	TArray<TWeakObjectPtr<APlayerStart>> CachedPlayerStarts;
+	// UPROPERTY(Transient)
+	// TArray<TWeakObjectPtr<APlayerStart>> CachedPlayerStarts;
 
 		
 };

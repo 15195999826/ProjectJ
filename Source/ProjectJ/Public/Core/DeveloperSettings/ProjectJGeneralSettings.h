@@ -43,6 +43,9 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category=GAS)
 	FVector ExecutorSize;
+
+	UPROPERTY(config, EditAnywhere, Category=GAS)
+	FVector DeskTopSize;
 	
 	// Todo: 技能通用的一个技能
 

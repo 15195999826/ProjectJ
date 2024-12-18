@@ -78,12 +78,15 @@ void AProjectJCardBase::OnDragStart()
 
 void AProjectJCardBase::OnDrop(float InDuration)
 {
+	auto Location = GetActorLocation();
+	auto SelfDesiredLocation = FVector(Location.X, Location.Y, 0.f);
 	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	// 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
 	auto AllCards = ContextSystem->GetUsingCards();
 	
+	TArray<TObjectPtr<AProjectJCardBase>> OverlappedCards;
 	for (auto& Card : AllCards)
 	{
 		if (Card == this)
@@ -95,22 +98,25 @@ void AProjectJCardBase::OnDrop(float InDuration)
 		auto CardLocation = Card->GetActorLocation();
 		auto CardSize = GSettings->CardSize;
 		// Check if the current card overlaps with another card
-		if (FMath::Abs(CardLocation.X - GetActorLocation().X) < CardSize.X &&
-			FMath::Abs(CardLocation.Y - GetActorLocation().Y) < CardSize.Y)
+		if (FMath::Abs(CardLocation.X - SelfDesiredLocation.X) < CardSize.X &&
+			FMath::Abs(CardLocation.Y - SelfDesiredLocation.Y) < CardSize.Y)
 		{
-			// Adjust the position of the overlapping card
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("压到了卡牌"));
-			Card->FrameSprite->SetVisibility(true);
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(
-				TimerHandle,
-				[Card]()
-				{
-					Card->FrameSprite->SetVisibility(false);
-				},
-				3,
-				false
-			);
+			OverlappedCards.Add(Card);
+		}
+	}
+	
+	
+	if (OverlappedCards.Num() > 0)
+	{
+		auto DeskTopSize = GSettings->DeskTopSize;
+		auto CardSize = GSettings->CardSize;
+		for (auto& Card : OverlappedCards)
+		{
+			// Calculate the direction to move the card
+			FVector MoveDirection = SelfDesiredLocation - Card->GetActorLocation();
+			MoveDirection.Normalize();
+			// 优先向MoveDirection方向，移动距离为，
+			
 		}
 	}
 	

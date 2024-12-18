@@ -27,33 +27,33 @@ void UProjectJSpawnManagerComponent::InitializeComponent()
 	Super::InitializeComponent();
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &ThisClass::OnLevelAdded);
 
-	UWorld* World = GetWorld();
-	World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &ThisClass::HandleOnActorSpawned));
-
-	for (TActorIterator<APlayerStart> It(World); It; ++It)
-	{
-		if (APlayerStart* PlayerStart = *It)
-		{
-			CachedPlayerStarts.Add(PlayerStart);
-		}
-	}
+	// UWorld* World = GetWorld();
+	// World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &ThisClass::HandleOnActorSpawned));
+	//
+	// for (TActorIterator<APlayerStart> It(World); It; ++It)
+	// {
+	// 	if (APlayerStart* PlayerStart = *It)
+	// 	{
+	// 		CachedPlayerStarts.Add(PlayerStart);
+	// 	}
+	// }
 }
 
 bool UProjectJSpawnManagerComponent::TryFindPlayerStart(const FName& Tag, AActor*& OutStart)
 {
-	for (auto PlayerStart : CachedPlayerStarts)
-	{
-		if (!PlayerStart.IsValid())
-		{
-			continue;
-		}
-		
-		if (PlayerStart->PlayerStartTag == Tag)
-		{
-			OutStart = PlayerStart.Get();
-			return true;
-		}
-	}
+	// for (auto PlayerStart : CachedPlayerStarts)
+	// {
+	// 	if (!PlayerStart.IsValid())
+	// 	{
+	// 		continue;
+	// 	}
+	// 	
+	// 	if (PlayerStart->PlayerStartTag == Tag)
+	// 	{
+	// 		OutStart = PlayerStart.Get();
+	// 		return true;
+	// 	}
+	// }
 
 	return false;
 }
@@ -66,8 +66,8 @@ void UProjectJSpawnManagerComponent::OnLevelAdded(ULevel* InLevel, UWorld* InWor
 		{
 			if (APlayerStart* PlayerStart = Cast<APlayerStart>(Actor))
 			{
-				ensure(!CachedPlayerStarts.Contains(PlayerStart));
-				CachedPlayerStarts.Add(PlayerStart);
+				// ensure(!CachedPlayerStarts.Contains(PlayerStart));
+				// CachedPlayerStarts.Add(PlayerStart);
 			}
 		}
 	} else
@@ -78,10 +78,10 @@ void UProjectJSpawnManagerComponent::OnLevelAdded(ULevel* InLevel, UWorld* InWor
 
 void UProjectJSpawnManagerComponent::HandleOnActorSpawned(AActor* SpawnedActor)
 {
-	if (APlayerStart* PlayerStart = Cast<APlayerStart>(SpawnedActor))
-	{
-		CachedPlayerStarts.Add(PlayerStart);
-	}
+	// if (APlayerStart* PlayerStart = Cast<APlayerStart>(SpawnedActor))
+	// {
+	// 	CachedPlayerStarts.Add(PlayerStart);
+	// }
 }
 
 // Called when the game starts
