@@ -66,6 +66,7 @@ public:
 	}
 	virtual void OnDragStart() override;
 	virtual void OnDragTick(float DeltaSeconds, const FVector& ToLocation, float InBaseRotationX,float InMaxShakeDelta, float InLerpSpeed) override;
+	
 	virtual void OnDrop(float InDuration) override;
 	virtual void OnCancelDrag() override;
 	// End IProjectJDragInterface
@@ -73,13 +74,37 @@ public:
 	void OnSpellFocus();
 	void OnLoseSpellFocus();
 	
-	////// 程序动画 ////
+	//----- 程序动画 Start -------
 private:
-	
 	// 1. 拖拽卡牌
 	FTimerHandle DropOnGroundTimerHandle;
 	float DropOnGroundStartTime;
 	float DropOnGroundDuration = 0.5f;
 	FVector DropOnGroundStartLocation;
 	void UpdateDropOnGroundAnimation();
+
+	// ---- 程序动画 End ------
+
+	// ---- 放置卡牌 辅助函数 Start ----
+	// 计算卡牌之间所需的最小移动距离
+	float CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const;
+
+	// 检查位置是否在桌面边界内
+	bool IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds) const;
+
+	// 处理特殊边界情况
+	bool HandleBorderCase(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation,
+	                      const FVector& OtherCardDstLocation, const FVector2D& CardSize, const FVector2D& DeskBounds,
+	                      FVector& OutDstPosition) const;
+	// 确定旋转方向
+	bool DetermineRotateClockwise(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation, const FVector& OtherCardDstLocation,const FVector2D& DeskBounds);
+	// 通过旋转查找有效位置
+	bool FindValidPositionByRotation(const FVector& SelfDesiredLocation, const FVector& MoveDirection,
+	                                 const FVector2D& CardSize, const FVector2D& DeskBounds, bool RotateClockwise,
+	                                 FVector& OutNewLocation) const;
+
+	// 卡牌是否重叠
+	static bool IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation, const FVector2D& CardSize);
+
+	// ---- 放置卡牌 辅助函数 End ----
 };
