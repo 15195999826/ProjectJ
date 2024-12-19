@@ -35,6 +35,9 @@ public:
 	// Sets default values for this actor's properties
 	AProjectJLevelSettingActor();
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config, meta=(DisplayName="是否使用力导向算法布局"))
+	bool UseCardLayoutManager = true;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
 	FVector HandSpellCardStartLocation;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
@@ -48,4 +51,5 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Config)
 	FProjectJBattleAreaSettings BattleAreaSettings;
+	
 };

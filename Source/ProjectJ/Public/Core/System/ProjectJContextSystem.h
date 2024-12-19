@@ -75,6 +75,8 @@ public:
 	TObjectPtr<AProjectJSpellArea> SpellArea;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AProjectJCardExecuteArea> ExecuteArea;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<class AProjectJCardLayoutManager> CardLayoutManager;
 	
 	// RuntimeData
 public:

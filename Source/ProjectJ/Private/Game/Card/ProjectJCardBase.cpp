@@ -8,6 +8,8 @@
 #include "Components/TextRenderComponent.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
+#include "Game/ProjectJCardLayoutManager.h"
+#include "Game/ProjectJLevelSettingActor.h"
 
 // Sets default values
 AProjectJCardBase::AProjectJCardBase()
@@ -78,80 +80,98 @@ void AProjectJCardBase::OnDragStart()
 
 void AProjectJCardBase::OnDrop(float InDuration)
 {
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	auto Location = GetActorLocation();
 	auto SelfDesiredLocation = FVector(Location.X, Location.Y, 0.f);
 	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	const auto& CardSize3D = GSettings->CardSize;
 	const FVector2D CardSize = FVector2D(CardSize3D.X, CardSize3D.Y);
-	
-	// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
-	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	// 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
-	auto AllCards = ContextSystem->GetUsingCards();
-	
-	TArray<TObjectPtr<AProjectJCardBase>> OverlappedCards;
-	for (auto& Card : AllCards)
+	// -Y更左， +Y更右， -X更下， +X更上
+	const auto& DeskTopSize = GSettings->DeskTopSize;
+
+	const float MaxX = (DeskTopSize.X - CardSize3D.X) * 0.5f;
+	const float MaxY = (DeskTopSize.Y - CardSize3D.Y) * 0.5f;
+	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
+	if (ContextSystem->LevelSettingActor->UseCardLayoutManager)
 	{
-		if (Card == this)
+		auto LayoutManager = ContextSystem->CardLayoutManager;
+		LayoutManager->LayoutConfig.DirectionalForceRatio = GSettings->CardSize.X / GSettings->CardSize.Y;
+		bool Success = LayoutManager->PlaceCardAndRelayout(
+			this,
+			SelfDesiredLocation,
+			DeskBounds,
+			CardSize
+		);
+	}
+	else
+	{
+		// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
+
+		// 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
+		auto AllCards = ContextSystem->GetUsingCards();
+
+		TArray<TObjectPtr<AProjectJCardBase>> OverlappedCards;
+		for (auto& Card : AllCards)
 		{
-			continue;
+			if (Card == this)
+			{
+				continue;
+			}
+			// Todo: 这里没有区分是不是执行区， 位置稍有误差
+
+			auto CardLocation = Card->GetActorLocation();
+			// Check if the current card overlaps with another card
+			if (IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
+			{
+				OverlappedCards.Add(Card);
+			}
 		}
-		// Todo: 这里没有区分是不是执行区， 位置稍有误差
-		
-		auto CardLocation = Card->GetActorLocation();
-		// Check if the current card overlaps with another card
-		if (IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
+
+		if (OverlappedCards.Num() > 0)
 		{
-			OverlappedCards.Add(Card);
+			// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
+			DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
+
+			for (auto& Card : OverlappedCards)
+			{
+				// Calculate the direction to move the card
+				FVector MoveDirection = Card->GetActorLocation() - SelfDesiredLocation;
+				MoveDirection.Z = 0.f;
+				MoveDirection.Normalize();
+				const float RequiredDistance = CalculateRequiredDistance(CardSize, MoveDirection);
+				FVector DstLocation = SelfDesiredLocation + MoveDirection * (RequiredDistance + 0.1f);
+				// 检查是否超出边界
+				if (IsPositionInBounds(DstLocation, DeskBounds))
+				{
+					Card->SetActorLocation(DstLocation);
+					continue;
+				}
+
+				// 优先处理特殊边界情况
+				FVector BorderCaseDstPosition;
+				if (HandleBorderCase(Card->GetActorLocation(), SelfDesiredLocation, DstLocation, CardSize, DeskBounds,
+				                     BorderCaseDstPosition))
+				{
+					Card->SetActorLocation(BorderCaseDstPosition);
+					continue;
+				}
+
+				// 确定旋转方向并尝试找到有效位置
+				bool RotateClockwise = DetermineRotateClockwise(Card->GetActorLocation(), SelfDesiredLocation,
+				                                                DstLocation,
+				                                                DeskBounds);
+				if (FindValidPositionByRotation(SelfDesiredLocation, MoveDirection, CardSize, DeskBounds,
+				                                RotateClockwise,
+				                                DstLocation))
+				{
+					Card->SetActorLocation(DstLocation);
+					continue;
+				}
+				// 没有找到可以放置的位置， Todo:
+			}
 		}
 	}
-	
-	if (OverlappedCards.Num() > 0)
-	{
-		// -Y更左， +Y更右， -X更下， +X更上
-		const auto& DeskTopSize = GSettings->DeskTopSize;
-		
-		const float MaxX = (DeskTopSize.X - CardSize3D.X) * 0.5f;
-		const float MaxY = (DeskTopSize.Y - CardSize3D.Y) * 0.5f;
-		const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
-	
-		// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
-		DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
-		
-		for (auto& Card : OverlappedCards)
-		{
-			// Calculate the direction to move the card
-			FVector MoveDirection = Card->GetActorLocation() - SelfDesiredLocation;
-			MoveDirection.Z = 0.f;
-			MoveDirection.Normalize();
-			const float RequiredDistance = CalculateRequiredDistance(CardSize, MoveDirection);
-			FVector DstLocation = SelfDesiredLocation + MoveDirection * (RequiredDistance + 0.1f);
-			// 检查是否超出边界
-			if (IsPositionInBounds(DstLocation, DeskBounds))
-			{
-				Card->SetActorLocation(DstLocation);
-				continue;
-			}
 
-			// 优先处理特殊边界情况
-			FVector BorderCaseDstPosition;
-			if (HandleBorderCase(Card->GetActorLocation(), SelfDesiredLocation, DstLocation, CardSize, DeskBounds, BorderCaseDstPosition))
-			{
-				Card->SetActorLocation(BorderCaseDstPosition);
-				continue;
-			}
-
-			// 确定旋转方向并尝试找到有效位置
-			bool RotateClockwise = DetermineRotateClockwise(Card->GetActorLocation(), SelfDesiredLocation, DstLocation, DeskBounds);
-			if (FindValidPositionByRotation(SelfDesiredLocation, MoveDirection, CardSize, DeskBounds, RotateClockwise, DstLocation))
-			{
-				Card->SetActorLocation(DstLocation);
-				continue;
-			}
-			// 没有找到可以放置的位置， Todo:
-		}
-	}
-	
 	SetActorEnableCollision(true);
 	GetWorld()->GetTimerManager().SetTimer(
 		DropOnGroundTimerHandle,
