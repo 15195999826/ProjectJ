@@ -106,11 +106,130 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 			HandleBoundaryForces(GetForceCard, GetForceCardPosition, DeskBounds, Forces,FixedCards);
 		}
 
-		// 检查是否所有卡牌受力都为0
-		// 检查是否所有非固定卡牌的受力都为0
 		// 如果存在固定卡牌，则移动新卡牌
 		if (FixedCards.Num() > 0)
 		{
+			// 检查所有移动的卡牌，是否会被固定卡牌卡住
+			// 检查每张可移动的卡牌
+			for (auto Tuple : Forces)
+			{
+				const auto Card = Tuple.Key;
+				const FVector& CardPosition = Positions[Card];
+				FVector& CardForce = Forces[Card];
+
+				if (!CardForce.IsNearlyZero())
+				{
+					// 分别检查X和Y方向的力
+					FVector ForceX(CardForce.X, 0.0f, 0.0f);
+					FVector ForceY(0.0f, CardForce.Y, 0.0f);
+
+					bool BlockedX = false;
+					bool BlockedY = false;
+
+					// 检查X方向移动
+					if (!ForceX.IsNearlyZero())
+					{
+						// 首先检查边界阻挡
+						FVector PredictedPositionX = CardPosition + ForceX * LayoutConfig.IterationInterval;
+						if ((ForceX.X > 0 && PredictedPositionX.X >= DeskBounds.X) ||
+							(ForceX.X < 0 && PredictedPositionX.X <= -DeskBounds.X))
+						{
+							BlockedX = true;
+							CardForce.X = 0.0f;
+						}
+
+						// 如果没有被边界阻挡，检查是否被固定卡牌阻挡
+						if (!BlockedX)
+						{
+							for (auto FixedCard : FixedCards)
+							{
+								if (IsTwoCardOverlap(PredictedPositionX, Positions[FixedCard], CardSize))
+								{
+									FVector DeltaToFixed = Positions[FixedCard] - CardPosition;
+									if ((ForceX.X > 0 && DeltaToFixed.X > 0) ||
+										(ForceX.X < 0 && DeltaToFixed.X < 0))
+									{
+										BlockedX = true;
+										CardForce.X = 0.0f;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					// 检查Y方向移动
+					if (!ForceY.IsNearlyZero())
+					{
+						// 首先检查边界阻挡
+						FVector PredictedPositionY = CardPosition + ForceY * LayoutConfig.IterationInterval;
+						if ((ForceY.Y > 0 && PredictedPositionY.Y >= DeskBounds.Y) ||
+							(ForceY.Y < 0 && PredictedPositionY.Y <= -DeskBounds.Y))
+						{
+							BlockedY = true;
+							CardForce.Y = 0.0f;
+						}
+
+						// 如果没有被边界阻挡，检查是否被固定卡牌阻挡
+						if (!BlockedY)
+						{
+							for (auto FixedCard : FixedCards)
+							{
+								if (IsTwoCardOverlap(PredictedPositionY, Positions[FixedCard], CardSize))
+								{
+									FVector DeltaToFixed = Positions[FixedCard] - CardPosition;
+									if ((ForceY.Y > 0 && DeltaToFixed.Y > 0) ||
+										(ForceY.Y < 0 && DeltaToFixed.Y < 0))
+									{
+										BlockedY = true;
+										CardForce.Y = 0.0f;
+										break;
+									}
+								}
+							}
+						}
+					}
+
+					// 如果两个方向都被阻挡（无论是被边界还是固定卡牌），则将卡牌标记为固定
+					if (BlockedX && BlockedY)
+					{
+						FixedCards.Add(Card);
+						CardForce = FVector::ZeroVector;
+
+						// 添加调试信息
+						UE_LOG(LogTemp, Warning, TEXT("Card %d is completely blocked and marked as fixed"), Card->ID);
+					}
+					// 如果只有一个方向被阻挡，保留另一个方向的力
+					else if (BlockedX || BlockedY)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Card %d is partially blocked: BlockedX=%d, BlockedY=%d"),
+						       Card->ID, BlockedX, BlockedY);
+					}
+
+					// 可以添加可视化调试
+#if WITH_EDITOR
+					if (BlockedX || BlockedY)
+					{
+						// 绘制调试线条显示被阻挡的方向
+						FColor DebugColor = (BlockedX && BlockedY) ? FColor::Red : FColor::Yellow;
+						DrawDebugPoint(GetWorld(), CardPosition, 10.0f, DebugColor, false, 5.0f);
+						if (BlockedX)
+						{
+							DrawDebugLine(GetWorld(), CardPosition,
+							              CardPosition + FVector(100.0f * FMath::Sign(CardForce.X), 0.0f, 0.0f),
+							              FColor::Red, false, 5.0f);
+						}
+						if (BlockedY)
+						{
+							DrawDebugLine(GetWorld(), CardPosition,
+							              CardPosition + FVector(0.0f, 100.0f * FMath::Sign(CardForce.Y), 0.0f),
+							              FColor::Red, false, 5.0f);
+						}
+					}
+#endif
+				}
+			}
+			
 			auto NewCardPosition = Positions[NewCard];
 			for (auto FixedCard : FixedCards)
 			{
@@ -122,7 +241,8 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 				}
 			}
 		}
-		
+
+		// 检查是否所有卡牌受力都为0
 		bool AllCardsNoForce = true;
 		for (const auto& Tuple : Forces)
 		{
