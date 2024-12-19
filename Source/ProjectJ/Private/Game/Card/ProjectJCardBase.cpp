@@ -92,10 +92,12 @@ void AProjectJCardBase::OnDrop(float InDuration)
 	const float MaxX = (DeskTopSize.X - CardSize3D.X) * 0.5f;
 	const float MaxY = (DeskTopSize.Y - CardSize3D.Y) * 0.5f;
 	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
+	// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
+	DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
+
 	if (ContextSystem->LevelSettingActor->UseCardLayoutManager)
 	{
 		auto LayoutManager = ContextSystem->CardLayoutManager;
-		LayoutManager->LayoutConfig.DirectionalForceRatio = GSettings->CardSize.X / GSettings->CardSize.Y;
 		bool Success = LayoutManager->PlaceCardAndRelayout(
 			this,
 			SelfDesiredLocation,
@@ -121,7 +123,7 @@ void AProjectJCardBase::OnDrop(float InDuration)
 
 			auto CardLocation = Card->GetActorLocation();
 			// Check if the current card overlaps with another card
-			if (IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
+			if (AProjectJCardLayoutManager::IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
 			{
 				OverlappedCards.Add(Card);
 			}
@@ -129,9 +131,7 @@ void AProjectJCardBase::OnDrop(float InDuration)
 
 		if (OverlappedCards.Num() > 0)
 		{
-			// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
-			DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
-
+			
 			for (auto& Card : OverlappedCards)
 			{
 				// Calculate the direction to move the card
@@ -141,7 +141,7 @@ void AProjectJCardBase::OnDrop(float InDuration)
 				const float RequiredDistance = CalculateRequiredDistance(CardSize, MoveDirection);
 				FVector DstLocation = SelfDesiredLocation + MoveDirection * (RequiredDistance + 0.1f);
 				// 检查是否超出边界
-				if (IsPositionInBounds(DstLocation, DeskBounds))
+				if (AProjectJCardLayoutManager::IsPositionInBounds(DstLocation, DeskBounds))
 				{
 					Card->SetActorLocation(DstLocation);
 					continue;
@@ -256,12 +256,6 @@ float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, co
 	return DirX > 0.0f ? CardSize.X / DirX : CardSize.Y / DirY;
 }
 
-bool AProjectJCardBase::IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds) const
-{
-	return Position.X >= -DeskBounds.X && Position.X <= DeskBounds.X &&
-		   Position.Y >= -DeskBounds.Y && Position.Y <= DeskBounds.Y;
-}
-
 bool AProjectJCardBase::HandleBorderCase(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation,
                                          const FVector& OtherCardDstLocation, const FVector2D& CardSize,
                                          const FVector2D& DeskBounds,
@@ -365,14 +359,14 @@ bool AProjectJCardBase::HandleBorderCase(const FVector& OtherCardPosition, const
 		OutDstPosition.Y = FMath::Clamp(OutDstPosition.Y, MinY, MaxY);
 
 		// 检查两张卡是否发生了重叠
-		if (IsTwoCardOverlap(OutDstPosition,SelfDesiredLocation, CardSize))
+		if (AProjectJCardLayoutManager::IsTwoCardOverlap(OutDstPosition,SelfDesiredLocation, CardSize))
 		{
 			// 未找到合适的位置
 			return false;
 		}
 
 		// 检查新位置是否在牌桌内
-		if (IsPositionInBounds(OutDstPosition, DeskBounds))
+		if (AProjectJCardLayoutManager::IsPositionInBounds(OutDstPosition, DeskBounds))
 		{
 			return true;
 		}
@@ -461,7 +455,7 @@ bool AProjectJCardBase::FindValidPositionByRotation(const FVector& SelfDesiredLo
 		OutNewLocation = SelfDesiredLocation + NewDirection * (RequiredDistance + 0.1f);
 
 		// 检查是否在边界内
-		if (IsPositionInBounds(OutNewLocation, DeskBounds))
+		if (AProjectJCardLayoutManager::IsPositionInBounds(OutNewLocation, DeskBounds))
 		{
 			FoundValidPosition = true;
 			// DrawDebugLine(GetWorld(), SelfDesiredLocation, SelfDesiredLocation + NewDirection * 100.0f,
@@ -483,11 +477,4 @@ bool AProjectJCardBase::FindValidPositionByRotation(const FVector& SelfDesiredLo
 	}
 
 	return true;
-}
-
-bool AProjectJCardBase::IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation,
-	const FVector2D& CardSize)
-{
-	return FMath::Abs(ACardLocation.X - BCardLocation.X) < CardSize.X &&
-			FMath::Abs(ACardLocation.Y - BCardLocation.Y) < CardSize.Y;
 }

@@ -89,8 +89,7 @@ private:
 	// 计算卡牌之间所需的最小移动距离
 	float CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const;
 
-	// 检查位置是否在桌面边界内
-	bool IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds) const;
+	
 
 	// 处理特殊边界情况
 	bool HandleBorderCase(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation,
@@ -102,9 +101,6 @@ private:
 	bool FindValidPositionByRotation(const FVector& SelfDesiredLocation, const FVector& MoveDirection,
 	                                 const FVector2D& CardSize, const FVector2D& DeskBounds, bool RotateClockwise,
 	                                 FVector& OutNewLocation) const;
-
-	// 卡牌是否重叠
-	static bool IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation, const FVector2D& CardSize);
 
 	// ---- 放置卡牌 辅助函数 End ----
 };

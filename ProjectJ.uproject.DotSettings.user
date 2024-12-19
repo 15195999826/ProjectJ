@@ -20,4 +20,9 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7C58EDDA_002DD2C7_002D1868_002D72B5_002D94E629E240BA_002Fd_003APrivate_002Ff_003AWorld_002Ecpp/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=AEC96199_002D061B_002D0DC7_002D2B55_002D13CC8994725E_002Fd_003APublic_002Fd_003AMisc_002Ff_003AConfigCacheIni_002Eh/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=AEC96199_002D061B_002D0DC7_002D2B55_002D13CC8994725E_002Fd_003APublic_002Ff_003ACoreGlobals_002Eh/@EntryIndexedValue">ForceIncluded</s:String>
-	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=D2C87CB0_002D3B70_002D200E_002D0AB2_002D509890CFC95C_002Fd_003APrivate_002Ff_003AWidgetBlueprintEditorUtils_002Ecpp/@EntryIndexedValue">ForceIncluded</s:String></wpf:ResourceDictionary>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=D2C87CB0_002D3B70_002D200E_002D0AB2_002D509890CFC95C_002Fd_003APrivate_002Ff_003AWidgetBlueprintEditorUtils_002Ecpp/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/ActualSeverity/@EntryValue">INFO</s:String>
+	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/FiltersState/=CodeStyle/@EntryIndexedValue">On</s:String>
+	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/FiltersState/=NamingFilter/@EntryIndexedValue">On</s:String>
+	<s:String x:Key="/Default/CodeInspection/PencilsConfiguration/FiltersState/=SpellingFilter/@EntryIndexedValue">On</s:String>
+	<s:Boolean x:Key="/Default/Environment/InlayHints/GeneralInlayHintsOptions/EnableInlayHints/@EntryValue">True</s:Boolean></wpf:ResourceDictionary>

@@ -11,28 +11,19 @@ USTRUCT(BlueprintType)
 struct FLayoutConfig
 {
 	GENERATED_BODY()
-	// X方向(长)和Y方向(宽)的力量系数
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(DisplayName="X方向(长)和Y方向(宽)的力量系数(根据卡牌尺寸自动设置)"))
-	float DirectionalForceRatio = 1.5f;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="卡牌间基础排斥力"))
 	float BaseRepulsionForce = 1000.0f;
 	
-	// 向目标位置的吸引力
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="向目标位置的吸引力"))
-	float AttractionForce = 0.01f;
-	// 边界排斥力
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="边界排斥力"))
 	float BoundaryForce = 2000.0f;
-	// 边界影响范围系数(相对于卡牌尺寸)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="边界影响范围系数(相对于卡牌尺寸)"))
-	float BoundaryEffectRatio = 0.2f;
+
 	// 最大迭代次数
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="最大迭代次数"))
 	int32 MaxIterations = 50;
-	// 收敛阈值
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="收敛阈值"))
-	float ConvergenceThreshold = 1.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="每次受力迭代时间间隔"))
+	float IterationInterval = 0.01f;
 };
 
 UCLASS()
@@ -52,19 +43,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Layout")
 	FLayoutConfig LayoutConfig;
 
+	/**
+	 * 
+	 * @param NewCard 
+	 * @param NewCardDesiredLocation 
+	 * @param DeskBounds 
+	 * @param CardSize 
+	 * @return 返回是否需要发生调整
+	 */
 	bool PlaceCardAndRelayout(class AProjectJCardBase* NewCard, 
-						  const FVector& DesiredLocation,
-						  const FVector2D& DeskBounds,
-						  const FVector2D& CardSize);
+	                          const FVector& NewCardDesiredLocation,
+	                          const FVector2D& DeskBounds,
+	                          const FVector2D& CardSize);
 
 private:
-	TMap<AProjectJCardBase*, FVector> CalculateOptimalLayout(
-	   const TArray<AProjectJCardBase*>& AllCards,
-	   AProjectJCardBase* NewCard,
-	   const FVector& DesiredLocation,
-	   const FVector2D& DeskBounds,
-	   const FVector2D& CardSize,
-	   const FLayoutConfig& Config);
-
 	TArray<FTimerHandle> MoveTimers;
+
+	TArray<TMap<AProjectJCardBase*, FVector>> DebugFrameStatus;
+	int32 DebugCursor = 0;
+
+	void ExecDebugFrameStatus();
+
+public:
+	// 检查位置是否在桌面边界内
+	static bool IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds);
+	// 卡牌是否重叠
+	static bool IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation, const FVector2D& CardSize);
+
 };
