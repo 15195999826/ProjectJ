@@ -107,82 +107,82 @@ void AProjectJCardBase::OnDrop(float InDuration)
 	}
 	else
 	{
-		// 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
-
-		// 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
-		auto AllCards = ContextSystem->GetUsingCards();
-
-		TArray<TObjectPtr<AProjectJCardBase>> OverlappedCards;
-		for (auto& Card : AllCards)
-		{
-			if (Card == this)
-			{
-				continue;
-			}
-			// Todo: 这里没有区分是不是执行区， 位置稍有误差
-
-			auto CardLocation = Card->GetActorLocation();
-			// Check if the current card overlaps with another card
-			if (AProjectJCardLayoutManager::IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
-			{
-				OverlappedCards.Add(Card);
-			}
-		}
-
-		if (OverlappedCards.Num() > 0)
-		{
-			
-			for (auto& Card : OverlappedCards)
-			{
-				// Calculate the direction to move the card
-				FVector MoveDirection = Card->GetActorLocation() - SelfDesiredLocation;
-				MoveDirection.Z = 0.f;
-				MoveDirection.Normalize();
-				const float RequiredDistance = CalculateRequiredDistance(CardSize, MoveDirection);
-				FVector DstLocation = SelfDesiredLocation + MoveDirection * (RequiredDistance + 0.1f);
-				// 检查是否超出边界
-				if (AProjectJCardLayoutManager::IsPositionInBounds(DstLocation, DeskBounds))
-				{
-					Card->SetActorLocation(DstLocation);
-					continue;
-				}
-
-				// 优先处理特殊边界情况
-				FVector BorderCaseDstPosition;
-				if (HandleBorderCase(Card->GetActorLocation(), SelfDesiredLocation, DstLocation, CardSize, DeskBounds,
-				                     BorderCaseDstPosition))
-				{
-					Card->SetActorLocation(BorderCaseDstPosition);
-					continue;
-				}
-
-				// 确定旋转方向并尝试找到有效位置
-				bool RotateClockwise = DetermineRotateClockwise(Card->GetActorLocation(), SelfDesiredLocation,
-				                                                DstLocation,
-				                                                DeskBounds);
-				if (FindValidPositionByRotation(SelfDesiredLocation, MoveDirection, CardSize, DeskBounds,
-				                                RotateClockwise,
-				                                DstLocation))
-				{
-					Card->SetActorLocation(DstLocation);
-					continue;
-				}
-				// 没有找到可以放置的位置， Todo:
-			}
-		}
+		// // 落在某一张卡牌上面，需要将该卡牌挤开到一个空位； 卡牌的中心为ActorLocation, 卡牌的Size为GeneralSettings->CardSize
+		//
+		// // 遍历所有正在使用的卡牌， 看看自己的落点是否会压到其它卡牌
+		// auto AllCards = ContextSystem->GetUsingCards();
+		//
+		// TArray<TObjectPtr<AProjectJCardBase>> OverlappedCards;
+		// for (auto& Card : AllCards)
+		// {
+		// 	if (Card == this)
+		// 	{
+		// 		continue;
+		// 	}
+		// 	// Todo: 这里没有区分是不是执行区， 位置稍有误差
+		//
+		// 	auto CardLocation = Card->GetActorLocation();
+		// 	// Check if the current card overlaps with another card
+		// 	if (AProjectJCardLayoutManager::IsTwoCardOverlap(CardLocation, SelfDesiredLocation, CardSize))
+		// 	{
+		// 		OverlappedCards.Add(Card);
+		// 	}
+		// }
+		//
+		// if (OverlappedCards.Num() > 0)
+		// {
+		// 	
+		// 	for (auto& Card : OverlappedCards)
+		// 	{
+		// 		// Calculate the direction to move the card
+		// 		FVector MoveDirection = Card->GetActorLocation() - SelfDesiredLocation;
+		// 		MoveDirection.Z = 0.f;
+		// 		MoveDirection.Normalize();
+		// 		const float RequiredDistance = CalculateRequiredDistance(CardSize, MoveDirection);
+		// 		FVector DstLocation = SelfDesiredLocation + MoveDirection * (RequiredDistance + 0.1f);
+		// 		// 检查是否超出边界
+		// 		if (AProjectJCardLayoutManager::IsPositionInBounds(DstLocation, DeskBounds))
+		// 		{
+		// 			Card->SetActorLocation(DstLocation);
+		// 			continue;
+		// 		}
+		//
+		// 		// 优先处理特殊边界情况
+		// 		FVector BorderCaseDstPosition;
+		// 		if (HandleBorderCase(Card->GetActorLocation(), SelfDesiredLocation, DstLocation, CardSize, DeskBounds,
+		// 		                     BorderCaseDstPosition))
+		// 		{
+		// 			Card->SetActorLocation(BorderCaseDstPosition);
+		// 			continue;
+		// 		}
+		//
+		// 		// 确定旋转方向并尝试找到有效位置
+		// 		bool RotateClockwise = DetermineRotateClockwise(Card->GetActorLocation(), SelfDesiredLocation,
+		// 		                                                DstLocation,
+		// 		                                                DeskBounds);
+		// 		if (FindValidPositionByRotation(SelfDesiredLocation, MoveDirection, CardSize, DeskBounds,
+		// 		                                RotateClockwise,
+		// 		                                DstLocation))
+		// 		{
+		// 			Card->SetActorLocation(DstLocation);
+		// 			continue;
+		// 		}
+		// 		// 没有找到可以放置的位置， Todo:
+		// 	}
+		// }
 	}
 
 	SetActorEnableCollision(true);
-	GetWorld()->GetTimerManager().SetTimer(
-		DropOnGroundTimerHandle,
-		this,
-		&AProjectJCardBase::UpdateDropOnGroundAnimation,
-		0.01f,
-		true
-	);
-	DropOnGroundStartTime = GetWorld()->GetTimeSeconds();
-	DropOnGroundDuration = InDuration;
-	DropOnGroundStartLocation = GetActorLocation();
+	// GetWorld()->GetTimerManager().SetTimer(
+	// 	DropOnGroundTimerHandle,
+	// 	this,
+	// 	&AProjectJCardBase::UpdateDropOnGroundAnimation,
+	// 	0.01f,
+	// 	true
+	// );
+	// DropOnGroundStartTime = GetWorld()->GetTimeSeconds();
+	// DropOnGroundDuration = InDuration;
+	// DropOnGroundStartLocation = GetActorLocation();
 }
 
 void AProjectJCardBase::OnCancelDrag()

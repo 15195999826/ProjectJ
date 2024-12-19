@@ -3,11 +3,28 @@
 
 #include "BuildLevel/ProjectJBuildLevelGameMode.h"
 
+#include "EngineUtils.h"
 #include "BuildLevel/ProjectJBuildLevelTipsActor.h"
-#include "Interface/ProjectJDragInterface.h"
+#include "Core/System/ProjectJContextSystem.h"
+#include "Game/ProjectJCardLayoutManager.h"
+#include "Game/ProjectJLevelSettingActor.h"
 
 void AProjectJBuildLevelGameMode::BeginPlay()
 {
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	
+	// 查询场景中的LevelSettingActor
+	for (TActorIterator<AProjectJLevelSettingActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->LevelSettingActor = *ActorItr;
+		break;
+	}
+
+	for (TActorIterator<AProjectJCardLayoutManager> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->CardLayoutManager = *ActorItr;
+		break;
+	}
 	Super::BeginPlay();
 }
 

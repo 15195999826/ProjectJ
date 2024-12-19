@@ -62,6 +62,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	// 计算最优布局
 	TMap<AProjectJCardBase*, FVector> Forces;
 	TMap<AProjectJCardBase*, FVector> Positions;
+	TSet<AProjectJCardBase*> FixedCards;
 
 	// 初始化位置
 	for (auto Card : AllCards)
@@ -96,57 +97,43 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 				// 只在重叠时产生斥力
 				if (IsTwoCardOverlap(GetForceCardPosition, GiveForceCardPosition, CardSize))
                 {
-                    // 防止除零
-                    if (Delta.IsNearlyZero())
-                    {
-                        Delta = FVector(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
-                    }
-
-                    // 计算X和Y方向的排斥力
-                    FVector Force = Delta.GetSafeNormal();
-                    Force.X *= LayoutConfig.BaseRepulsionForce;
-                    Force.Y *= LayoutConfig.BaseRepulsionForce;
-                    Force.Z = 0.0f;
-
-                    Forces[GetForceCard] += Force;
+					GiveCardForce(GetForceCard, Delta, Forces);
                 }
 			}
 
 			// 处理边界碰撞
 			// 如果超出了左边界， 则向右给与一个力
-			if (GetForceCardPosition.Y< -DeskBounds.Y)
-			{
-				Forces[GetForceCard].Y += LayoutConfig.BoundaryForce;
-			}
-			// 右边界
-			if (GetForceCardPosition.Y > DeskBounds.Y)
-			{
-				Forces[GetForceCard].Y -= LayoutConfig.BoundaryForce;
-			}
-			// 上边界
-			if (GetForceCardPosition.X > DeskBounds.X)
-			{
-				Forces[GetForceCard].X -= LayoutConfig.BoundaryForce;
-			}
-			// 下边界
-			if (GetForceCardPosition.X < -DeskBounds.X)
-			{
-				Forces[GetForceCard].X += LayoutConfig.BoundaryForce;
-			}
+			HandleBoundaryForces(GetForceCard, GetForceCardPosition, DeskBounds, Forces,FixedCards);
 		}
 
 		// 检查是否所有卡牌受力都为0
-		bool AllCardNoForce = true;
+		// 检查是否所有非固定卡牌的受力都为0
+		// 如果存在固定卡牌，则移动新卡牌
+		if (FixedCards.Num() > 0)
+		{
+			auto NewCardPosition = Positions[NewCard];
+			for (auto FixedCard : FixedCards)
+			{
+				const auto& FixedCardPosition = Positions[FixedCard];
+				FVector Delta =  NewCardPosition - FixedCardPosition;
+				if (IsTwoCardOverlap(NewCardPosition, FixedCardPosition, CardSize))
+				{
+					GiveCardForce(NewCard, Delta, Forces);
+				}
+			}
+		}
+		
+		bool AllCardsNoForce = true;
 		for (const auto& Tuple : Forces)
 		{
 			if (!Tuple.Value.IsNearlyZero())
 			{
-				AllCardNoForce = false;
+				AllCardsNoForce = false;
 				break;
 			}
 		}
 
-		if (AllCardNoForce)
+		if (AllCardsNoForce)
 		{
 			// 打印当前遍历的次数，与因为所有卡牌不受力中断
 			UE_LOG(LogTemp, Warning, TEXT("Iteration: %d, All cards have no force!"), Iteration);
@@ -154,15 +141,8 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 		}
 
 		// 更新位置
-
 		for (auto Card : AllCards)
 		{
-			if (Card == NewCard)
-			{
-				check(Forces[Card].IsNearlyZero());
-				continue; // 新卡牌保持在原位
-			}
-
 			// 只有在有力的情况下才移动
 			if (!Forces[Card].IsNearlyZero())
 			{
@@ -253,6 +233,82 @@ void AProjectJCardLayoutManager::ExecDebugFrameStatus()
 	{
 		ExecDebugFrameStatus();
 	});
+}
+
+
+
+void AProjectJCardLayoutManager::HandleBoundaryForces(AProjectJCardBase* InGetForceCard,
+	const FVector& InGetForceCardPosition, const FVector2D& DeskBounds, TMap<AProjectJCardBase*, FVector>& Forces,
+	TSet<AProjectJCardBase*>& FixedCards)
+{
+	// 获取当前的力
+	const FVector& CurrentForce = Forces[InGetForceCard];
+	
+	// 预测下一步位置
+	FVector PredictedPosition = InGetForceCardPosition + CurrentForce * LayoutConfig.IterationInterval;
+	
+	// 检查是否在边界
+	bool WillAtLeftBound = PredictedPosition.Y <= -DeskBounds.Y;
+	bool WillAtRightBound = PredictedPosition.Y >= DeskBounds.Y;
+	bool WillAtTopBound = PredictedPosition.X >= DeskBounds.X;
+	bool WillAtBottomBound = PredictedPosition.X <= -DeskBounds.X;
+	
+	// 如果卡牌同时在多个边界
+	if ((WillAtLeftBound || WillAtRightBound) && (WillAtTopBound || WillAtBottomBound))
+	{
+		// 检查力的方向是否会进一步压向边界
+		bool WillPushAgainstBoundary = 
+			(WillAtLeftBound && CurrentForce.Y < 0) ||
+			(WillAtRightBound && CurrentForce.Y > 0) ||
+			(WillAtTopBound && CurrentForce.X > 0) ||
+			(WillAtBottomBound && CurrentForce.X < 0);
+
+		if (WillPushAgainstBoundary)
+		{
+			// 将卡牌标记为固定状态
+			FixedCards.Add(InGetForceCard);
+			// 清除这张卡的所有力
+			Forces[InGetForceCard] = FVector::ZeroVector;
+			return;
+		}
+	}
+
+	// 如果卡牌没有被固定，正常处理边界力
+	if (!FixedCards.Contains(InGetForceCard))
+	{
+		if (WillAtLeftBound && CurrentForce.Y < 0)
+		{
+			Forces[InGetForceCard].Y  = 0;
+		}
+		if (WillAtRightBound && CurrentForce.Y > 0)
+		{
+			Forces[InGetForceCard].Y = 0;
+		}
+		if (WillAtTopBound && CurrentForce.X > 0)
+		{
+			Forces[InGetForceCard].X = 0;
+		}
+		if (WillAtBottomBound && CurrentForce.X < 0)
+		{
+			Forces[InGetForceCard].X = 0;
+		}
+	}
+}
+
+void AProjectJCardLayoutManager::GiveCardForce(AProjectJCardBase* InCard, FVector& InDelta, TMap<AProjectJCardBase*, FVector>& Forces)
+{
+	if (InDelta.IsNearlyZero())
+	{
+		InDelta = FVector(FMath::RandRange(-1.0f, 1.0f), FMath::RandRange(-1.0f, 1.0f), 0.0f);
+	}
+
+	// 计算X和Y方向的排斥力
+	FVector Force = InDelta.GetSafeNormal();
+	Force.X *= LayoutConfig.BaseRepulsionForce;
+	Force.Y *= LayoutConfig.BaseRepulsionForce;
+	Force.Z = 0.0f;
+
+	Forces[InCard] += Force;
 }
 
 bool AProjectJCardLayoutManager::IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds)

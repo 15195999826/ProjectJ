@@ -64,6 +64,14 @@ private:
 
 	void ExecDebugFrameStatus();
 
+	void HandleBoundaryForces(AProjectJCardBase* InGetForceCard, 
+						 const FVector& InGetForceCardPosition,
+						 const FVector2D& DeskBounds,
+						 TMap<AProjectJCardBase*, FVector>& Forces,
+						 TSet<AProjectJCardBase*>& FixedCards);
+
+	void GiveCardForce(AProjectJCardBase* InCard, FVector& InDelta, TMap<AProjectJCardBase*, FVector>& Forces);
+
 public:
 	// 检查位置是否在桌面边界内
 	static bool IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds);
