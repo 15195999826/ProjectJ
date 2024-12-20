@@ -144,7 +144,41 @@ TArray<TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards()
 			Ret.Add(Pair.Value.Get());
 		}
 	}
-	Ret.Add(ExecuteArea);
+
+	return Ret;
+}
+
+TMap<int32, TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCardsMap()
+{
+	TMap<int32, TObjectPtr<AProjectJCardBase>> Ret;
+	for (auto& Pair : UsingSpells)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Key, Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingCharacters)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Key, Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingLandmarks)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Key, Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingItems)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Key, Pair.Value.Get());
+		}
+	}
 
 	return Ret;
 }

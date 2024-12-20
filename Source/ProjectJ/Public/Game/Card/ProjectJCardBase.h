@@ -38,7 +38,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	TObjectPtr<UTextRenderComponent> Title;
-
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 ID;
 	bool CanDrag = true;
 protected:

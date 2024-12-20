@@ -26,6 +26,7 @@ struct FLayoutConfig
 	float IterationInterval = 0.01f;
 };
 
+
 UCLASS()
 class PROJECTJ_API AProjectJCardLayoutManager : public AActor
 {
@@ -40,29 +41,38 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Layout")
 	FLayoutConfig LayoutConfig;
 
 	/**
 	 * 
-	 * @param NewCard 
+	 * @param NewCard
+	 * @param InDesiredDropDuration 
 	 * @param NewCardDesiredLocation 
 	 * @param DeskBounds 
 	 * @param CardSize 
 	 * @return 返回是否需要发生调整
 	 */
-	bool PlaceCardAndRelayout(class AProjectJCardBase* NewCard, 
+	bool PlaceCardAndRelayout(class AProjectJCardBase* NewCard,
+	                          float InDesiredDropDuration,
 	                          const FVector& NewCardDesiredLocation,
 	                          const FVector2D& DeskBounds,
 	                          const FVector2D& CardSize);
 
+	void OnDragCard(int32 InCardID);
+	void OnStopDragCard(int32 InCardID);
+
 private:
-	TArray<FTimerHandle> MoveTimers;
-
-	TArray<TMap<AProjectJCardBase*, FVector>> DebugFrameStatus;
-	int32 DebugCursor = 0;
-
-	void ExecDebugFrameStatus();
+	int32 DraggingCardID = INT_MIN;
+	bool IsControlCardDrop = false;
+	int32 DroppingCardID = -1;
+	FVector DropOnGroundStartLocation;
+	float DroppingStartTime = 0.0f;
+	float DesiredDropDuration = 0.0f;
+	TArray<TMap<int32, FVector>> FrameRecords;
 
 	void HandleBoundaryForces(AProjectJCardBase* InGetForceCard, 
 						 const FVector& InGetForceCardPosition,

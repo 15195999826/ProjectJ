@@ -100,7 +100,7 @@ public:
 	TMap<int32, TWeakObjectPtr<AProjectJNavPointActor>> UsingNavPoints;
 	
 	TArray<TObjectPtr<AProjectJCardBase>> GetUsingCards();
-	
+	TMap<int32, TObjectPtr<AProjectJCardBase>> GetUsingCardsMap();
 	
 	AProjectJSpell* CreateSpell(const FName& Config);
 	AProjectJCharacter* CreateCharacter(const FName& Config);
