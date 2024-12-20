@@ -238,7 +238,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 								(ForceX.X < 0 && PredictedPositionX.X <= -DeskBounds.X))
 							{
 								BlockedX = true;
-								CardForce.X = 0.0f;
+								RedirectXForce2Y(CardForce);
 							}
 
 							// 如果没有被边界阻挡，检查是否被固定卡牌阻挡
@@ -253,7 +253,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 											(ForceX.X < 0 && DeltaToFixed.X < 0))
 										{
 											BlockedX = true;
-											CardForce.X = 0.0f;
+											RedirectXForce2Y(CardForce);
 											break;
 										}
 									}
@@ -270,7 +270,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 								(ForceY.Y < 0 && PredictedPositionY.Y <= -DeskBounds.Y))
 							{
 								BlockedY = true;
-								CardForce.Y = 0.0f;
+								RedirectYForce2X(CardForce);
 							}
 
 							// 如果没有被边界阻挡，检查是否被固定卡牌阻挡
@@ -285,7 +285,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 											(ForceY.Y < 0 && DeltaToFixed.Y < 0))
 										{
 											BlockedY = true;
-											CardForce.Y = 0.0f;
+											RedirectYForce2X(CardForce);
 											break;
 										}
 									}
@@ -439,25 +439,26 @@ void AProjectJCardLayoutManager::HandleBoundaryForces(AProjectJCardBase* InGetFo
 			return;
 		}
 	}
-
-	// 如果卡牌没有被固定，正常处理边界力
+	
+	// 处理单边界情况，重定向力
 	if (!FixedCards.Contains(InGetForceCard))
 	{
 		if (WillAtLeftBound && CurrentForce.Y < 0)
 		{
-			Forces[InGetForceCard].Y  = 0;
+			// 将Y方向的力重定向到X方向
+			RedirectYForce2X(Forces[InGetForceCard]);
 		}
-		if (WillAtRightBound && CurrentForce.Y > 0)
+		else if (WillAtRightBound && CurrentForce.Y > 0)
 		{
-			Forces[InGetForceCard].Y = 0;
+			RedirectYForce2X(Forces[InGetForceCard]);
 		}
-		if (WillAtTopBound && CurrentForce.X > 0)
+		else if (WillAtTopBound && CurrentForce.X > 0)
 		{
-			Forces[InGetForceCard].X = 0;
+			RedirectXForce2Y(Forces[InGetForceCard]);
 		}
-		if (WillAtBottomBound && CurrentForce.X < 0)
+		else if (WillAtBottomBound && CurrentForce.X < 0)
 		{
-			Forces[InGetForceCard].X = 0;
+			RedirectXForce2Y(Forces[InGetForceCard]);
 		}
 	}
 }
@@ -476,6 +477,20 @@ void AProjectJCardLayoutManager::GiveCardForce(AProjectJCardBase* InCard, FVecto
 	Force.Z = 0.0f;
 
 	Forces[InCard] += Force;
+}
+
+void AProjectJCardLayoutManager::RedirectXForce2Y(FVector& WriteForce)
+{
+	auto RedirectForce = FMath::Abs(WriteForce.X);
+	WriteForce.Y += WriteForce.Y > 0 ? RedirectForce : -RedirectForce;
+	WriteForce.X = 0.0f;
+}
+
+void AProjectJCardLayoutManager::RedirectYForce2X(FVector& WriteForce)
+{
+	auto RedirectForce = FMath::Abs(WriteForce.Y);
+	WriteForce.X += WriteForce.X > 0 ? RedirectForce : -RedirectForce;
+	WriteForce.Y = 0.0f;
 }
 
 bool AProjectJCardLayoutManager::IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds)

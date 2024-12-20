@@ -24,6 +24,9 @@ struct FLayoutConfig
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="每次受力迭代时间间隔"))
 	float IterationInterval = 0.01f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="力的重定向系数"))
+	float ForceRedirectFactor = 1.f;
 };
 
 
@@ -81,6 +84,10 @@ private:
 						 TSet<AProjectJCardBase*>& FixedCards);
 
 	void GiveCardForce(AProjectJCardBase* InCard, FVector& InDelta, TMap<AProjectJCardBase*, FVector>& Forces);
+
+	
+	void RedirectXForce2Y(FVector& WriteForce);
+	void RedirectYForce2X(FVector& WriteForce);
 
 public:
 	// 检查位置是否在桌面边界内
