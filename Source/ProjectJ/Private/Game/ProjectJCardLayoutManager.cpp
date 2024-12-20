@@ -8,6 +8,8 @@
 
 #include <chrono>
 
+#include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+
 // Sets default values
 AProjectJCardLayoutManager::AProjectJCardLayoutManager()
 {
@@ -72,9 +74,12 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	}
 
 	DebugFrameStatus.Empty();
+	bool UnlockNewCardMove = false;
 	int32 Iteration = 0;
 	while (Iteration < LayoutConfig.MaxIterations)
 	{
+		// FixedCard 只记录每帧是不是生成了新的
+		FixedCards.Empty();
 		// 计算各个卡牌受力的方向， 这个方向由与它重叠卡牌的重叠范围决定
 		// 重置力
 		for (auto& Pair : Forces)
@@ -84,7 +89,13 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 
 		for (auto GetForceCard : AllCards)
 		{
-			if (GetForceCard == NewCard) continue; // 新卡牌保持在原位
+			if (GetForceCard == NewCard)
+			{
+				if (!UnlockNewCardMove)
+				{
+					continue; // 新卡牌尽可能保持在原位
+				}
+			}
 
 			const auto& GetForceCardPosition = Positions[GetForceCard];
 			for (auto GiveForceCard : AllCards)
@@ -109,6 +120,8 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 		// 如果存在固定卡牌，则移动新卡牌
 		if (FixedCards.Num() > 0)
 		{
+			// 一旦出现了固定卡牌，新卡牌就可以移动了
+			UnlockNewCardMove = true;
 			// 检查所有移动的卡牌，是否会被固定卡牌卡住
 			// 检查每张可移动的卡牌
 			for (auto Tuple : Forces)
@@ -229,35 +242,6 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 #endif
 				}
 			}
-			
-			auto NewCardPosition = Positions[NewCard];
-			for (auto FixedCard : FixedCards)
-			{
-				const auto& FixedCardPosition = Positions[FixedCard];
-				FVector Delta =  NewCardPosition - FixedCardPosition;
-				if (IsTwoCardOverlap(NewCardPosition, FixedCardPosition, CardSize))
-				{
-					GiveCardForce(NewCard, Delta, Forces);
-				}
-			}
-		}
-
-		// 检查是否所有卡牌受力都为0
-		bool AllCardsNoForce = true;
-		for (const auto& Tuple : Forces)
-		{
-			if (!Tuple.Value.IsNearlyZero())
-			{
-				AllCardsNoForce = false;
-				break;
-			}
-		}
-
-		if (AllCardsNoForce)
-		{
-			// 打印当前遍历的次数，与因为所有卡牌不受力中断
-			UE_LOG(LogTemp, Warning, TEXT("Iteration: %d, All cards have no force!"), Iteration);
-			break;
 		}
 
 		// 更新位置
@@ -279,6 +263,29 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 			}
 		}
 		DebugFrameStatus.Add(Positions);
+
+		// 检查是否所有卡牌都不重叠
+		bool AllCardsNotOverlap = true;
+		for (auto ACard : AllCards)
+		{
+			const auto& ACardPosition = Positions[ACard];
+			for (auto BCard : AllCards)
+			{
+				if (ACard == BCard) continue;
+				if (IsTwoCardOverlap(ACardPosition, Positions[BCard], CardSize))
+				{
+					AllCardsNotOverlap = false;
+					break;
+				}
+			}
+		}
+		
+		if (AllCardsNotOverlap)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("所有卡牌都不重叠，布局完成"));
+			break;
+		}
+
 		Iteration++;
 	}
 
@@ -340,6 +347,25 @@ void AProjectJCardLayoutManager::ExecDebugFrameStatus()
 {
 	if (DebugCursor >= DebugFrameStatus.Num())
 	{
+		auto GSettings = GetDefault<UProjectJGeneralSettings>();
+		const auto& CardSize3D = GSettings->CardSize;
+		const FVector2D CardSize = FVector2D(CardSize3D.X, CardSize3D.Y);
+		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+		auto AllCards = ContextSystem->GetUsingCards();
+		for (auto ACard : AllCards)
+		{
+			const auto& ACardPosition = ACard->GetActorLocation();
+			for (auto BCard : AllCards)
+			{
+				if (ACard == BCard) continue;
+				if (IsTwoCardOverlap(ACardPosition, BCard->GetActorLocation(), CardSize))
+				{
+					// DebugDrawSphere
+					DrawDebugSphere(GetWorld(), ACardPosition, 10.f, 12, FColor::Red, false, 5.f);
+					break;
+				}
+			}
+		}
 		return;
 	}
 	

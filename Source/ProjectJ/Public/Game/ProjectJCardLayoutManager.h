@@ -12,7 +12,7 @@ struct FLayoutConfig
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="卡牌间基础排斥力"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="卡牌间固定斥力"))
 	float BaseRepulsionForce = 1000.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="边界排斥力"))
