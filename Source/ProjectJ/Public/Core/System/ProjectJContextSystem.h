@@ -61,7 +61,7 @@ class PROJECTJ_API UProjectJContextSystem : public UWorldSubsystem
 
 public:
 	inline static FVector HiddenLocation = FVector(0, 0, -10000);
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AProjectJLevelSettingActor> LevelSettingActor;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AProjectJSceneUIManager> SceneUIManager;

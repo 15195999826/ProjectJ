@@ -40,7 +40,7 @@ void AProjectJCardExecuteArea::StartExecute(AProjectJCardBase* InCard)
 		case EProjectJCardType::Item:
 			{
 				// Todo: 选择目标
-				ContextSystem->LuaExecutor->GetTargetFilter(InCard);
+				// ContextSystem->LuaExecutor->GetTargetFilter(InCard);
 			}
 			break;
 	}

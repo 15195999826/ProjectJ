@@ -7,6 +7,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "ProjectJGeneralSettings.generated.h"
 
+class AProjectJItem;
 class UProjectJLuaGameplayAbility;
 class UProjectJAttackGA;
 class AProjectJNavPointActor;

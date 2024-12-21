@@ -173,6 +173,24 @@ void AProjectJCardBase::OnLoseSpellFocus()
 	FrameSprite->SetVisibility(false);
 }
 
+void AProjectJCardBase::HideCard(float Duration)
+{
+	InitialScale = GetActorScale3D();
+	PlayHideAnimation(Duration);
+}
+
+void AProjectJCardBase::ShowCard(float Duration)
+{
+	SetActorScale3D(FVector::ZeroVector);
+	InitialScale = FVector::OneVector;
+	PlayShowAnimation(Duration);
+}
+
+void AProjectJCardBase::PopupCard(const FVector& StartLocation, const FVector& TargetLocation, float Duration)
+{
+	PlayPopupAnimation(StartLocation, TargetLocation, Duration);
+}
+
 void AProjectJCardBase::OnDragTick(float DeltaSeconds, const FVector& ToLocation, float InBaseRotationX,float InMaxShakeDelta, float InLerpSpeed)
 {
 	const auto& Location = GetActorLocation();
@@ -232,6 +250,152 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 
 	SetActorLocation(NewLocation);
 	SetActorRotation(NewRotation);
+}
+
+void AProjectJCardBase::PlayHideAnimation(float Duration)
+{
+	AnimationStartTime = GetWorld()->GetTimeSeconds();
+	AnimationDuration = Duration;
+    
+	GetWorld()->GetTimerManager().SetTimer(
+		CardAnimationTimerHandle,
+		this,
+		&AProjectJCardBase::UpdateHideAnimation,
+		0.016f, // 约60帧
+		true
+	);
+}
+
+void AProjectJCardBase::UpdateHideAnimation()
+{
+	auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+	const auto& Config = LevelSettings->HideAnimConfig;
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Alpha = (CurrentTime - AnimationStartTime) / Config.Duration;
+    
+	if (Alpha >= 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
+		SetActorScale3D(FVector::ZeroVector);
+		return;
+	}
+    
+	float ScaleFactor;
+	if (Alpha < Config.ScaleUpPhaseRatio) // 放大阶段
+	{
+		float SubAlpha = Alpha / Config.ScaleUpPhaseRatio;
+		ScaleFactor = FMath::InterpEaseOut(1.0f, Config.MaxScaleFactor, SubAlpha, 2.0f);
+	}
+	else // 直接缩小消失
+	{
+		float SubAlpha = (Alpha - Config.ScaleUpPhaseRatio) / (1.0f - Config.ScaleUpPhaseRatio);
+		ScaleFactor = FMath::InterpExpoIn(Config.MaxScaleFactor, 0.0f, SubAlpha);
+	}
+    
+	SetActorScale3D(InitialScale * ScaleFactor);
+}
+
+void AProjectJCardBase::PlayShowAnimation(float Duration)
+{
+	AnimationStartTime = GetWorld()->GetTimeSeconds();
+	AnimationDuration = Duration;
+    
+	GetWorld()->GetTimerManager().SetTimer(
+		CardAnimationTimerHandle,
+		this,
+		&AProjectJCardBase::UpdateShowAnimation,
+		0.016f,
+		true
+	);
+}
+
+void AProjectJCardBase::UpdateShowAnimation()
+{
+	auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+	const auto& Config = LevelSettings->ShowAnimConfig;
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Alpha = (CurrentTime - AnimationStartTime) / Config.Duration;
+    
+	if (Alpha >= 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
+		SetActorScale3D(InitialScale);
+		return;
+	}
+    
+	float ScaleFactor;
+	if (Alpha < Config.ScaleUpPhaseRatio) // 从0放大到超过1
+	{
+		float SubAlpha = Alpha / Config.ScaleUpPhaseRatio;
+		ScaleFactor = FMath::InterpExpoOut(0.0f, Config.MaxScaleFactor, SubAlpha);
+	}
+	else // 平滑回到1
+	{
+		float SubAlpha = (Alpha - Config.ScaleUpPhaseRatio) / (1.0f - Config.ScaleUpPhaseRatio);
+		ScaleFactor = FMath::InterpEaseOut(Config.MaxScaleFactor, 1.0f, SubAlpha, 2.0f);
+	}
+    
+	SetActorScale3D(InitialScale * ScaleFactor);
+}
+
+void AProjectJCardBase::PlayPopupAnimation(const FVector& StartLocation, const FVector& TargetLocation, float Duration)
+{
+	auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+	const auto& Config = LevelSettings->PopSpawnAnimConfig;
+	PopupStartLocation = StartLocation;
+	PopupTargetLocation = TargetLocation;
+    
+	// 设置初始旋转
+	PopupStartRotation = FRotator(
+		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees),
+		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees),
+		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees)
+	);
+	PopupTargetRotation = FRotator::ZeroRotator;
+    
+	SetActorLocation(StartLocation);
+	SetActorRotation(PopupStartRotation);
+    
+	AnimationStartTime = GetWorld()->GetTimeSeconds();
+	AnimationDuration = Duration;
+    
+	GetWorld()->GetTimerManager().SetTimer(
+		CardAnimationTimerHandle,
+		this,
+		&AProjectJCardBase::UpdatePopupAnimation,
+		0.016f,
+		true
+	);
+}
+
+void AProjectJCardBase::UpdatePopupAnimation()
+{
+	auto LevelSettings = GetWorld()->GetSubsystem<UProjectJContextSystem>()->LevelSettingActor;
+	const auto& Config = LevelSettings->PopSpawnAnimConfig;
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Alpha = (CurrentTime - AnimationStartTime) / AnimationDuration;
+    
+	if (Alpha >= 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
+		SetActorLocation(PopupTargetLocation);
+		SetActorRotation(PopupTargetRotation);
+		return;
+	}
+    
+	// 使用不同的缓动函数使动画更生动
+	float LocationAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 3.0f);
+	float RotationAlpha = FMath::InterpExpoOut(0.0f, 1.0f, Alpha);
+    
+	// 添加一个抛物线效果
+	FVector CurrentLocation = FMath::Lerp(PopupStartLocation, PopupTargetLocation, LocationAlpha);
+	float HeightOffset = FMath::Sin(Alpha * PI) * Config.MaxArcHeight;
+	CurrentLocation.Z += HeightOffset;
+    
+	FRotator CurrentRotation = FMath::Lerp(PopupStartRotation, PopupTargetRotation, RotationAlpha);
+    
+	SetActorLocation(CurrentLocation);
+	SetActorRotation(CurrentRotation);
 }
 
 float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const

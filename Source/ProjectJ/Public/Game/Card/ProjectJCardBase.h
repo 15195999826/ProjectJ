@@ -78,6 +78,16 @@ public:
 	void OnLoseSpellFocus();
 	
 	//----- 程序动画 Start -------
+	// 公开接口
+	UFUNCTION(BlueprintCallable)
+	void HideCard(float Duration = 0.5f);
+    
+	UFUNCTION(BlueprintCallable) 
+	void ShowCard(float Duration = 0.5f);
+    
+	UFUNCTION(BlueprintCallable)
+	void PopupCard(const FVector& StartLocation, const FVector& TargetLocation, float Duration = 0.8f);
+	
 private:
 	// 1. 拖拽卡牌
 	FTimerHandle DropOnGroundTimerHandle;
@@ -87,12 +97,26 @@ private:
 	bool IsDropOnExecuteArea = false;
 	void UpdateDropOnGroundAnimation();
 
+	// 通用动画数据
+	FTimerHandle CardAnimationTimerHandle;
+	float AnimationStartTime;
+	float AnimationDuration;
 	// 2. 隐藏卡牌
-
+	void PlayHideAnimation(float Duration = 0.5f);
+	void UpdateHideAnimation();
+	FVector InitialScale;
 
 	// 3. 卡牌出现
+	void PlayShowAnimation(float Duration = 0.5f);
+	void UpdateShowAnimation();
 
 	// 4. 卡牌从某个位置旋转弹出
+	void PlayPopupAnimation(const FVector& StartLocation, const FVector& TargetLocation, float Duration = 0.8f);
+	void UpdatePopupAnimation();
+	FVector PopupStartLocation;
+	FVector PopupTargetLocation;
+	FRotator PopupStartRotation;
+	FRotator PopupTargetRotation;
 
 	// ---- 程序动画 End ------
 
