@@ -14,10 +14,6 @@ struct FLayoutConfig
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="卡牌间固定斥力"))
 	float BaseRepulsionForce = 1000.0f;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="边界排斥力"))
-	float BoundaryForce = 2000.0f;
-
 	// 最大迭代次数
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="最大迭代次数"))
 	int32 MaxIterations = 50;
@@ -55,15 +51,11 @@ public:
 	 * @param NewCard
 	 * @param InDesiredDropDuration 
 	 * @param NewCardDesiredLocation 
-	 * @param DeskBounds 
-	 * @param CardSize 
 	 * @return 返回是否需要发生调整
 	 */
 	bool PlaceCardAndRelayout(class AProjectJCardBase* NewCard,
 	                          float InDesiredDropDuration,
-	                          const FVector& NewCardDesiredLocation,
-	                          const FVector2D& DeskBounds,
-	                          const FVector2D& CardSize);
+	                          const FVector& NewCardDesiredLocation);
 
 	void OnDragCard(int32 InCardID);
 	void OnStopDragCard(int32 InCardID);
@@ -83,8 +75,12 @@ private:
 						 TMap<AProjectJCardBase*, FVector>& Forces,
 						 TSet<AProjectJCardBase*>& FixedCards);
 
+	/**
+     * 禁止进入一个区域
+     */
+	
+	
 	void GiveCardForce(AProjectJCardBase* InCard, FVector& InDelta, TMap<AProjectJCardBase*, FVector>& Forces);
-
 	
 	void RedirectXForce2Y(FVector& WriteForce);
 	void RedirectYForce2X(FVector& WriteForce);
@@ -93,6 +89,6 @@ public:
 	// 检查位置是否在桌面边界内
 	static bool IsPositionInBounds(const FVector& Position, const FVector2D& DeskBounds);
 	// 卡牌是否重叠
-	static bool IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation, const FVector2D& CardSize);
+	static bool IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation, const FVector& CardSize);
 
 };

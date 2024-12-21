@@ -5,6 +5,7 @@
 
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/Card/ProjectJSpell.h"
 
 
@@ -62,28 +63,38 @@ void AProjectJPlayerController::CustomTick(float DeltaSeconds, bool OverWidget, 
 				if (IsDragging)
 				{
 					auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-					// Todo: 都是临时写法
-					if (InHitActor && InHitActor->Implements<UProjectJCardInterface>())
+					if (ContextSystem->IsInExecuteArea(DragActor->GetCurrentLocation()))
 					{
-						auto CardType = IProjectJCardInterface::Execute_GetCardType(InHitActor);
-						if (CardType != EProjectJCardType::Spell)
-						{
-							if (ContextSystem->WeakFocusCard.IsValid() && ContextSystem->WeakFocusCard != InHitActor)
-							{
-								ContextSystem->WeakFocusCard->OnLoseSpellFocus();
-							}
-							ContextSystem->WeakFocusCard = Cast<AProjectJCardBase>(InHitActor);
-							ContextSystem->WeakFocusCard->OnSpellFocus();
-						}
+						// Todo: 根据卡牌能否执行显示不同的效果
+						ContextSystem->ExecuteArea->OnFocus();
 					}
 					else
 					{
-						if (ContextSystem->WeakFocusCard.IsValid())
-						{
-							ContextSystem->WeakFocusCard->OnLoseSpellFocus();
-							ContextSystem->WeakFocusCard = nullptr;
-						}
+						ContextSystem->ExecuteArea->OnLoseFocus();
 					}
+					
+					// Todo: 都是临时写法
+					// if (InHitActor && InHitActor->Implements<UProjectJCardInterface>())
+					// {
+					// 	auto CardType = IProjectJCardInterface::Execute_GetCardType(InHitActor);
+					// 	if (CardType != EProjectJCardType::Spell)
+					// 	{
+					// 		if (ContextSystem->WeakFocusCard.IsValid() && ContextSystem->WeakFocusCard != InHitActor)
+					// 		{
+					// 			ContextSystem->WeakFocusCard->OnLoseSpellFocus();
+					// 		}
+					// 		ContextSystem->WeakFocusCard = Cast<AProjectJCardBase>(InHitActor);
+					// 		ContextSystem->WeakFocusCard->OnSpellFocus();
+					// 	}
+					// }
+					// else
+					// {
+					// 	if (ContextSystem->WeakFocusCard.IsValid())
+					// 	{
+					// 		ContextSystem->WeakFocusCard->OnLoseSpellFocus();
+					// 		ContextSystem->WeakFocusCard = nullptr;
+					// 	}
+					// }
 				}
 			}
 			break;
@@ -116,7 +127,6 @@ void AProjectJPlayerController::CustomTick(float DeltaSeconds, bool OverWidget, 
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("DeprojectMousePositionToWorld failed!"));
 		}
 	}
-	
 }
 
 void AProjectJPlayerController::OnDragStart(AActor* InDragActor)
@@ -129,18 +139,9 @@ void AProjectJPlayerController::OnDragStart(AActor* InDragActor)
 
 void AProjectJPlayerController::OnDrop()
 {
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	ContextSystem->ExecuteArea->OnLoseFocus();
 	IsDragging = false;
-	auto CardType = IProjectJCardInterface::Execute_GetCardType(DragActor.GetObject());
-	if (CardType == EProjectJCardType::Spell)
-	{
-		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-		if (!ContextSystem->WeakFocusCard.IsValid())
-		{
-			OnCancelDrag();
-			return;
-		}
-	}
-	
 	// 当前卡牌放置到鼠标命中地面的位置
 	DragActor->OnDrop(DropOnGroundDuration);
 	DragActor = nullptr;
@@ -149,11 +150,12 @@ void AProjectJPlayerController::OnDrop()
 void AProjectJPlayerController::OnCancelDrag()
 {
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	if (ContextSystem->WeakFocusCard.IsValid())
-	{
-		ContextSystem->WeakFocusCard->OnLoseSpellFocus();
-		ContextSystem->WeakFocusCard = nullptr;
-	}
+	ContextSystem->ExecuteArea->OnLoseFocus();
+	// if (ContextSystem->WeakFocusCard.IsValid())
+	// {
+	// 	ContextSystem->WeakFocusCard->OnLoseSpellFocus();
+	// 	ContextSystem->WeakFocusCard = nullptr;
+	// }
 	
 	DragActor->OnCancelDrag();
 	IsDragging = false;

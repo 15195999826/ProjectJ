@@ -27,4 +27,6 @@ public:
 	virtual void OnDragTick(float DeltaSeconds, const FVector& ToLocation, float InBaseRotationX,float InMaxShakeDelta, float InLerpSpeed) = 0;
 	virtual void OnDrop(float InDropDuration) = 0;
 	virtual void OnCancelDrag() = 0;
+
+	virtual FVector GetCurrentLocation() = 0;
 };

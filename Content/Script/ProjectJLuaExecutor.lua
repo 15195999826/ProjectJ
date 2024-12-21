@@ -13,6 +13,7 @@ local M = UnLua.Class()
 local LevelInstance = {}
 local CharacterInstance = {}
 local LandmarkInstance = {}
+local ItemInstance = {}
 local EventInstances = {}
 
 _G.EmptyTagArray = UE.TArray(UE.FGameplayTag());

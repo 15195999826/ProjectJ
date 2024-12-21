@@ -10,6 +10,7 @@
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJCardLayoutManager.h"
 #include "Game/ProjectJLevelSettingActor.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 
 // Sets default values
 AProjectJCardBase::AProjectJCardBase()
@@ -88,17 +89,26 @@ void AProjectJCardBase::OnDrop(float InDuration)
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	auto Location = GetActorLocation();
 	auto SelfDesiredLocation = FVector(Location.X, Location.Y, 0.f);
-	auto GSettings = GetDefault<UProjectJGeneralSettings>();
-	const auto& CardSize3D = GSettings->CardSize;
-	const FVector2D CardSize = FVector2D(CardSize3D.X, CardSize3D.Y);
-	// -Y更左， +Y更右， -X更下， +X更上
-	const auto& DeskTopSize = GSettings->DeskTopSize;
-
-	const float MaxX = (DeskTopSize.X - CardSize3D.X) * 0.5f;
-	const float MaxY = (DeskTopSize.Y - CardSize3D.Y) * 0.5f;
-	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
-	// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
-	DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
+	IsDropOnExecuteArea = false;
+	
+	if (!ContextSystem->ExecuteArea->IsExecuting() && ContextSystem->IsInExecuteArea(SelfDesiredLocation))
+	{
+		// 播放动画， 放置到执行区域， 播放完毕后，调用DropOnExecuteArea(); 执行完毕后才可以执行其它卡牌, 这张卡牌执行完毕后必然会消失， 如果NPC不能交谈，将无法执行；
+		// Todo: 如果NPC交谈完毕后，暂定在执行区上方刷新一张新的“交谈过的”NPC卡牌
+		GetWorld()->GetTimerManager().SetTimer(
+			DropOnGroundTimerHandle,
+			this,
+			&AProjectJCardBase::UpdateDropOnGroundAnimation,
+			0.01f,
+			true
+		);
+		IsDropOnExecuteArea = true;
+		DropOnGroundStartTime = GetWorld()->GetTimeSeconds();
+		DropOnGroundDuration = InDuration;
+		DropOnGroundStartLocation = GetActorLocation();
+		
+		return;
+	}
 
 	bool SimpleDrop = !ContextSystem->LevelSettingActor->UseCardLayoutManager;
 	if (ContextSystem->LevelSettingActor->UseCardLayoutManager)
@@ -107,9 +117,7 @@ void AProjectJCardBase::OnDrop(float InDuration)
 		bool HasLayoutTask = LayoutManager->PlaceCardAndRelayout(
 			this,
 			InDuration,
-			SelfDesiredLocation,
-			DeskBounds,
-			CardSize
+			SelfDesiredLocation
 		);
 
 		if (!HasLayoutTask)
@@ -150,6 +158,11 @@ void AProjectJCardBase::OnCancelDrag()
 	SetActorRotation(FRotator::ZeroRotator);
 }
 
+FVector AProjectJCardBase::GetCurrentLocation()
+{
+	return GetActorLocation();
+}
+
 void AProjectJCardBase::OnSpellFocus()
 {
 	FrameSprite->SetVisibility(true);
@@ -184,7 +197,17 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 	float ElapsedTime = GetWorld()->GetTimeSeconds() - DropOnGroundStartTime;
 	if (ElapsedTime > DropOnGroundDuration)
 	{
-		SetActorLocation(FVector(DropOnGroundStartLocation.X, DropOnGroundStartLocation.Y, 0.f));
+		if (IsDropOnExecuteArea)
+		{
+			auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+			SetActorLocation(ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 1.f));
+			ContextSystem->ExecuteArea->StartExecute(this);
+		}
+		else
+		{
+			SetActorLocation(FVector(DropOnGroundStartLocation.X, DropOnGroundStartLocation.Y, 0.f));
+		}
+		
 		SetActorRotation(FRotator::ZeroRotator);
 		// Stop the timer when the animation is complete
 		GetWorld()->GetTimerManager().ClearTimer(DropOnGroundTimerHandle);
@@ -193,7 +216,16 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 	
 	float Alpha = ElapsedTime / DropOnGroundDuration;
 	FVector NewLocation = DropOnGroundStartLocation;
-	NewLocation.Z = FMath::Lerp(DropOnGroundStartLocation.Z, 0.0f, Alpha);
+	if (IsDropOnExecuteArea)
+	{
+		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+		// Lerp到执行区域的位置
+		NewLocation = FMath::Lerp(DropOnGroundStartLocation, ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 1.f), Alpha);
+	}
+	else
+	{
+		NewLocation.Z = FMath::Lerp(DropOnGroundStartLocation.Z, 0.0f, Alpha);
+	}
 	
 	FRotator CurrentRotation = GetActorRotation();
 	FRotator NewRotation = FMath::Lerp(CurrentRotation, FRotator::ZeroRotator, Alpha);
@@ -215,7 +247,7 @@ float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, co
 }
 
 bool AProjectJCardBase::HandleBorderCase(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation,
-                                         const FVector& OtherCardDstLocation, const FVector2D& CardSize,
+                                         const FVector& OtherCardDstLocation, const FVector& CardSize,
                                          const FVector2D& DeskBounds,
                                          FVector& OutDstPosition) const
 {

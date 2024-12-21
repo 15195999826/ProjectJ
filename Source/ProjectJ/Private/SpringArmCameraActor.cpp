@@ -134,7 +134,7 @@ void ASpringArmCameraActor::OnRotateCamera(const FInputActionValue& Value)
 	CameraBoom->SetWorldRotation(NewRotation);
 }
 
-void ASpringArmCameraActor::OnResetCamera(const FInputActionValue& InputActionValue)
+void ASpringArmCameraActor::OnResetCamera()
 {
 	CameraBoom->SetWorldRotation(DefaultRotation);
 	// Reset the camera zoom

@@ -5,15 +5,21 @@
 
 #include "AbilitySystemComponent.h"
 #include "GameplayAbilitySpec.h"
+#include "Components/BoxComponent.h"
+#include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Game/ProjectJCardBackendSystem.h"
 #include "Game/ProjectJEffectActor.h"
+#include "Game/ProjectJLuaExecutor.h"
 #include "Game/ProjectJNavPointActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
+#include "Game/Card/ProjectJItem.h"
+#include "Types/ProjectJCharacterConfig.h"
+#include "Types/ProjectJLandmarkConfig.h"
 
 AProjectJSpell* UProjectJContextSystem::GetSpell()
 {
@@ -86,6 +92,30 @@ AProjectJLandmark* UProjectJContextSystem::GetLandMark()
 
 #if WITH_EDITOR
 	Ret->SetFolderPath(TEXT("UsingLandmarks"));
+#endif
+	return Ret;
+}
+
+AProjectJItem* UProjectJContextSystem::GetItem()
+{
+	AProjectJItem* Ret;
+	if (ItemPool.Num() > 0)
+	{
+		Ret = ItemPool.Pop();
+	}
+	else
+	{
+		auto ItemClass = GetDefault<UProjectJGeneralSettings>()->ItemClass;
+		Ret = GetWorld()->SpawnActor<AProjectJItem>(ItemClass);
+	}
+	check(Ret);
+	
+	Ret->ID = GID++;
+	GeneralOnGet(Ret);
+	UsingItems.Add(Ret->ID, Ret);
+
+#if WITH_EDITOR
+	Ret->SetFolderPath(TEXT("UsingItems"));
 #endif
 	return Ret;
 }
@@ -194,7 +224,8 @@ AProjectJCharacter* UProjectJContextSystem::CreateCharacter(const FName& Config)
 {
 	AProjectJCharacter* Character = GetCharacter();
 	IProjectJCardInterface::Execute_BindConfig(Character, Config);
-	
+	auto ConfigRow = GetDefault<UProjectJDataTableSettings>()->CharacterTable.LoadSynchronous()->FindRow<FProjectJCharacterConfig>(Config, TEXT("CreateCharacter"));
+	LuaExecutor->CreateCharacter(Character->ID, ConfigRow->LuaScriptName);
 	// Todo: 在ItemSystem注册装备槽位
 	// auto ItemSystem = GetWorld()->GetSubsystem<UProjectJCardBackendSystem>();
 	// ItemSystem->RegisterCharacterLogicSlots(Character->ID);
@@ -205,7 +236,19 @@ AProjectJLandmark* UProjectJContextSystem::CreateLandMark(const FName& Config)
 {
 	AProjectJLandmark* LandMark = GetLandMark();
 	IProjectJCardInterface::Execute_BindConfig(LandMark, Config);
+	auto ConfigRow = GetDefault<UProjectJDataTableSettings>()->LandmarkTable.LoadSynchronous()->FindRow<FProjectJLandmarkConfig>(Config, TEXT("CreateLandMark"));
+	LuaExecutor->CreateLandMark(LandMark->ID, ConfigRow->LuaScriptName);
 	return LandMark;
+}
+
+AProjectJItem* UProjectJContextSystem::CreateItem(const FName& Config, EProjectJItemType InType)
+{
+	AProjectJItem* Item = GetItem();
+	IProjectJCardInterface::Execute_BindConfig(Item, Config);
+
+	// Todo: 创建lua侧脚本
+	
+	return Item;
 }
 
 AProjectJNavPointActor* UProjectJContextSystem::CreateNavPoint(const FProjectJNavPoint& Config)
@@ -228,6 +271,10 @@ void UProjectJContextSystem::RecycleByID(int32 InID)
 	else if (UsingLandmarks.Contains(InID))
 	{
 		RecycleLandMark(UsingLandmarks[InID].Get());
+	}
+	else if (UsingItems.Contains(InID))
+	{
+		RecycleItem(UsingItems[InID].Get());
 	}
 	else if (UsingNavPoints.Contains(InID))
 	{
@@ -266,6 +313,7 @@ void UProjectJContextSystem::RecycleSpell(AProjectJSpell* Spell)
 
 void UProjectJContextSystem::RecycleCharacter(AProjectJCharacter* Character)
 {
+	LuaExecutor->RemoveCharacter(Character->ID);
 	auto ItemSystem = GetWorld()->GetSubsystem<UProjectJCardBackendSystem>();
 	ItemSystem->RemoveCharacterLogicSlots(Character->ID);
 
@@ -303,11 +351,23 @@ void UProjectJContextSystem::RecycleCharacter(AProjectJCharacter* Character)
 
 void UProjectJContextSystem::RecycleLandMark(AProjectJLandmark* LandMark)
 {
+	LuaExecutor->RemoveLandMark(LandMark->ID);
 	UsingLandmarks.Remove(LandMark->ID);
 	LandmarkPool.Add(LandMark);
 	GeneralOnRecycle(LandMark);
 #if WITH_EDITOR
 	LandMark->SetFolderPath(TEXT("LandmarkPool"));
+#endif
+}
+
+void UProjectJContextSystem::RecycleItem(AProjectJItem* Item)
+{
+	LuaExecutor->RemoveItem(Item->ID);
+	UsingItems.Remove(Item->ID);
+	ItemPool.Add(Item);
+	GeneralOnRecycle(Item);
+#if WITH_EDITOR
+	Item->SetFolderPath(TEXT("ItemPool"));
 #endif
 }
 
@@ -358,4 +418,37 @@ void UProjectJContextSystem::RecycleEffectActor(AProjectJEffectActor* InEffectAc
 	InEffectActor->SetActorLocation(HiddenLocation);
 	InEffectActor->SetActorHiddenInGame(true);
 	EffectActorPool[EffectName].Pool.Add(InEffectActor);
+}
+
+bool UProjectJContextSystem::IsOverlapExecuteArea(const FVector& InCardPosition) const
+{
+	FVector BlockAreaSize = ExecuteArea->BoxComponent->GetScaledBoxExtent();
+	FVector BlockAreaCenter = ExecuteArea->BoxComponent->GetComponentLocation();
+	BlockAreaCenter.Z = 0.f;
+
+	auto GSettings = GetDefault<UProjectJGeneralSettings>();
+
+	auto  HalfCardSize = GSettings->CardSize * 0.5f;
+
+	// Check if the card's position is within the block area bounds
+	bool bIsInXBounds = InCardPosition.X + HalfCardSize.X > BlockAreaCenter.X - BlockAreaSize.X &&
+						InCardPosition.X - HalfCardSize.X < BlockAreaCenter.X + BlockAreaSize.X;
+	bool bIsInYBounds = InCardPosition.Y + HalfCardSize.Y > BlockAreaCenter.Y - BlockAreaSize.Y &&
+						InCardPosition.Y - HalfCardSize.Y < BlockAreaCenter.Y + BlockAreaSize.Y;
+
+	return bIsInXBounds && bIsInYBounds;
+}
+
+bool UProjectJContextSystem::IsInExecuteArea(const FVector& InCardPosition) const
+{
+	FVector BlockAreaSize = ExecuteArea->BoxComponent->GetScaledBoxExtent();
+	FVector BlockAreaCenter = ExecuteArea->BoxComponent->GetComponentLocation();
+	BlockAreaCenter.Z = 0.f;
+	// Check if the card's position is within the block area bounds
+	bool bIsInXBounds = InCardPosition.X > BlockAreaCenter.X - BlockAreaSize.X &&
+						InCardPosition.X < BlockAreaCenter.X + BlockAreaSize.X;
+	bool bIsInYBounds = InCardPosition.Y> BlockAreaCenter.Y - BlockAreaSize.Y &&
+						InCardPosition.Y< BlockAreaCenter.Y + BlockAreaSize.Y;
+
+	return bIsInXBounds && bIsInYBounds;
 }

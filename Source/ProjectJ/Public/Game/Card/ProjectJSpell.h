@@ -28,13 +28,4 @@ public:
 	virtual void BindConfig_Implementation(const FName& InRowName) override;
 
 	virtual FName GetConfigRowName_Implementation() override;
-
-	// Drag Interface
-public:
-	virtual void OnDragStart() override;
-	virtual void OnDrop(float InDuration) override;
-	virtual void OnCancelDrag() override;
-
-private:
-	FTransform DragStartTransform;
 };

@@ -53,6 +53,7 @@ public:
 	virtual void OnDrop(float InDropDuration) override;
 	virtual void OnCancelDrag() override;
 
+	virtual FVector GetCurrentLocation() override;
 private:
 	FVector DragStartLocation;
 	// End IProjectJDragInterface

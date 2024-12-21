@@ -7,8 +7,8 @@
 #include "Game/Card/ProjectJCardBase.h"
 
 #include <chrono>
-
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 
 // Sets default values
 AProjectJCardLayoutManager::AProjectJCardLayoutManager()
@@ -22,7 +22,6 @@ AProjectJCardLayoutManager::AProjectJCardLayoutManager()
 void AProjectJCardLayoutManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AProjectJCardLayoutManager::Tick(float DeltaTime)
@@ -113,9 +112,19 @@ void AProjectJCardLayoutManager::Tick(float DeltaTime)
 	}
 }
 
-bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard, float InDesiredDropDuration, const FVector& NewCardDesiredLocation,
-                                                      const FVector2D& DeskBounds, const FVector2D& CardSize)
+bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard, float InDesiredDropDuration, const FVector& NewCardDesiredLocation)
 {
+	auto GSettings = GetDefault<UProjectJGeneralSettings>();
+	const auto& CardSize = GSettings->CardSize;
+	// -Y更左， +Y更右， -X更下， +X更上
+	const auto& DeskTopSize = GSettings->DeskTopSize;
+
+	const float MaxX = (DeskTopSize.X - CardSize.X) * 0.5f;
+	const float MaxY = (DeskTopSize.Y - CardSize.Y) * 0.5f;
+	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
+	// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
+	DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
+	
 	OnStopDragCard(NewCard->ID);
 	DroppingCardID = INT_MIN;
 	FrameRecords.Empty();
@@ -123,32 +132,49 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	// 获取所有卡牌
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	TArray<TObjectPtr<AProjectJCardBase>> AllCards = ContextSystem->GetUsingCards();
-	bool HasAnyCardOverlapped = false;
-	// 检查NewCard是否跟其它卡牌之间有重叠
-	for (auto Card : AllCards)
+	if (ContextSystem->ExecuteArea->ExecutingCard.IsValid())
 	{
-		if (Card == NewCard)
-		{
-			continue;
-		}
+		AllCards.Remove(ContextSystem->ExecuteArea->ExecutingCard.Get());
+	}
+	
+	bool HasAnyCardOverlapped = ContextSystem->IsOverlapExecuteArea(NewCardDesiredLocation);
 
-		auto CardLocation = Card->GetActorLocation();
-		// Check if the current card overlaps with another card
-		if (IsTwoCardOverlap(CardLocation, NewCardDesiredLocation, CardSize))
+	if (!HasAnyCardOverlapped)
+	{
+		// 检查NewCard是否跟其它卡牌之间有重叠
+		for (auto Card : AllCards)
 		{
-			HasAnyCardOverlapped = true;
-			break;
+			auto CardLocation = Card->GetActorLocation();
+			if (!IsPositionInBounds(CardLocation, DeskBounds))
+			{
+				HasAnyCardOverlapped = true;
+				continue;
+			}
+		
+			if (Card == NewCard)
+			{
+				continue;
+			}
+
+			// Check if the current card overlaps with another card
+			if (IsTwoCardOverlap(CardLocation, NewCardDesiredLocation, CardSize))
+			{
+				HasAnyCardOverlapped = true;
+				break;
+			}
 		}
 	}
-
+	
 	// 没有卡牌之间有重叠， 不需要调整
 	if (!HasAnyCardOverlapped)
 	{
 		return false;
 	}
 
+	
 	Async(EAsyncExecution::TaskGraph, [this, AllCards, NewCard, NewCardDesiredLocation,DeskBounds,CardSize]()
 	{
+		auto LocalContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 		// 获取开始时间
 		auto start = std::chrono::high_resolution_clock::now();
 	
@@ -177,6 +203,45 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 				Pair.Value = FVector::ZeroVector;
 			}
 
+			if (!IsPositionInBounds(Positions[NewCard], DeskBounds))
+			{
+				const auto& CardPosition = Positions[NewCard];
+				// 放置的卡牌超出了边界， 边界需要给予斥力
+				FVector ExceedDistance(0.0f, 0.0f, 0.0f);
+
+				// Check X boundaries
+				if (CardPosition.X > DeskBounds.X)
+				{
+					ExceedDistance.X = CardPosition.X - DeskBounds.X;
+				}
+				else if (CardPosition.X < -DeskBounds.X)
+				{
+					ExceedDistance.X = CardPosition.X + DeskBounds.X;
+				}
+				// Check Y boundaries
+				if (CardPosition.Y > DeskBounds.Y)
+				{
+					ExceedDistance.Y = CardPosition.Y - DeskBounds.Y;
+				}
+				else if (CardPosition.Y < -DeskBounds.Y)
+				{
+					ExceedDistance.Y = CardPosition.Y + DeskBounds.Y;
+				}
+
+				GiveCardForce(NewCard, ExceedDistance, Forces);
+			}
+
+			for (auto GetForceCard : AllCards)
+			{
+				const auto& GetForceCardPosition = Positions[GetForceCard];
+				if (LocalContextSystem->IsOverlapExecuteArea(GetForceCardPosition))
+				{
+					// 给与斥力
+					FVector Delta = GetForceCardPosition - LocalContextSystem->ExecuteArea->GetActorLocation();
+					GiveCardForce(GetForceCard, Delta, Forces);
+				}
+			}
+			
 			for (auto GetForceCard : AllCards)
 			{
 				if (GetForceCard == NewCard)
@@ -206,6 +271,9 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 				// 如果超出了左边界， 则向右给与一个力
 				HandleBoundaryForces(GetForceCard, GetForceCardPosition, DeskBounds, Forces, FixedCards);
 			}
+
+			
+			
 
 			// 如果存在固定卡牌，则移动新卡牌
 			if (FixedCards.Num() > 0)
@@ -344,6 +412,13 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 			for (auto ACard : AllCards)
 			{
 				const auto& ACardPosition = Positions[ACard];
+				// 检查卡牌是不是在BlockArea内
+				if (LocalContextSystem->IsOverlapExecuteArea(ACardPosition))
+				{
+					AllCardsNotOverlap = false;
+					break;
+				}
+				
 				for (auto BCard : AllCards)
 				{
 					if (ACard == BCard) continue;
@@ -500,7 +575,7 @@ bool AProjectJCardLayoutManager::IsPositionInBounds(const FVector& Position, con
 }
 
 bool AProjectJCardLayoutManager::IsTwoCardOverlap(const FVector& ACardLocation, const FVector& BCardLocation,
-	const FVector2D& CardSize)
+	const FVector& CardSize)
 {
 	return FMath::Abs(ACardLocation.X - BCardLocation.X) < CardSize.X &&
 			FMath::Abs(ACardLocation.Y - BCardLocation.Y) < CardSize.Y;

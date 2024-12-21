@@ -98,11 +98,14 @@ private:
 	bool bInputSetup = false;
 	FRotator DefaultRotation;
 	float DefaultZoom;
+protected:
+	UFUNCTION(BlueprintCallable)
+	void OnResetCamera();
 private:
 	void OnMoveCamera(const FInputActionValue& InputActionValue);
 	void OnZoomCamera(const FInputActionValue& Value);
 	void OnRotateCamera(const FInputActionValue& Value);
-	void OnResetCamera(const FInputActionValue& InputActionValue);
+	
 	void ApplyEdgeScrolling();
 	bool IsValidMousePosition(FVector2D Positions, const FVector4& Rules);
 	void OnWindowResized();

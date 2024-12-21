@@ -74,6 +74,11 @@ void AProjectJNavPointActor::OnCancelDrag()
 	SetActorLocation(DragStartLocation);
 }
 
+FVector AProjectJNavPointActor::GetCurrentLocation()
+{
+	return GetActorLocation();
+}
+
 void AProjectJNavPointActor::BindConfig(const FProjectJNavPoint& InConfig)
 {
 	CanDrag = false;

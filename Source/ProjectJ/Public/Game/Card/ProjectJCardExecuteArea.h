@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ProjectJCardExecuteArea.generated.h"
 
+class AProjectJCardBase;
 class UBoxComponent;
 /**
  * 
@@ -21,4 +22,20 @@ public:
 	// 决定边界
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UBoxComponent> BoxComponent;
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnFocus();
+	UFUNCTION(BlueprintNativeEvent)
+	void OnLoseFocus();
+	
+	void StartExecute(AProjectJCardBase* InCard);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsExecuting() const
+	{
+		return ExecutingCard.IsValid();
+	}
+
+	UPROPERTY()
+	TWeakObjectPtr<AProjectJCardBase> ExecutingCard;
 };

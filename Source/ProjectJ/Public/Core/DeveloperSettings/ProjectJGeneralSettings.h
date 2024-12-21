@@ -59,6 +59,9 @@ public:
 	TSubclassOf<AProjectJLandmark> LandmarkClass;
 
 	UPROPERTY(config, EditAnywhere)
+	TSubclassOf<AProjectJItem> ItemClass;
+
+	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJSpell> SpellClass;
 	
 	UPROPERTY(config, EditAnywhere)

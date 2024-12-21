@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "Types/ProjectJLevelConfig.h"
+#include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJContextSystem.generated.h"
 
+class AProjectJItem;
 class AProjectJSpellArea;
 class AProjectJEffectActor;
 class AProjectJBattleManager;
@@ -83,8 +85,8 @@ public:
 	UPROPERTY()
 	FProjectJGameContext GameContext;
 
-	UPROPERTY()
-	TWeakObjectPtr<AProjectJCardBase> WeakFocusCard;
+	// UPROPERTY()
+	// TWeakObjectPtr<AProjectJCardBase> WeakFocusCard;
 	
 	// 简单的CardPool
 public:
@@ -95,7 +97,7 @@ public:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJLandmark>> UsingLandmarks;
 	UPROPERTY()
-	TMap<int32, TWeakObjectPtr<AProjectJLandmark>> UsingItems;
+	TMap<int32, TWeakObjectPtr<AProjectJItem>> UsingItems;
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJNavPointActor>> UsingNavPoints;
 	
@@ -105,12 +107,15 @@ public:
 	AProjectJSpell* CreateSpell(const FName& Config);
 	AProjectJCharacter* CreateCharacter(const FName& Config);
 	AProjectJLandmark* CreateLandMark(const FName& Config);
-	AProjectJNavPointActor* CreateNavPoint(const FProjectJNavPoint& Config);
+	AProjectJItem* CreateItem(const FName& Config, EProjectJItemType InType);
 
+	AProjectJNavPointActor* CreateNavPoint(const FProjectJNavPoint& Config);
+	
 	void RecycleByID(int32 ID);
 	void RecycleSpell(AProjectJSpell* Spell);
 	void RecycleCharacter(AProjectJCharacter* Character);
 	void RecycleLandMark(AProjectJLandmark* LandMark);
+	void RecycleItem(AProjectJItem* Item);
 	void RecycleNavPoint(AProjectJNavPointActor* NavPoint);
 protected:
 	int32 GID = 0;
@@ -122,11 +127,14 @@ protected:
 	UPROPERTY()
 	TArray<AProjectJLandmark*> LandmarkPool;
 	UPROPERTY()
+	TArray<AProjectJItem*> ItemPool;
+	UPROPERTY()
 	TArray<AProjectJNavPointActor*> NavPointPool;
 
 	AProjectJSpell* GetSpell();
 	AProjectJCharacter* GetCharacter();
 	AProjectJLandmark* GetLandMark();
+	AProjectJItem* GetItem();
 	AProjectJNavPointActor* GetNavPoint();
 	
 	void GeneralOnGet(AActor* InActor);
@@ -140,5 +148,11 @@ public:
 protected:
 	UPROPERTY()
 	TMap<FName,FProjectJEffectContainer> EffectActorPool;
-	// ----- 特效池子 End-----	
+	// ----- 特效池子 End-----
+
+
+	// ----- 辅助函数 Start-----
+public:
+	bool IsOverlapExecuteArea(const FVector& InCardPosition) const;
+	bool IsInExecuteArea(const FVector& InCardPosition) const;
 };

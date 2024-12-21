@@ -70,6 +70,8 @@ public:
 	
 	virtual void OnDrop(float InDuration) override;
 	virtual void OnCancelDrag() override;
+
+	virtual FVector GetCurrentLocation() override;
 	// End IProjectJDragInterface
 
 	void OnSpellFocus();
@@ -82,11 +84,20 @@ private:
 	float DropOnGroundStartTime;
 	float DropOnGroundDuration = 0.5f;
 	FVector DropOnGroundStartLocation;
+	bool IsDropOnExecuteArea = false;
 	void UpdateDropOnGroundAnimation();
+
+	// 2. 隐藏卡牌
+
+
+	// 3. 卡牌出现
+
+	// 4. 卡牌从某个位置旋转弹出
 
 	// ---- 程序动画 End ------
 
 	// ---- 放置卡牌 辅助函数 Start ----
+	
 	// 计算卡牌之间所需的最小移动距离
 	float CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const;
 
@@ -94,7 +105,7 @@ private:
 
 	// 处理特殊边界情况
 	bool HandleBorderCase(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation,
-	                      const FVector& OtherCardDstLocation, const FVector2D& CardSize, const FVector2D& DeskBounds,
+	                      const FVector& OtherCardDstLocation, const FVector& CardSize, const FVector2D& DeskBounds,
 	                      FVector& OutDstPosition) const;
 	// 确定旋转方向
 	bool DetermineRotateClockwise(const FVector& OtherCardPosition, const FVector& SelfDesiredLocation, const FVector& OtherCardDstLocation,const FVector2D& DeskBounds);

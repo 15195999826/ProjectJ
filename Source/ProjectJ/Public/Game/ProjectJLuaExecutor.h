@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "UnLuaInterface.h"
+#include "Card/ProjectJCharacter.h"
+#include "Card/ProjectJItem.h"
+#include "Card/ProjectJLandmark.h"
+#include "Card/ProjectJSpell.h"
 #include "GameFramework/Actor.h"
 #include "Types/ProjectJBattleEventData.h"
 #include "Types/ProjectJLuaAbilityExecInfo.h"
@@ -24,21 +28,35 @@ public:
 	{
 		return TEXT("ProjectJLuaExecutor");
 	}
-
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// ----- 关卡玩法相关 Start -----
 public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void FirstTimeEnterLevel(const FName& RowName, const FName& ScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
 	void EnterLevel(const FName& RowName);
-	
-protected:
-	// UFUNCTION(BlueprintImplementableEvent)
 
+	UFUNCTION(BlueprintImplementableEvent)
+	bool CanExecute();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateCharacter(int32 ID, const FName& InLuaScriptName);
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateLandMark(int32 ID, const FName& InLuaScriptName);
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateItem(int32 ID, const FName& InLuaScriptName);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveCharacter(int32 ID);
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveLandMark(int32 ID);
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveItem(int32 ID);
+
+	// ----- 关卡玩法相关 End -----
 
 	// ----- 战斗技能相关 Start -----
 public:
