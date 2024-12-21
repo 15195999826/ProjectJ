@@ -345,12 +345,20 @@ void AProjectJCardBase::PlayPopupAnimation(const FVector& StartLocation, const F
 	PopupStartLocation = StartLocation;
 	PopupTargetLocation = TargetLocation;
     
-	// 设置初始旋转
+	// 计算移动方向
+	FVector MoveDirection = (TargetLocation - StartLocation).GetSafeNormal();
+    
+	// 基于移动方向决定旋转的主要方向
+	float BaseYaw = FMath::RadiansToDegrees(FMath::Atan2(MoveDirection.Y, MoveDirection.X));
+	
 	PopupStartRotation = FRotator(
-		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees),
-		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees),
-		FMath::RandRange(-Config.MaxRotationDegrees, Config.MaxRotationDegrees)
+		FMath::RandRange(Config.MinPitch, Config.MaxPitch),          // Pitch
+		BaseYaw + FMath::RandRange(Config.MinYaw, Config.MaxYaw),     // Yaw
+		FMath::RandRange(Config.MinRoll, Config.MaxRoll)              // Roll
 	);
+
+	UE_LOG(LogTemp, Warning, TEXT("PopupStartRotation: %s"), *PopupStartRotation.ToString());
+	
 	PopupTargetRotation = FRotator::ZeroRotator;
     
 	SetActorLocation(StartLocation);
@@ -380,22 +388,33 @@ void AProjectJCardBase::UpdatePopupAnimation()
 		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
 		SetActorLocation(PopupTargetLocation);
 		SetActorRotation(PopupTargetRotation);
+		SetActorScale3D(FVector(1.0f));
 		return;
 	}
+
+	// 1. 位置动画 - 使用抛物线轨迹
+	float VerticalAlpha = FMath::InterpExpoOut(0.0f, 1.0f, Alpha);
+	float HorizontalAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 2.0f);
     
-	// 使用不同的缓动函数使动画更生动
-	float LocationAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 3.0f);
+	// 计算水平位置
+	FVector HorizontalPosition = FMath::Lerp(PopupStartLocation, PopupTargetLocation, HorizontalAlpha);
+    
+	// 计算垂直位置 - 使用修改后的抛物线
+	float HeightOffset = Config.MaxArcHeight * (1.0f - FMath::Square(2.0f * Alpha - 1.0f));
+	FVector CurrentLocation = HorizontalPosition + FVector(0, 0, HeightOffset);
+
+	// 2. 旋转动画 - 平滑过渡
 	float RotationAlpha = FMath::InterpExpoOut(0.0f, 1.0f, Alpha);
-    
-	// 添加一个抛物线效果
-	FVector CurrentLocation = FMath::Lerp(PopupStartLocation, PopupTargetLocation, LocationAlpha);
-	float HeightOffset = FMath::Sin(Alpha * PI) * Config.MaxArcHeight;
-	CurrentLocation.Z += HeightOffset;
-    
 	FRotator CurrentRotation = FMath::Lerp(PopupStartRotation, PopupTargetRotation, RotationAlpha);
-    
+
+	// 3. 缩放动画 - 简单但有效的缩放效果
+	float ScaleValue = FMath::InterpExpoOut(0.7f, 1.0f, Alpha);
+	FVector CurrentScale = FVector(ScaleValue);
+
+	// 应用变换
 	SetActorLocation(CurrentLocation);
 	SetActorRotation(CurrentRotation);
+	SetActorScale3D(CurrentScale);
 }
 
 float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const

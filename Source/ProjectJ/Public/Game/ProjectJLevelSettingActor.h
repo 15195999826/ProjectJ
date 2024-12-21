@@ -67,17 +67,27 @@ struct FCardRotateSpawnAnimConfig
 {
 	GENERATED_BODY()
 
-	// 总动画持续时间
-	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation", meta=(ClampMin="0.1",DisplayName="总动画持续时间"))
-	float Duration = 0.8f;
-
-	// 最大旋转角度
-	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation", meta=(ClampMin="0.0", ClampMax="720.0", DisplayName="最大旋转角度"))
-	float MaxRotationDegrees = 720.0f;
-
 	// 抛物线最大高度
 	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation", meta=(ClampMin="100.0", DisplayName="抛物线最大高度"))
 	float MaxArcHeight = 200.0f;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MinPitch;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MaxPitch;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MinYaw;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MaxYaw;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MinRoll;
+
+	UPROPERTY(EditAnywhere, Category="Rotate Spawn Animation")
+	float MaxRoll;
 };
 
 UCLASS()
