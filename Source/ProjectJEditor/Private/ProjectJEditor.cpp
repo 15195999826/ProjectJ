@@ -1,6 +1,8 @@
 ﻿#include "ProjectJEditor.h"
 
 #include "BuildLevelWorldSubsystem.h"
+#include "DataTableEditorUtils.h"
+#include "FileHelpers.h"
 #include "ProjectJGameEditorStyle.h"
 #include "ProjectJLuaFunction.h"
 #include "GameplayAbilitiesEditorModule.h"
@@ -16,6 +18,7 @@
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "Game/ProjectJEffectActor.h"
+#include "Types/Item/ProjectJPropConfig.h"
 #include "UObject/UObjectIterator.h"
 
 #define LOCTEXT_NAMESPACE "FProjectJEditorModule"
@@ -148,6 +151,10 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 		case EProjectJLuaInstanceType::Ability:
 			TemplateFilePath = "Config/LuaTemplates/AbilityTemplate.lua";
 			GAbilityLuaSrcRelativePath = TEXT("Script/Abilities/");
+			break;
+		case EProjectJLuaInstanceType::Prop:
+			TemplateFilePath = "Config/LuaTemplates/PropTemplate.lua";
+			GAbilityLuaSrcRelativePath = TEXT("Script/Props/");
 			break;
 		default:
 			return;
@@ -473,11 +480,17 @@ static void CreateStaticVariableLua()
 	auto LevelTableVariables = MakeTableRowValues(DTSettings->LevelTable.LoadSynchronous(), TEXT("Level"));
 	auto CharacterTableVariables = MakeTableRowValues(DTSettings->CharacterTable.LoadSynchronous(), TEXT("Character"));
 	auto LandmarkTableVariables = MakeTableRowValues(DTSettings->LandmarkTable.LoadSynchronous(), TEXT("Landmark"));
+	auto WeaponTableVariables = MakeTableRowValues(DTSettings->WeaponTable.LoadSynchronous(), TEXT("Weapon"));
+	auto ArmorTableVariables = MakeTableRowValues(DTSettings->ArmorTable.LoadSynchronous(), TEXT("Armor"));
+	auto PropTableVariables = MakeTableRowValues(DTSettings->PropTable.LoadSynchronous(), TEXT("Prop"));
 
 	// LevelTableVariables\CharacterTableVariables\LandmarkTableVariables 三者都需要写入Content
 	Content = FString::Join(LevelTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(CharacterTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(LandmarkTableVariables, TEXT("\n"));
+	Content = Content + TEXT("\n") + FString::Join(WeaponTableVariables, TEXT("\n"));
+	Content = Content + TEXT("\n") + FString::Join(ArmorTableVariables, TEXT("\n"));
+	Content = Content + TEXT("\n") + FString::Join(PropTableVariables, TEXT("\n"));
 	
 	TableContent = TableContent.Replace(TEXT("---{Content}"), *Content);
 	auto TablePath = FString::Printf(TEXT("%sTableRows.lua"), *GLuaSrcFullPath);
@@ -490,6 +503,7 @@ static void MigrateAbilityTemplate()
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Character);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Ability);
+	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Prop);
 }
 
 static void CreateAbilityLuaScript()
@@ -574,6 +588,80 @@ static void CreateAbilityLuaScript()
     FSlateApplication::Get().AddWindow(Dialog);
 }
 
+static void CreatePropLuaScript()
+{
+	auto PythonBridge = UPythonBridge::Get();
+	auto PropDT = GetDefault<UProjectJDataTableSettings>()->PropTable.LoadSynchronous();
+	auto RowMap = PropDT->GetRowMap();
+
+	// 检查是否存在重复的拼音
+	TMap<FString, TArray<FName>> PinyinMap; 
+	for (const auto& Pair : RowMap)
+	{
+		auto DesiredPinyin = PythonBridge->ToPinyin(Pair.Key.ToString());
+		auto& PinyinArray = PinyinMap.FindOrAdd(DesiredPinyin);
+		PinyinArray.Add(Pair.Key);
+	}
+
+	for (const auto& Pair : PinyinMap)
+	{
+		if (Pair.Value.Num() > 1)
+		{
+			FString ErrorString = FString::Printf(TEXT("重复的拼音: %s, Rows: "), *Pair.Key);
+			for (const auto& Name : Pair.Value)
+			{
+				ErrorString += Name.ToString() + TEXT(", ");
+			}
+			// 提示框显示ErrorString
+			FText DialogText = FText::Format(LOCTEXT("Error", "{0}"), FText::FromString(ErrorString));
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+			return;
+		}
+	}
+	
+	for (const auto& Pair : RowMap)
+	{
+		auto PropConfig = reinterpret_cast<FProjectJPropConfig*>(Pair.Value);
+		auto DesiredPinyin = PythonBridge->ToPinyin(Pair.Key.ToString());
+		UProjectJEditorBFL::CreateLuaScript(Pair.Key, DesiredPinyin, EProjectJLuaInstanceType::Prop, false);
+		PropConfig->ExecLuaScriptName = FName(*DesiredPinyin);
+	}
+	// 保存DataTable
+	UEditorLoadingAndSavingUtils::SavePackages({ PropDT->GetPackage() }, false);
+	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(PropDT), FDataTableEditorUtils::EDataTableChangeInfo::RowData);
+
+	// 检查是否存在未被使用的脚本
+	FString GLuaSrcFullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + "Script/Props/");
+	TArray<FString> LuaFiles;
+	IFileManager::Get().FindFilesRecursive(LuaFiles, *GLuaSrcFullPath, TEXT("*.lua"), true, false);
+	TSet<FString> UsedScripts;
+	for (const auto& Pair : RowMap)
+	{
+		auto PropConfig = reinterpret_cast<FProjectJPropConfig*>(Pair.Value);
+		UsedScripts.Add(PropConfig->ExecLuaScriptName.ToString() + TEXT(".lua"));
+	}
+
+	TArray<FString> UnusedScripts;
+	for (const FString& LuaFile : LuaFiles)
+	{
+		if (!UsedScripts.Contains(FPaths::GetCleanFilename(LuaFile)))
+		{
+			UnusedScripts.Add(LuaFile);
+		}
+	}
+
+	if (UnusedScripts.Num() > 0)
+	{
+		FString UnusedScriptsList = FString::Join(UnusedScripts, TEXT("\n"));
+		FText DialogText = FText::Format(LOCTEXT("UnusedScripts", "[Warning] 存在未被使用的脚本:\n{0}"), FText::FromString(UnusedScriptsList));
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	}
+	else
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NoUnusedScripts", "更新成功"));
+	}
+}
+
 static void RegisterGameEditorMenus()
 {
 	UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu");
@@ -639,6 +727,14 @@ static void RegisterGameEditorMenus()
 				LOCTEXT("ProjectJDataTableSubMenuEntry1_ToolTip", "创建技能Lua脚本"),
 				FSlateIcon(),
 				FUIAction(FExecuteAction::CreateStatic(&CreateAbilityLuaScript))
+			);
+
+			SubSection.AddMenuEntry(
+				"ProjectJDataTableSubMenuEntry2",
+				LOCTEXT("ProjectJDataTableSubMenuEntry2_Label", "更新道具Lua脚本"),
+				LOCTEXT("ProjectJDataTableSubMenuEntry2_ToolTip", "更新道具Lua脚本"),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateStatic(&CreatePropLuaScript))
 			);
 		})
 	);

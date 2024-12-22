@@ -46,7 +46,6 @@ void AProjectJCardLayoutManager::Tick(float DeltaTime)
 				if (IsControlCardDrop)
 				{
 					// 融合运动， 既要下落和调整旋转，也要应用FrameRecord
-					
 					check(Card);
 					float ElapsedTime = GetWorld()->GetTimeSeconds() - DroppingStartTime;
 					if (ElapsedTime > DesiredDropDuration)
@@ -56,7 +55,7 @@ void AProjectJCardLayoutManager::Tick(float DeltaTime)
 						Card->SetActorRotation(FRotator::ZeroRotator);
 						continue;
 					}
-					
+
 					float Alpha = ElapsedTime / DesiredDropDuration;
 					auto NewLocation = Pair.Value;
 					NewLocation.Z = FMath::Lerp(DropOnGroundStartLocation.Z, 0.0f, Alpha);
@@ -127,7 +126,6 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	
 	OnStopDragCard(NewCard->ID);
 	DroppingCardID = INT_MIN;
-	FrameRecords.Empty();
 	// DeskBounds已经处理了卡牌的大小， 是卡牌中心可以在的范围
 	// 获取所有卡牌
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
@@ -452,7 +450,9 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 		// 如何在主线程调用ExecDebugFrameStatus？
 		AsyncTask(ENamedThreads::GameThread, [this, TaskResult]()
 		{
-			FrameRecords = TaskResult;
+			UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, CurrentLength: %d, AppendLength: %d"), FrameRecords.Num(), TaskResult.Num());
+			FrameRecords.Append(TaskResult);
+			UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, AfterAppendLength: %d"), FrameRecords.Num());
 		});
 	});
 	

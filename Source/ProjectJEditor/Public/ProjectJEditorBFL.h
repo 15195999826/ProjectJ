@@ -16,5 +16,5 @@ class PROJECTJEDITOR_API UProjectJEditorBFL : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	static bool CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType);	
+	static bool CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType, bool ReportErrorDialog = true);	
 };

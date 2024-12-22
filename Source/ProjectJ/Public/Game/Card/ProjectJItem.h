@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Game/Card/ProjectJCardBase.h"
 #include "Interface/ProjectJCardInterface.h"
+#include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJItem.generated.h"
 
 class UWidgetComponent;
@@ -21,7 +22,8 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWidgetComponent> FloatWidgetComponent;
-	
+	EProjectJItemType ItemType;
+
 	// IProjectJCard interface
 public:
 	virtual EProjectJCardType GetCardType_Implementation() override

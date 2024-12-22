@@ -143,6 +143,12 @@ AProjectJNavPointActor* UProjectJContextSystem::GetNavPoint()
 	return Ret;
 }
 
+void UProjectJContextSystem::OnWorldBeginPlay(UWorld& InWorld)
+{
+	Super::OnWorldBeginPlay(InWorld);
+	LogicFrameCount = 0;
+}
+
 TArray<TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards()
 {
 	TArray<TObjectPtr<AProjectJCardBase>> Ret;
@@ -244,6 +250,7 @@ AProjectJLandmark* UProjectJContextSystem::CreateLandMark(const FName& Config)
 AProjectJItem* UProjectJContextSystem::CreateItem(const FName& Config, EProjectJItemType InType)
 {
 	AProjectJItem* Item = GetItem();
+	Item->ItemType = InType;
 	IProjectJCardInterface::Execute_BindConfig(Item, Config);
 
 	// Todo: 创建lua侧脚本
@@ -374,6 +381,7 @@ void UProjectJContextSystem::RecycleItem(AProjectJItem* Item)
 void UProjectJContextSystem::GeneralOnGet(AActor* InActor)
 {
 	InActor->SetActorEnableCollision(true);
+	InActor->SetActorLocation(HiddenLocation);
 }
 
 void UProjectJContextSystem::GeneralOnRecycle(AActor* InActor)

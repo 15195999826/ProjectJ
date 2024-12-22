@@ -10,6 +10,10 @@ require("ProjectJGameplayTags")
 require("ProjectJGlobal")
 require("TableRows")
 
+_G.DefaultPropTargetFilter = UE.FProjectJTargetFilter()
+DefaultPropTargetFilter.TargetTypes:Add(EProjectJCardType.Character)
+DefaultPropTargetFilter.TargetTypes:Add(EProjectJCardType.Landmark)
+
 _G.TargetHelper = require("TargetHelper")
 _G.TriggerHelper = require("TriggerHelper")
 _G.BattleEventHelper = require("BattleEventHelper")

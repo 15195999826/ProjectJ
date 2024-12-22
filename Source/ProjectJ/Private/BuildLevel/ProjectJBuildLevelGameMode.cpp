@@ -8,6 +8,7 @@
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJCardLayoutManager.h"
 #include "Game/ProjectJLevelSettingActor.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 
 void AProjectJBuildLevelGameMode::BeginPlay()
 {
@@ -23,6 +24,12 @@ void AProjectJBuildLevelGameMode::BeginPlay()
 	for (TActorIterator<AProjectJCardLayoutManager> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
 		ContextSystem->CardLayoutManager = *ActorItr;
+		break;
+	}
+
+	for (TActorIterator<AProjectJCardExecuteArea> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->ExecuteArea = *ActorItr;
 		break;
 	}
 	Super::BeginPlay();

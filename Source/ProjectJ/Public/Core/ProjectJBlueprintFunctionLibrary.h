@@ -18,10 +18,10 @@ class PROJECTJ_API UProjectJBlueprintFunctionLibrary : public UBlueprintFunction
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable, Category="TheOne|UI")
+	UFUNCTION(BlueprintCallable, Category="ProjectJ|UI")
 	static void EnableUINav();
-	UFUNCTION(BlueprintCallable, Category="TheOne|UI")
+	UFUNCTION(BlueprintCallable, Category="ProjectJ|UI")
 	static void DisableUINav();
-	UFUNCTION(BlueprintCallable, Category="TheOne|UI")
+	UFUNCTION(BlueprintCallable, Category="ProjectJ|UI")
 	static FText GetLocText(const FString& InNameSpace, const FString& InKey, const FText& InDefault);
 };

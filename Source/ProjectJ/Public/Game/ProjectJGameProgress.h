@@ -37,6 +37,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+private:
+	float DeltaTimeAccumulator = 0.f;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

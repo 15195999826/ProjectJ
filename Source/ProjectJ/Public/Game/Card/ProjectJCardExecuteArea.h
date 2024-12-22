@@ -3,10 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Core/System/ProjectJContextSystem.h"
+#include "Game/ProjectJLuaExecutor.h"
 #include "ProjectJCardExecuteArea.generated.h"
 
 class AProjectJCardBase;
 class UBoxComponent;
+
+
 /**
  * 
  */
@@ -17,6 +21,16 @@ class PROJECTJ_API AProjectJCardExecuteArea : public AActor
 
 public:
 	AProjectJCardExecuteArea();
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+	
+public:
+	// Called every Logic frame
+	void CustomTick(int32 InLogicFrameCount);
+
+public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USceneComponent> SceneRoot;
 	// 决定边界
@@ -38,4 +52,9 @@ public:
 
 	UPROPERTY()
 	TWeakObjectPtr<AProjectJCardBase> ExecutingCard;
+
+private:
+	EProjectJItemType CachedItemSecondaryType = EProjectJItemType::None;
+	bool DuringHiding = false;
+	bool SatisfyFilter(AProjectJCardBase* InCard, const FProjectJTargetFilter& InTargetFilter);
 };

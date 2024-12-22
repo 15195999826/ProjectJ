@@ -6,6 +6,7 @@
 #include "PaperSpriteComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "Core/ProjectJEditorDebugBFL.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJCardLayoutManager.h"
@@ -163,14 +164,19 @@ FVector AProjectJCardBase::GetCurrentLocation()
 	return GetActorLocation();
 }
 
-void AProjectJCardBase::OnSpellFocus()
+// void AProjectJCardBase::OnSpellFocus()
+// {
+// 	FrameSprite->SetVisibility(true);
+// }
+//
+// void AProjectJCardBase::OnLoseSpellFocus()
+// {
+// 	FrameSprite->SetVisibility(false);
+// }
+
+void AProjectJCardBase::OnWaitForExecuteSelect()
 {
 	FrameSprite->SetVisibility(true);
-}
-
-void AProjectJCardBase::OnLoseSpellFocus()
-{
-	FrameSprite->SetVisibility(false);
 }
 
 void AProjectJCardBase::HideCard(float Duration)
@@ -218,7 +224,7 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 		if (IsDropOnExecuteArea)
 		{
 			auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-			SetActorLocation(ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 1.f));
+			SetActorLocation(ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 3.f));
 			ContextSystem->ExecuteArea->StartExecute(this);
 		}
 		else
@@ -238,7 +244,7 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 	{
 		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 		// Lerp到执行区域的位置
-		NewLocation = FMath::Lerp(DropOnGroundStartLocation, ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 1.f), Alpha);
+		NewLocation = FMath::Lerp(DropOnGroundStartLocation, ContextSystem->ExecuteArea->GetActorLocation() + FVector(0.f, 0.f, 3.f), Alpha);
 	}
 	else
 	{
@@ -393,7 +399,6 @@ void AProjectJCardBase::UpdatePopupAnimation()
 	}
 
 	// 1. 位置动画 - 使用抛物线轨迹
-	float VerticalAlpha = FMath::InterpExpoOut(0.0f, 1.0f, Alpha);
 	float HorizontalAlpha = FMath::InterpEaseOut(0.0f, 1.0f, Alpha, 2.0f);
     
 	// 计算水平位置

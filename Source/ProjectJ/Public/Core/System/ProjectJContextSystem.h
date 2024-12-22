@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Types/ProjectJDateTime.h"
 #include "Types/ProjectJLevelConfig.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJContextSystem.generated.h"
@@ -30,12 +31,17 @@ struct FProjectJGameContext
 
 	FProjectJGameContext(){}
 
+	UPROPERTY()
 	FName CurrentLevel = NAME_None;
-
+	UPROPERTY()
+	FProjectJDateTime DateTime;
+	UPROPERTY()
 	TArray<int32> LevelCharacters;
+	UPROPERTY()
 	TArray<int32> LevelLandmarks;
+	UPROPERTY()
 	TArray<int32> LevelNavPoints;
-
+	UPROPERTY()
 	TArray<int32> HandSpellCards;
 
 	// 用于计算是否首次进入某个关卡
@@ -60,7 +66,10 @@ class PROJECTJ_API UProjectJContextSystem : public UWorldSubsystem
 	GENERATED_BODY()
 
 public:
-	inline static FVector HiddenLocation = FVector(0, 0, -10000);
+	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+
+public:
+	inline static FVector HiddenLocation = FVector(-5000, -5000, -10000);
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<AProjectJLevelSettingActor> LevelSettingActor;
 	UPROPERTY(BlueprintReadOnly)
@@ -155,4 +164,15 @@ protected:
 public:
 	bool IsOverlapExecuteArea(const FVector& InCardPosition) const;
 	bool IsInExecuteArea(const FVector& InCardPosition) const;
+	void StepLogicFrameCount()
+	{
+		LogicFrameCount++;
+	}
+	int32 GetLogicFrameCount() const
+	{
+		return LogicFrameCount;
+	}
+
+private:
+	int32 LogicFrameCount = 0;
 };

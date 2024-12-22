@@ -13,6 +13,7 @@
 #include "Game/ProjectJPerformManager.h"
 #include "Game/ProjectJSceneUIManager.h"
 #include "Game/ProjectJSpellArea.h"
+#include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
@@ -39,12 +40,23 @@ void AProjectJGameProgress::BeginPlay()
 	EventSystem->OnCheckCard.AddUObject(this, &AProjectJGameProgress::OnCheckCard);
 	EventSystem->OnHideAtCard.AddUObject(this, &AProjectJGameProgress::OnHideAtCard);
 	EventSystem->OnAmbushCard.AddUObject(this, &AProjectJGameProgress::OnAmbushCard);
+
+	DeltaTimeAccumulator = 0.f;
 }
 
 // Called every frame
 void AProjectJGameProgress::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	DeltaTimeAccumulator += DeltaTime;
+	// 更新逻辑帧数 逻辑帧率按60帧计算
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	if (DeltaTimeAccumulator >= 1.f / 60.f)
+	{
+		DeltaTimeAccumulator -= 1.f / 60.f;
+		ContextSystem->StepLogicFrameCount();
+		ContextSystem->ExecuteArea->CustomTick(ContextSystem->GetLogicFrameCount());
+	}
 
 	switch (GameStage) {
 		case EProjectJGameStage::None:

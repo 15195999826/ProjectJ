@@ -33,4 +33,6 @@ public:
 	TSoftObjectPtr<UDataTable> WeaponTable;
 	UPROPERTY(config, EditAnywhere, Category = DataTable)
 	TSoftObjectPtr<UDataTable> ArmorTable;
+	UPROPERTY(config, EditAnywhere, Category = DataTable)
+	TSoftObjectPtr<UDataTable> PropTable;
 };

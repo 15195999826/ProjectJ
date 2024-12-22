@@ -52,7 +52,7 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	
 protected:
 	UPROPERTY()
 	FName ConfigRowName;
@@ -74,8 +74,9 @@ public:
 	virtual FVector GetCurrentLocation() override;
 	// End IProjectJDragInterface
 
-	void OnSpellFocus();
-	void OnLoseSpellFocus();
+	// Todo: 不同类型的卡牌可以有不同的等待选择效果
+	virtual void OnWaitForExecuteSelect();
+
 	
 	//----- 程序动画 Start -------
 	// 公开接口

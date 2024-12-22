@@ -9,6 +9,7 @@ enum class EProjectJItemType : uint8
 	None,
 	Weapon UMETA(DisplayName = "武器"),
 	Armor UMETA(DisplayName = "防具"),
+	Prop UMETA(DisplayName = "道具"),
 };
 
 USTRUCT()

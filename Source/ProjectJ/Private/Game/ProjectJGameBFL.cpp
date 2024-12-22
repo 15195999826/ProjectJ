@@ -169,3 +169,36 @@ FGameplayTag UProjectJGameBFL::RequestGameplayTag(const FName& InTagName)
 {
 	return UGameplayTagsManager::Get().RequestGameplayTag(InTagName, false);
 }
+
+FProjectJWeaponConfig* UProjectJGameBFL::GetWeaponConfig(const FName& InRowName)
+{
+	auto DT = GetDefault<UProjectJDataTableSettings>()->WeaponTable.LoadSynchronous();
+	if (auto Config = DT->FindRow<FProjectJWeaponConfig>(InRowName, TEXT("Get Weapon Config")))
+	{
+		return Config;
+	}
+	
+	return nullptr;
+}
+
+FProjectJArmorConfig* UProjectJGameBFL::GetArmorConfig(const FName& InRowName)
+{
+	auto DT = GetDefault<UProjectJDataTableSettings>()->ArmorTable.LoadSynchronous();
+	if (auto Config = DT->FindRow<FProjectJArmorConfig>(InRowName, TEXT("Get Armor Config")))
+	{
+		return Config;
+	}
+	
+	return nullptr;
+}
+
+FProjectJPropConfig* UProjectJGameBFL::GetPropConfig(const FName& InRowName)
+{
+	auto DT = GetDefault<UProjectJDataTableSettings>()->PropTable.LoadSynchronous();
+	if (auto Config = DT->FindRow<FProjectJPropConfig>(InRowName, TEXT("Get Prop Config")))
+	{
+		return Config;
+	}
+	
+	return nullptr;
+}

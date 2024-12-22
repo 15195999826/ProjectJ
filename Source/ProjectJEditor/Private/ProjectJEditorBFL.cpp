@@ -3,7 +3,7 @@
 
 #include "ProjectJEditorBFL.h"
 
-bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType)
+bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& InLuaScriptName, EProjectJLuaInstanceType InType, bool ReportErrorDialog)
 {
 	FString GLuaSrcRelativePath;
 	const char* TemplateFilePath;
@@ -27,6 +27,11 @@ bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& 
 			TemplateFilePath = "Config/LuaTemplates/AbilityTemplate.lua";
 			AllowNewName = false;
 			break;
+		case EProjectJLuaInstanceType::Prop:
+			GLuaSrcRelativePath = TEXT("Script/Props/");
+			TemplateFilePath = "Config/LuaTemplates/PropTemplate.lua";
+			AllowNewName = false;
+			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("Unknown LuaFileType %d"), (int32)InType);
 			return false;
@@ -41,12 +46,14 @@ bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& 
 		{
 			// 显示Dialog
 			// 弹出提示框
-			FText DialogText = FText::Format(
+			if (ReportErrorDialog)
+			{
+				FText DialogText = FText::Format(
 								NSLOCTEXT("AutoDWEditor", "FileAlreadyExists", "Lua file ({0}) is already existed!"),
 								FText::FromString(FileName)
 						   );
-			FMessageDialog::Open(EAppMsgType::Ok, DialogText);
-			
+				FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+			}
 			return false;
 		}
 	}

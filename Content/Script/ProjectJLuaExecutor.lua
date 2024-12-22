@@ -8,6 +8,7 @@
 
 ---@type BP_LuaExecutor_C
 local M = UnLua.Class()
+local Screen = require "Screen"
 
 --- 只提供相关的功能函数，不保存任何状态， 状态都在UE侧保存
 local LevelInstance = {}
@@ -15,6 +16,19 @@ local CharacterInstance = {}
 local LandmarkInstance = {}
 local ItemInstance = {}
 local EventInstances = {}
+
+local function GetExecInstance(CardType, ID)
+    if CardType == UE.EProjectJCardType.Character then
+        return CharacterInstance[ID];
+    elseif CardType == UE.EProjectJCardType.Landmark then
+        return LandmarkInstance[ID];
+    elseif CardType == UE.EProjectJCardType.Item then
+        return ItemInstance[ID];
+    end
+
+    return nil;
+end
+
 
 _G.EmptyTagArray = UE.TArray(UE.FGameplayTag());
 
@@ -44,7 +58,120 @@ function M:EnterLevel(RowName)
     LevelInstance[RowName]:EnterLevel(ContextSystem, EventSystem);
 end
 
+---@return boolean
+function M:CanExecute() 
+    return true;
+end
 
+---@param ID integer
+---@param InLuaScriptName string
+function M:CreateCharacter(ID, InLuaScriptName) 
+    if CharacterInstance[ID] ~= nil then
+        Screen.Print("创建角色脚本失败,已经存在角色：" .. ID);
+    end
+
+    CharacterInstance[ID] = newInstance("Characters." .. InLuaScriptName);
+end
+
+---@param ID integer
+---@param InLuaScriptName string
+function M:CreateLandMark(ID, InLuaScriptName) 
+    if LandmarkInstance[ID] ~= nil then
+        Screen.Print("创建地标脚本失败,已经存在地标：" .. ID);
+    end
+    
+    LandmarkInstance[ID] = newInstance("Landmarks." .. InLuaScriptName);
+end
+
+---@param ID integer
+---@param InLuaScriptName string
+function M:CreateItem(ID, InLuaScriptName)
+    if ItemInstance[ID] ~= nil then
+        Screen.Print("创建物品脚本失败,已经存在物品：" .. ID);
+    end
+
+    ItemInstance[ID] = newInstance("Items." .. InLuaScriptName);
+end
+
+---@param ID integer
+function M:RemoveCharacter(ID)
+    if CharacterInstance[ID] == nil then
+        Screen.Print("删除角色脚本失败,不存在角色：" .. ID);
+    end
+    
+    CharacterInstance[ID] = nil;
+end
+
+---@param ID integer
+function M:RemoveLandMark(ID)
+    if LandmarkInstance[ID] == nil then
+        Screen.Print("删除地标脚本失败,不存在地标：" .. ID);
+    end
+
+    LandmarkInstance[ID] = nil;
+end
+
+---@param ID integer
+function M:RemoveItem(ID)
+    if ItemInstance[ID] == nil then
+        Screen.Print("删除物品脚本失败,不存在物品：" .. ID);
+    end
+
+    ItemInstance[ID] = nil;
+end
+
+
+---@param ID integer
+---@return FProjectJTargetFilter
+function M:GetTargetFilter(ID)
+    ---目前只有Item需要选择目标
+    local Instance = ItemInstance[ID];
+    if Instance == nil then
+        return UE.FProjectJTargetFilter();
+    end
+    
+    return Instance:GetTargetFilter();
+end
+
+---@param CardType EProjectJCardType
+---@param ID integer
+---@param Frame integer
+function M:ExecuteStart(CardType, ID, Frame)
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+
+    Instance.StartTickFrame = Frame;
+end
+
+
+---@param CardType EProjectJCardType
+---@param ID integer
+---@param LogicFrame integer
+---@return boolean
+function M:ExecuteTick(CardType, ID, LogicFrame)
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+    local ExecHelper = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJCardExecuteHelper);
+    return Instance:ExecuteTick(ID, LogicFrame, ExecHelper);
+end
+
+---@param CardType EProjectJCardType
+---@param ID integer
+function M:ExecuteAfterHide(CardType, ID) 
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+    local ExecHelper = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJCardExecuteHelper);
+    Instance:ExecuteAfterHide(ID, ExecHelper);
+end
 ---@param InLuaScriptName string
 ---@return string
 function M:GetLuaAbilityDesc(InLuaScriptName) 

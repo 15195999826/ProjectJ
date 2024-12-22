@@ -11,6 +11,8 @@
 #include "Types/ProjectJBattleEventData.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "Types/ProjectJValid.h"
+#include "Types/Item/ProjectJEquipmentConfig.h"
+#include "Types/Item/ProjectJPropConfig.h"
 #include "ProjectJGameBFL.generated.h"
 
 class UProjectJGameplayEffectUIData;
@@ -49,4 +51,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FGameplayTag RequestGameplayTag(const FName& InTagName);
+
+	static FProjectJWeaponConfig* GetWeaponConfig(const FName& InRowName);
+
+	static FProjectJArmorConfig* GetArmorConfig(const FName& InRowName);
+	
+	static FProjectJPropConfig* GetPropConfig(const FName& InRowName);
 };

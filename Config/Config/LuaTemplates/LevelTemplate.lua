@@ -4,3 +4,31 @@
 --- DateTime: {DateTime}
 --- RowName：{RowName}
 ---
+
+local M = {StartTickFrame = -1}
+
+---[[[
+--- 首次进入该关卡时
+---@param ContextSystem UProjectJContextSystem
+---@param EventSystem UProjectJEventSystem
+---]]]
+function M:FirstTimeEnterLevel(ContextSystem, EventSystem)
+    --- 播放剧情， 写入剧情描述
+    local StoryRecord = UE.FProjectJStoryRecord();
+    StoryRecord.Story:Add(
+            NSLOCTEXT("Unlua", "Story_{LuaScriptName}_1", "默认文本")
+    );
+
+    EventSystem.PostStoryRecord:Broadcast(StoryRecord);
+end
+
+---[[[
+--- 进入该关卡时 (PS: 首次进入时先调用FirstTimeEnterLevel再调用EnterLevel), 每次进入都会调用
+---@param ContextSystem UProjectJContextSystem
+---@param EventSystem UProjectJEventSystem
+---]]]
+function M:EnterLevel(ContextSystem, EventSystem)
+
+end
+
+return M

@@ -4,3 +4,30 @@
 --- DateTime: 2024-11-19
 --- RowName：岛主
 ---
+
+local M = {StartTickFrame = -1}
+
+
+
+
+---[[[
+--- 每帧执行
+---@param OwnerID integer
+---@param Frame integer
+---@param ExecHelper UProjectJCardExecuteHelper
+---@return boolean
+---]]]
+function M:ExecuteTick(OwnerID, Frame, ExecHelper)
+    return false;
+end
+
+
+---[[[
+--- 隐藏动画播放结束后执行
+---@param OwnerID integer
+---@param ExecHelper UProjectJCardExecuteHelper
+---]]]
+function M:ExecuteAfterHide(OwnerID, ExecHelper)
+end
+
+return M

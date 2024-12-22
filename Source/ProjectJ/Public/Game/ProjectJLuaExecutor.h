@@ -13,6 +13,7 @@
 #include "Types/ProjectJBattleEventData.h"
 #include "Types/ProjectJLuaAbilityExecInfo.h"
 #include "Types/ProjectJLuaInstanceType.h"
+#include "Types/ProjectJTargetFilter.h"
 #include "ProjectJLuaExecutor.generated.h"
 
 UCLASS()
@@ -28,6 +29,7 @@ public:
 	{
 		return TEXT("ProjectJLuaExecutor");
 	}
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -56,6 +58,17 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void RemoveItem(int32 ID);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	FProjectJTargetFilter GetTargetFilter(int32 ID);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteStart(EProjectJCardType CardType, int32 ID, int32 Frame);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	bool ExecuteTick(EProjectJCardType CardType, int32 ID, int32 LogicFrame);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteAfterHide(EProjectJCardType CardType, int32 ID);
 	// ----- 关卡玩法相关 End -----
 
 	// ----- 战斗技能相关 Start -----

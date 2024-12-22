@@ -5,10 +5,11 @@
 --- RowName：中心广场
 ---
 
-local M = {}
+local M = {StartTickFrame = -1}
 
 --- 首次进入该关卡时
 ---[[[
+--- 首次进入该关卡时
 ---@param ContextSystem UProjectJContextSystem
 ---@param EventSystem UProjectJEventSystem
 ---]]]
@@ -36,8 +37,9 @@ end
 
 --- 进入该关卡时 (PS: 首次进入时先调用FirstTimeEnterLevel再调用EnterLevel)
 ---[[[
+--- 进入该关卡时 (PS: 首次进入时先调用FirstTimeEnterLevel再调用EnterLevel), 每次进入都会调用
 ---@param ContextSystem UProjectJContextSystem
------@param EventSystem UProjectJEventSystem
+---@param EventSystem UProjectJEventSystem
 ---]]]
 function M:EnterLevel(ContextSystem, EventSystem)
     

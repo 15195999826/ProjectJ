@@ -50,7 +50,7 @@ public:
 	 * 
 	 * @param NewCard
 	 * @param InDesiredDropDuration 
-	 * @param NewCardDesiredLocation 
+	 * @param NewCardDesiredLocation
 	 * @return 返回是否需要发生调整
 	 */
 	bool PlaceCardAndRelayout(class AProjectJCardBase* NewCard,
