@@ -7,8 +7,10 @@
 #include "GameplayEffectTypes.h"
 #include "Abilities/GameplayAbilityTypes.h"
 #include "Card/ProjectJCharacter.h"
+#include "Card/ProjectJUtility.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Types/ProjectJBattleEventData.h"
+#include "Types/ProjectJUtilityConfig.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "Types/ProjectJValid.h"
 #include "Types/Item/ProjectJEquipmentConfig.h"
@@ -57,4 +59,6 @@ public:
 	static FProjectJArmorConfig* GetArmorConfig(const FName& InRowName);
 	
 	static FProjectJPropConfig* GetPropConfig(const FName& InRowName);
+
+	static FProjectJUtilityConfig* GetUtilityConfig(const FName& InRowName);
 };

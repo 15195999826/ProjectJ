@@ -202,3 +202,14 @@ FProjectJPropConfig* UProjectJGameBFL::GetPropConfig(const FName& InRowName)
 	
 	return nullptr;
 }
+
+FProjectJUtilityConfig* UProjectJGameBFL::GetUtilityConfig(const FName& InRowName)
+{
+	auto DT = GetDefault<UProjectJDataTableSettings>()->UtilityTable.LoadSynchronous();
+	if (auto Config = DT->FindRow<FProjectJUtilityConfig>(InRowName, TEXT("Get Utility Config")))
+	{
+		return Config;
+	}
+	
+	return nullptr;
+}

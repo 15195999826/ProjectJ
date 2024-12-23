@@ -27,6 +27,8 @@ protected:
 	void CreateNewCharacter(const FName& InCharacterName);
 
 	void CreateNewLandmark(const FName& InLandmarkName);
+
+	void CreateNewUtility(const FName& InUtilityName);
 	
 	void SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig);
 	

@@ -15,5 +15,7 @@ enum class EProjectJCardType: uint8
 	// 地标
 	Landmark,
 	// 物品
-	Item
+	Item,
+	// 功能牌
+	Utility
 };

@@ -9,6 +9,7 @@
 #include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJContextSystem.generated.h"
 
+class AProjectJUtility;
 class AProjectJItem;
 class AProjectJSpellArea;
 class AProjectJEffectActor;
@@ -24,28 +25,30 @@ class AProjectJLandmark;
 class AProjectJCharacter;
 class AProjectJSpell;
 
-USTRUCT()
-struct FProjectJGameContext
-{
-	GENERATED_BODY()
-
-	FProjectJGameContext(){}
-
-	UPROPERTY()
-	FName CurrentLevel = NAME_None;
-	UPROPERTY()
-	FProjectJDateTime DateTime;
-	UPROPERTY()
-	TArray<int32> LevelCharacters;
-	UPROPERTY()
-	TArray<int32> LevelLandmarks;
-	UPROPERTY()
-	TArray<int32> LevelNavPoints;
-	UPROPERTY()
-	TArray<int32> HandSpellCards;
-
-	// 用于计算是否首次进入某个关卡
-	TArray<FName> HasEnteredLevels;
+// USTRUCT()
+// struct FProjectJGameContext
+// {
+// 	GENERATED_BODY()
+//
+// 	FProjectJGameContext(){}
+//
+// 	UPROPERTY()
+// 	FName CurrentLevel = NAME_None;
+// 	UPROPERTY()
+// 	FProjectJDateTime DateTime;
+// 	UPROPERTY()
+// 	TArray<int32> LevelCharacters;
+// 	UPROPERTY()
+// 	TArray<int32> LevelLandmarks;
+// 	UPROPERTY()
+// 	TArray<int32> LevelNavPoints;
+// 	UPROPERTY()
+// 	TArray<int32> HandSpellCards;
+//
+// 	// 用于计算是否首次进入某个关卡
+// 	TArray<FName> HasEnteredLevels;
+//
+// 	
 };
 
 USTRUCT()
@@ -106,6 +109,8 @@ public:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJLandmark>> UsingLandmarks;
 	UPROPERTY()
+	TMap<int32, TWeakObjectPtr<AProjectJUtility>> UsingUtilities;
+	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJItem>> UsingItems;
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJNavPointActor>> UsingNavPoints;
@@ -116,6 +121,7 @@ public:
 	AProjectJSpell* CreateSpell(const FName& Config);
 	AProjectJCharacter* CreateCharacter(const FName& Config);
 	AProjectJLandmark* CreateLandMark(const FName& Config);
+	AProjectJUtility* CreateUtility(const FName& Config);
 	AProjectJItem* CreateItem(const FName& Config, EProjectJItemType InType);
 
 	AProjectJNavPointActor* CreateNavPoint(const FProjectJNavPoint& Config);
@@ -124,6 +130,7 @@ public:
 	void RecycleSpell(AProjectJSpell* Spell);
 	void RecycleCharacter(AProjectJCharacter* Character);
 	void RecycleLandMark(AProjectJLandmark* LandMark);
+	void RecycleUtility(AProjectJUtility* Utility);
 	void RecycleItem(AProjectJItem* Item);
 	void RecycleNavPoint(AProjectJNavPointActor* NavPoint);
 protected:
@@ -136,6 +143,8 @@ protected:
 	UPROPERTY()
 	TArray<AProjectJLandmark*> LandmarkPool;
 	UPROPERTY()
+	TArray<AProjectJUtility*> UtilityPool;
+	UPROPERTY()
 	TArray<AProjectJItem*> ItemPool;
 	UPROPERTY()
 	TArray<AProjectJNavPointActor*> NavPointPool;
@@ -143,6 +152,7 @@ protected:
 	AProjectJSpell* GetSpell();
 	AProjectJCharacter* GetCharacter();
 	AProjectJLandmark* GetLandMark();
+	AProjectJUtility* GetUtility();
 	AProjectJItem* GetItem();
 	AProjectJNavPointActor* GetNavPoint();
 	

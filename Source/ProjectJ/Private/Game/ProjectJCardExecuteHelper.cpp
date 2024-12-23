@@ -10,6 +10,7 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJItem.h"
 #include "Game/Card/ProjectJLandmark.h"
+#include "Game/Card/ProjectJUtility.h"
 
 int32 UProjectJCardExecuteHelper::SpawnNewCard(const FName& InRowName, EProjectJCardType InType,
                                                EProjectJItemType InItemType)
@@ -29,6 +30,11 @@ int32 UProjectJCardExecuteHelper::SpawnNewCard(const FName& InRowName, EProjectJ
 		case EProjectJCardType::Landmark:
 			{
 				NewCard = ContextSystem->CreateLandMark(InRowName);
+			}
+			break;
+		case EProjectJCardType::Utility:
+			{
+				NewCard = ContextSystem->CreateUtility(InRowName);
 			}
 			break;
 		case EProjectJCardType::Item:

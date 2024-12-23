@@ -24,10 +24,11 @@ public:
 	TSoftObjectPtr<UDataTable> LandmarkTable;
 
 	UPROPERTY(config, EditAnywhere, Category = DataTable)
-	TSoftObjectPtr<UDataTable> LevelTable;
+	TSoftObjectPtr<UDataTable> UtilityTable;
 	
 	UPROPERTY(config, EditAnywhere, Category = DataTable)
-	TSoftObjectPtr<UDataTable> AbilityTable;
+	TSoftObjectPtr<UDataTable> LevelTable;
+	
 
 	UPROPERTY(config, EditAnywhere, Category = DataTable)
 	TSoftObjectPtr<UDataTable> WeaponTable;

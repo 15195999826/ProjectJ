@@ -7,13 +7,14 @@
 
 local M = {StartTickFrame = -1}
 ---[[[
---- 每帧执行
+---每帧执行
 ---@param OwnerID integer
 ---@param Frame integer
 ---@param ExecHelper UProjectJCardExecuteHelper
 ---@return boolean
 ---]]]
 function M:ExecuteTick(OwnerID, Frame, ExecHelper)
+    
     return false;
 end
 

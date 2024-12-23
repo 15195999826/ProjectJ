@@ -40,10 +40,10 @@ void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 		switch (CardType) {
 			case EProjectJCardType::None:
 				break;
-			case EProjectJCardType::Character:
-				break;
 			case EProjectJCardType::Spell:
 				break;
+			case EProjectJCardType::Character:
+			case EProjectJCardType::Utility:
 			case EProjectJCardType::Landmark:
 				{
 					bIsExecuteEnd = ContextSystem->LuaExecutor->ExecuteTick(CardType, ExecutingCard->ID, InLogicFrameCount);
@@ -111,20 +111,25 @@ void AProjectJCardExecuteArea::StartExecute(AProjectJCardBase* InCard)
 						break;
 					case EProjectJItemType::Prop:
 						{
-							const auto& TargetFilter = ContextSystem->LuaExecutor->GetTargetFilter(InCard->ID);
-							// 高亮满足条件的卡牌
-							auto AllCards = ContextSystem->GetUsingCardsMap();
-							for (auto& Pair : AllCards)
-							{
-								if (SatisfyFilter(Pair.Value.Get(), TargetFilter))
-								{
-									Pair.Value->OnWaitForExecuteSelect();
-								}
-							}
+							
 						}
 						break;
 					default:
 						break;
+				}
+			}
+			break;
+		case EProjectJCardType::Utility:
+			{
+				const auto& TargetFilter = ContextSystem->LuaExecutor->GetTargetFilter(InCard->ID);
+				// 高亮满足条件的卡牌
+				auto AllCards = ContextSystem->GetUsingCardsMap();
+				for (auto& Pair : AllCards)
+				{
+					if (SatisfyFilter(Pair.Value.Get(), TargetFilter))
+					{
+						Pair.Value->OnWaitForExecuteSelect();
+					}
 				}
 			}
 			break;

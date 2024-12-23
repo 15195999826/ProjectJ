@@ -14,6 +14,7 @@ local Screen = require "Screen"
 local LevelInstance = {}
 local CharacterInstance = {}
 local LandmarkInstance = {}
+local UtilityInstance = {}
 local ItemInstance = {}
 local EventInstances = {}
 
@@ -24,6 +25,8 @@ local function GetExecInstance(CardType, ID)
         return LandmarkInstance[ID];
     elseif CardType == UE.EProjectJCardType.Item then
         return ItemInstance[ID];
+    elseif CardType == UE.EProjectJCardType.Utility then
+        return UtilityInstance[ID];
     end
 
     return nil;
@@ -85,6 +88,16 @@ end
 
 ---@param ID integer
 ---@param InLuaScriptName string
+function M:CreateUtility(ID, InLuaScriptName)
+    if UtilityInstance[ID] ~= nil then
+        Screen.Print("创建Utility脚本失败,已经存在Utility：" .. ID);
+    end
+
+    UtilityInstance[ID] = newInstance("Utilities." .. InLuaScriptName);
+end
+
+---@param ID integer
+---@param InLuaScriptName string
 function M:CreateItem(ID, InLuaScriptName)
     if ItemInstance[ID] ~= nil then
         Screen.Print("创建物品脚本失败,已经存在物品：" .. ID);
@@ -109,6 +122,15 @@ function M:RemoveLandMark(ID)
     end
 
     LandmarkInstance[ID] = nil;
+end
+
+---@param ID integer
+function M:RemoveUtility(ID) 
+    if UtilityInstance[ID] == nil then
+        Screen.Print("删除Utility脚本失败,不存在Utility：" .. ID);
+    end
+
+    UtilityInstance[ID] = nil;
 end
 
 ---@param ID integer

@@ -79,31 +79,31 @@ void AProjectJPlayerControllerBase::SampleMouseState(EProjectJMouseState& MouseS
 		case EProjectJMouseState::Idle:
 			if (IsJustPressed)
 			{
-				UE_LOG(LogProjectJ, Log, TEXT("MouseState: Press"));
+				// UE_LOG(LogProjectJ, Log, TEXT("MouseState: Press"));
 				MouseState = EProjectJMouseState::Press;
 			}
 			break;
 		case EProjectJMouseState::Press:
 			if (IsDown)
 			{
-				UE_LOG(LogProjectJ, Log, TEXT("MouseState: Pressing"));
+				// UE_LOG(LogProjectJ, Log, TEXT("MouseState: Pressing"));
 				MouseState = EProjectJMouseState::Pressing;
 			}
 			else
 			{
-				UE_LOG(LogProjectJ, Log, TEXT("MouseState: Release"));
+				// UE_LOG(LogProjectJ, Log, TEXT("MouseState: Release"));
 				MouseState = EProjectJMouseState::Release;
 			}
 			break;
 		case EProjectJMouseState::Pressing:
 			if (!IsDown)
 			{
-				UE_LOG(LogProjectJ, Log, TEXT("MouseState: Release"));
+				// UE_LOG(LogProjectJ, Log, TEXT("MouseState: Release"));
 				MouseState = EProjectJMouseState::Release;
 			}
 			break;
 		case EProjectJMouseState::Release:
-			UE_LOG(LogProjectJ, Log, TEXT("MouseState: Idle"));
+			// UE_LOG(LogProjectJ, Log, TEXT("MouseState: Idle"));
 			MouseState = EProjectJMouseState::Idle;
 			break;
 		default: ;

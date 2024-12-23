@@ -15,6 +15,7 @@
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/ProjectJLandmarkConfig.h"
 #include "Types/ProjectJLevelConfig.h"
+#include "Types/ProjectJUtilityConfig.h"
 
 
 void UBuildLevelWorldSubsystem::OnWorldBeginPlay(UWorld& InWorld)
@@ -58,6 +59,7 @@ void UBuildLevelWorldSubsystem::OnLevelPrepared()
 	EventSystem->OnCreateLevel.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewLevel);
 	EventSystem->OnCreateCharacter.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewCharacter);
 	EventSystem->OnCreateLandmark.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewLandmark);
+	EventSystem->OnCreateUtility.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewUtility);
 	EventSystem->OnSaveLevel.AddUObject(this, &UBuildLevelWorldSubsystem::SaveLevel);
 }
 
@@ -125,6 +127,27 @@ void UBuildLevelWorldSubsystem::CreateNewLandmark(const FName& InLandmarkName)
 	LandmarkTable->AddRow(InLandmarkName, NewLandmarkConfig);
 	UEditorLoadingAndSavingUtils::SavePackages({ LandmarkTable->GetPackage() }, false);
 	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(LandmarkTable), FDataTableEditorUtils::EDataTableChangeInfo::RowList);
+}
+
+void UBuildLevelWorldSubsystem::CreateNewUtility(const FName& InUtilityName)
+{
+	auto UtilityTable = GetDefault<UProjectJDataTableSettings>()->UtilityTable.LoadSynchronous();
+	// 检查是否有重复的Row
+	auto RowNames = UtilityTable->GetRowNames();
+	if (RowNames.Contains(InUtilityName))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Utility %s already exists!"), *InUtilityName.ToString()));
+		return;
+	}
+	FString Pinyin = UPythonBridge::Get()->ToPinyin(InUtilityName.ToString());
+	UProjectJEditorBFL::CreateLuaScript(InUtilityName, Pinyin, EProjectJLuaInstanceType::Utility);
+	
+	FProjectJUtilityConfig NewUtilityConfig;
+	NewUtilityConfig.Name = FText::FromName(InUtilityName);
+	NewUtilityConfig.LuaScriptName = FName(*Pinyin);
+	UtilityTable->AddRow(InUtilityName, NewUtilityConfig);
+	UEditorLoadingAndSavingUtils::SavePackages({ UtilityTable->GetPackage() }, false);
+	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(UtilityTable), FDataTableEditorUtils::EDataTableChangeInfo::RowList);
 }
 
 void UBuildLevelWorldSubsystem::SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig)

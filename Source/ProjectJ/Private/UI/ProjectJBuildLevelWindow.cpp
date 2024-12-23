@@ -31,6 +31,12 @@ void UProjectJBuildLevelWindow::CreateNewLandmark(const FName& InLandmarkName)
 	EventSystem->OnCreateLandmark.Broadcast(InLandmarkName);
 }
 
+void UProjectJBuildLevelWindow::CreateNewUtility(const FName& InUtilityName)
+{
+	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+	EventSystem->OnCreateUtility.Broadcast(InUtilityName);
+}
+
 void UProjectJBuildLevelWindow::SaveLevel()
 {
 	if (EditLevelRowName == NAME_None)

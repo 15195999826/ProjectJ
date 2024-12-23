@@ -29,6 +29,9 @@ public:
 	void CreateNewLandmark(const FName& InLandmarkName);
 
 	UFUNCTION(BlueprintCallable)
+	void CreateNewUtility(const FName& InUtilityName);
+
+	UFUNCTION(BlueprintCallable)
 	void SaveLevel();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)

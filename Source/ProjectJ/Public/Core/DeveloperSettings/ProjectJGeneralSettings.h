@@ -7,6 +7,7 @@
 #include "Engine/DeveloperSettings.h"
 #include "ProjectJGeneralSettings.generated.h"
 
+class AProjectJUtility;
 class AProjectJItem;
 class UProjectJLuaGameplayAbility;
 class UProjectJAttackGA;
@@ -58,6 +59,9 @@ public:
 
 	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJLandmark> LandmarkClass;
+
+	UPROPERTY(config, EditAnywhere)
+	TSubclassOf<AProjectJUtility> UtilityClass;
 
 	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJItem> ItemClass;

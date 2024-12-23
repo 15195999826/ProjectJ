@@ -49,6 +49,8 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void CreateLandMark(int32 ID, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
+	void CreateUtility(int32 ID, const FName& InLuaScriptName);
+	UFUNCTION(BlueprintImplementableEvent)
 	void CreateItem(int32 ID, const FName& InLuaScriptName);
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -57,6 +59,8 @@ public:
 	void RemoveLandMark(int32 ID);
 	UFUNCTION(BlueprintImplementableEvent)
 	void RemoveItem(int32 ID);
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveUtility(int32 ID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	FProjectJTargetFilter GetTargetFilter(int32 ID);

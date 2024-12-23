@@ -156,6 +156,10 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 			TemplateFilePath = "Config/LuaTemplates/PropTemplate.lua";
 			GAbilityLuaSrcRelativePath = TEXT("Script/Props/");
 			break;
+		case EProjectJLuaInstanceType::Utility:
+			TemplateFilePath = "Config/LuaTemplates/UtilityTemplate.lua";
+			GAbilityLuaSrcRelativePath = TEXT("Script/Utilities/");
+			break;
 		default:
 			return;
 	}
@@ -480,6 +484,7 @@ static void CreateStaticVariableLua()
 	auto LevelTableVariables = MakeTableRowValues(DTSettings->LevelTable.LoadSynchronous(), TEXT("Level"));
 	auto CharacterTableVariables = MakeTableRowValues(DTSettings->CharacterTable.LoadSynchronous(), TEXT("Character"));
 	auto LandmarkTableVariables = MakeTableRowValues(DTSettings->LandmarkTable.LoadSynchronous(), TEXT("Landmark"));
+	auto UtilityTableVariables = MakeTableRowValues(DTSettings->UtilityTable.LoadSynchronous(), TEXT("Utility"));
 	auto WeaponTableVariables = MakeTableRowValues(DTSettings->WeaponTable.LoadSynchronous(), TEXT("Weapon"));
 	auto ArmorTableVariables = MakeTableRowValues(DTSettings->ArmorTable.LoadSynchronous(), TEXT("Armor"));
 	auto PropTableVariables = MakeTableRowValues(DTSettings->PropTable.LoadSynchronous(), TEXT("Prop"));
@@ -488,6 +493,7 @@ static void CreateStaticVariableLua()
 	Content = FString::Join(LevelTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(CharacterTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(LandmarkTableVariables, TEXT("\n"));
+	Content = Content + TEXT("\n") + FString::Join(UtilityTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(WeaponTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(ArmorTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(PropTableVariables, TEXT("\n"));
@@ -502,6 +508,7 @@ static void MigrateAbilityTemplate()
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Level);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Character);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
+	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Utility);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Ability);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Prop);
 }

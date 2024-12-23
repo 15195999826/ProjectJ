@@ -18,8 +18,10 @@
 #include "Game/GAS/ProjectJLuaGameplayAbility.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/Card/ProjectJItem.h"
+#include "Game/Card/ProjectJUtility.h"
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/ProjectJLandmarkConfig.h"
+#include "Types/ProjectJUtilityConfig.h"
 
 AProjectJSpell* UProjectJContextSystem::GetSpell()
 {
@@ -92,6 +94,30 @@ AProjectJLandmark* UProjectJContextSystem::GetLandMark()
 
 #if WITH_EDITOR
 	Ret->SetFolderPath(TEXT("UsingLandmarks"));
+#endif
+	return Ret;
+}
+
+AProjectJUtility* UProjectJContextSystem::GetUtility()
+{
+	AProjectJUtility* Ret;
+	if (UtilityPool.Num() > 0)
+	{
+		Ret = UtilityPool.Pop();
+	}
+	else
+	{
+		auto UtilityClass = GetDefault<UProjectJGeneralSettings>()->UtilityClass;
+		Ret = GetWorld()->SpawnActor<AProjectJUtility>(UtilityClass);
+	}
+	check(Ret);
+
+	Ret->ID = GID++;
+	GeneralOnGet(Ret);
+	UsingUtilities.Add(Ret->ID, Ret);
+
+#if WITH_EDITOR
+	Ret->SetFolderPath(TEXT("UsingUtilities"));
 #endif
 	return Ret;
 }
@@ -180,6 +206,13 @@ TArray<TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards()
 			Ret.Add(Pair.Value.Get());
 		}
 	}
+	for (auto& Pair : UsingUtilities)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Value.Get());
+		}
+	}
 
 	return Ret;
 }
@@ -209,6 +242,13 @@ TMap<int32, TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards
 		}
 	}
 	for (auto& Pair : UsingItems)
+	{
+		if (Pair.Value.IsValid())
+		{
+			Ret.Add(Pair.Key, Pair.Value.Get());
+		}
+	}
+	for (auto& Pair : UsingUtilities)
 	{
 		if (Pair.Value.IsValid())
 		{
@@ -247,6 +287,15 @@ AProjectJLandmark* UProjectJContextSystem::CreateLandMark(const FName& Config)
 	return LandMark;
 }
 
+AProjectJUtility* UProjectJContextSystem::CreateUtility(const FName& Config)
+{
+	AProjectJUtility* Utility = GetUtility();
+	IProjectJCardInterface::Execute_BindConfig(Utility, Config);
+	auto ConfigRow = GetDefault<UProjectJDataTableSettings>()->UtilityTable.LoadSynchronous()->FindRow<FProjectJUtilityConfig>(Config, TEXT("CreateUtility"));
+	LuaExecutor->CreateUtility(Utility->ID, ConfigRow->LuaScriptName);
+	return Utility;
+}
+
 AProjectJItem* UProjectJContextSystem::CreateItem(const FName& Config, EProjectJItemType InType)
 {
 	AProjectJItem* Item = GetItem();
@@ -282,6 +331,10 @@ void UProjectJContextSystem::RecycleByID(int32 InID)
 	else if (UsingItems.Contains(InID))
 	{
 		RecycleItem(UsingItems[InID].Get());
+	}
+	else if (UsingUtilities.Contains(InID))
+	{
+		RecycleUtility(UsingUtilities[InID].Get());
 	}
 	else if (UsingNavPoints.Contains(InID))
 	{
@@ -365,6 +418,12 @@ void UProjectJContextSystem::RecycleLandMark(AProjectJLandmark* LandMark)
 #if WITH_EDITOR
 	LandMark->SetFolderPath(TEXT("LandmarkPool"));
 #endif
+}
+
+void UProjectJContextSystem::RecycleUtility(AProjectJUtility* Utility)
+{
+	LuaExecutor->RemoveUtility(Utility->ID);
+	
 }
 
 void UProjectJContextSystem::RecycleItem(AProjectJItem* Item)

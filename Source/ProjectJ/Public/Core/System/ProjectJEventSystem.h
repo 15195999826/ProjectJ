@@ -32,6 +32,7 @@ public:
 	FProjectJOneNameDelegate OnCreateLevel;
 	FProjectJOneNameDelegate OnCreateCharacter;
 	FProjectJOneNameDelegate OnCreateLandmark;
+	FProjectJOneNameDelegate OnCreateUtility;
 	FProjectJNameLevelConfigDelegate OnSaveLevel;
 	// ----------------- 编辑器事件 End-----------------
 
