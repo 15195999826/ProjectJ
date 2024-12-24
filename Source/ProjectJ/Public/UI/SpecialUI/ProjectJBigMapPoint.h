@@ -14,11 +14,13 @@ UCLASS()
 class PROJECTJ_API UProjectJBigMapPoint : public UUserWidget
 {
 	GENERATED_BODY()
-
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Config)
 	FText PointText;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Config)
 	TSubclassOf<UProjectJAreaMap> AreaMapClass;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void HighLightCircle(bool bHighLight);
 };

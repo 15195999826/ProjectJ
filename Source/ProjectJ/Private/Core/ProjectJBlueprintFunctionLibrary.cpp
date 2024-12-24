@@ -2,7 +2,10 @@
 
 
 #include "Core/ProjectJBlueprintFunctionLibrary.h"
+
+#include "Core/ProjectJGameInstance.h"
 #include "Framework/Application/NavigationConfig.h"
+#include "Kismet/GameplayStatics.h"
 
 void UProjectJBlueprintFunctionLibrary::EnableUINav()
 {
@@ -25,4 +28,12 @@ FText UProjectJBlueprintFunctionLibrary::GetLocText(const FString& InNameSpace, 
 	}
 	
 	return InDefault;
+}
+
+void UProjectJBlueprintFunctionLibrary::PushUI(const UObject* WorldContextObject, EProjectJUIOverlayType OverlayType,
+	UUserWidget* Widget, TEnumAsByte<EHorizontalAlignment> HorizontalAlignment,
+	TEnumAsByte<EVerticalAlignment> VerticalAlignment)
+{
+	auto AutoDWGI = Cast<UProjectJGameInstance>(UGameplayStatics::GetGameInstance(WorldContextObject));
+	AutoDWGI->UIRoot->PushUI(OverlayType, Widget, HorizontalAlignment, VerticalAlignment);
 }

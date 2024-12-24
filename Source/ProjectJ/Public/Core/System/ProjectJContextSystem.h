@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "Types/ProjectJDateTime.h"
-#include "Types/ProjectJLevelConfig.h"
 #include "Types/Item/ProjectJItemBase.h"
 #include "ProjectJContextSystem.generated.h"
 
@@ -19,7 +18,6 @@ class AProjectJLuaExecutor;
 class AProjectJSceneUIManager;
 class AProjectJCardBase;
 class AProjectJLevelSettingActor;
-class AProjectJNavPointActor;
 class AProjectJGameProgress;
 class AProjectJLandmark;
 class AProjectJCharacter;
@@ -91,16 +89,9 @@ public:
 	TObjectPtr<class AProjectJCardExecuteArea> ExecuteArea;
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class AProjectJCardLayoutManager> CardLayoutManager;
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<class AProjectJGameContext> GameContext;
 	
-	// RuntimeData
-public:
-	UPROPERTY()
-	FDecoraptedProjectJGameContext GameContext;
-
-	// UPROPERTY()
-	// TWeakObjectPtr<AProjectJCardBase> WeakFocusCard;
-	
-	// 简单的CardPool
 public:
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJSpell>> UsingSpells;
@@ -112,8 +103,6 @@ public:
 	TMap<int32, TWeakObjectPtr<AProjectJUtility>> UsingUtilities;
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJItem>> UsingItems;
-	UPROPERTY()
-	TMap<int32, TWeakObjectPtr<AProjectJNavPointActor>> UsingNavPoints;
 	
 	TArray<TObjectPtr<AProjectJCardBase>> GetUsingCards();
 	TMap<int32, TObjectPtr<AProjectJCardBase>> GetUsingCardsMap();
@@ -123,8 +112,6 @@ public:
 	AProjectJLandmark* CreateLandMark(const FName& Config);
 	AProjectJUtility* CreateUtility(const FName& Config);
 	AProjectJItem* CreateItem(const FName& Config, EProjectJItemType InType);
-
-	AProjectJNavPointActor* CreateNavPoint(const FProjectJNavPoint& Config);
 	
 	void RecycleByID(int32 ID);
 	void RecycleSpell(AProjectJSpell* Spell);
@@ -132,7 +119,6 @@ public:
 	void RecycleLandMark(AProjectJLandmark* LandMark);
 	void RecycleUtility(AProjectJUtility* Utility);
 	void RecycleItem(AProjectJItem* Item);
-	void RecycleNavPoint(AProjectJNavPointActor* NavPoint);
 protected:
 	int32 GID = 0;
 	
@@ -146,15 +132,12 @@ protected:
 	TArray<AProjectJUtility*> UtilityPool;
 	UPROPERTY()
 	TArray<AProjectJItem*> ItemPool;
-	UPROPERTY()
-	TArray<AProjectJNavPointActor*> NavPointPool;
 
 	AProjectJSpell* GetSpell();
 	AProjectJCharacter* GetCharacter();
 	AProjectJLandmark* GetLandMark();
 	AProjectJUtility* GetUtility();
 	AProjectJItem* GetItem();
-	AProjectJNavPointActor* GetNavPoint();
 	
 	void GeneralOnGet(AActor* InActor);
 	void GeneralOnRecycle(AActor* InActor);

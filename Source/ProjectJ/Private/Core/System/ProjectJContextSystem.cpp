@@ -11,7 +11,6 @@
 #include "Game/ProjectJCardBackendSystem.h"
 #include "Game/ProjectJEffectActor.h"
 #include "Game/ProjectJLuaExecutor.h"
-#include "Game/ProjectJNavPointActor.h"
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
@@ -142,29 +141,6 @@ AProjectJItem* UProjectJContextSystem::GetItem()
 
 #if WITH_EDITOR
 	Ret->SetFolderPath(TEXT("UsingItems"));
-#endif
-	return Ret;
-}
-
-AProjectJNavPointActor* UProjectJContextSystem::GetNavPoint()
-{
-	AProjectJNavPointActor* Ret;
-	if (NavPointPool.Num() > 0)
-	{
-		Ret = NavPointPool.Pop();
-	}
-	else
-	{
-		auto NavPointClass = GetDefault<UProjectJGeneralSettings>()->NavPointClass;
-		Ret = GetWorld()->SpawnActor<AProjectJNavPointActor>(NavPointClass);
-	}
-	check(Ret);
-	
-	Ret->ID = GID++;
-	GeneralOnGet(Ret);
-	UsingNavPoints.Add(Ret->ID, Ret);
-#if WITH_EDITOR
-	Ret->SetFolderPath(TEXT("UsingNavPoints"));
 #endif
 	return Ret;
 }
@@ -307,13 +283,6 @@ AProjectJItem* UProjectJContextSystem::CreateItem(const FName& Config, EProjectJ
 	return Item;
 }
 
-AProjectJNavPointActor* UProjectJContextSystem::CreateNavPoint(const FProjectJNavPoint& Config)
-{
-	AProjectJNavPointActor* NavPoint = GetNavPoint();
-	NavPoint->BindConfig(Config);
-	return NavPoint;
-}
-
 void UProjectJContextSystem::RecycleByID(int32 InID)
 {
 	if (UsingSpells.Contains(InID))
@@ -336,24 +305,10 @@ void UProjectJContextSystem::RecycleByID(int32 InID)
 	{
 		RecycleUtility(UsingUtilities[InID].Get());
 	}
-	else if (UsingNavPoints.Contains(InID))
-	{
-		RecycleNavPoint(UsingNavPoints[InID].Get());
-	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("RecycleByID: Can't find ID: %d"), InID);
 	}
-}
-
-void UProjectJContextSystem::RecycleNavPoint(AProjectJNavPointActor* NavPoint)
-{
-	UsingNavPoints.Remove(NavPoint->ID);
-	NavPointPool.Add(NavPoint);
-	GeneralOnRecycle(NavPoint);
-#if WITH_EDITOR
-	NavPoint->SetFolderPath(TEXT("NavPointPool"));
-#endif
 }
 
 void UProjectJContextSystem::RecycleSpell(AProjectJSpell* Spell)

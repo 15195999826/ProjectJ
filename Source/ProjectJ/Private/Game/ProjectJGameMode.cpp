@@ -16,6 +16,7 @@
 #include "Game/ProjectJSpellArea.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/ProjectJCardLayoutManager.h"
+#include "Game/ProjectJGameContext.h"
 
 void AProjectJGameMode::BeginPlay()
 {
@@ -72,6 +73,12 @@ void AProjectJGameMode::BeginPlay()
 	for (TActorIterator<AProjectJCardLayoutManager> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
 		ContextSystem->CardLayoutManager = *ActorItr;
+		break;
+	}
+
+	for (TActorIterator<AProjectJGameContext> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		ContextSystem->GameContext = *ActorItr;
 		break;
 	}
 	

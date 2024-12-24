@@ -7,9 +7,9 @@
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/ProjectJGameContext.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/ProjectJLuaExecutor.h"
-#include "Game/ProjectJNavPointActor.h"
 #include "Game/ProjectJPerformManager.h"
 #include "Game/ProjectJSceneUIManager.h"
 #include "Game/ProjectJSpellArea.h"
@@ -17,7 +17,6 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
-#include "Types/ProjectJLevelConfig.h"
 
 // Sets default values
 AProjectJGameProgress::AProjectJGameProgress()
@@ -111,119 +110,130 @@ void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJC
 		case EProjectJGameStage::Observing:
 			{
 				// 观察卡牌返回手牌
-				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[0]];
-				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToArea(Card.Get(), 0, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
+				// auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[0]];
+				// auto LevelSettingActor = ContextSystem->LevelSettingActor;
+				// SpellCardToArea(Card.Get(), 0, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Checking:
 			{
 				// 检查卡牌返回手牌
-				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[1]];
-				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToArea(Card.Get(), 1, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
+				// auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[1]];
+				// auto LevelSettingActor = ContextSystem->LevelSettingActor;
+				// SpellCardToArea(Card.Get(), 1, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Hiding:
 			{
 				// 隐藏卡牌返回手牌
-				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[2]];
-				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToArea(Card.Get(), 2, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
+				// auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[2]];
+				// auto LevelSettingActor = ContextSystem->LevelSettingActor;
+				// SpellCardToArea(Card.Get(), 2, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 		case EProjectJGameStage::Ambushing:
 			{
 				// 偷袭卡牌返回手牌
-				auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[3]];
-				auto LevelSettingActor = ContextSystem->LevelSettingActor;
-				SpellCardToArea(Card.Get(), 3, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
+				// auto Card = ContextSystem->UsingSpells[ContextSystem->GameContext.HandSpellCards[3]];
+				// auto LevelSettingActor = ContextSystem->LevelSettingActor;
+				// SpellCardToArea(Card.Get(), 3, ContextSystem->SpellArea->GetActorLocation(), LevelSettingActor->HandSpellCardOffset);
 			}
 			break;
 	}
 }
 
-void AProjectJGameProgress::StartNewGame()
+void AProjectJGameProgress::StartNewGame(const FName& InMainCharacterRow)
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	// 创建主角， 主角始终是一张正在使用的卡牌， 但是不显示在场景中
+	auto MainCharacter = ContextSystem->CreateCharacter(InMainCharacterRow);
+	ContextSystem->GameContext->MainCharacterID = MainCharacter->ID;
+	ContextSystem->GameContext->DateTime = FProjectJDateTime();
+	// 刷新副本
+	ContextSystem->GameContext->RefreshDungeons();
+}
+
+void AProjectJGameProgress::EnterDungeon()
 {
 	// 生成4张Spell, 观察、检查、躲藏、偷袭
-	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	ContextSystem->GameContext = FDecoraptedProjectJGameContext();
-	auto Spell1 = ContextSystem->CreateSpell(TEXT("观察"));
-	ContextSystem->GameContext.HandSpellCards.Add(Spell1->ID);
-	auto Spell2 = ContextSystem->CreateSpell(TEXT("检查"));
-	ContextSystem->GameContext.HandSpellCards.Add(Spell2->ID);
-	auto Spell3 = ContextSystem->CreateSpell(TEXT("躲藏"));
-	ContextSystem->GameContext.HandSpellCards.Add(Spell3->ID);
-	auto Spell4 = ContextSystem->CreateSpell(TEXT("偷袭"));
-	ContextSystem->GameContext.HandSpellCards.Add(Spell4->ID);
+	// auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	// ContextSystem->GameContext = FDecoraptedProjectJGameContext();
+	// auto Spell1 = ContextSystem->CreateSpell(TEXT("观察"));
+	// ContextSystem->GameContext.HandSpellCards.Add(Spell1->ID);
+	// auto Spell2 = ContextSystem->CreateSpell(TEXT("检查"));
+	// ContextSystem->GameContext.HandSpellCards.Add(Spell2->ID);
+	// auto Spell3 = ContextSystem->CreateSpell(TEXT("躲藏"));
+	// ContextSystem->GameContext.HandSpellCards.Add(Spell3->ID);
+	// auto Spell4 = ContextSystem->CreateSpell(TEXT("偷袭"));
+	// ContextSystem->GameContext.HandSpellCards.Add(Spell4->ID);
 	// 放到手牌位置, Attach To MainCamera
-	auto LevelSettingActor = ContextSystem->LevelSettingActor;
-	auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
-	auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
-	SpellCardToArea(Spell1, 0, HandSpellCardStartLocation, HandSpellCardOffset);
-	SpellCardToArea(Spell2, 1, HandSpellCardStartLocation, HandSpellCardOffset);
-	SpellCardToArea(Spell3, 2, HandSpellCardStartLocation, HandSpellCardOffset);
-	SpellCardToArea(Spell4, 3, HandSpellCardStartLocation, HandSpellCardOffset);
+	// auto LevelSettingActor = ContextSystem->LevelSettingActor;
+	// auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
+	// auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
+	// SpellCardToArea(Spell1, 0, HandSpellCardStartLocation, HandSpellCardOffset);
+	// SpellCardToArea(Spell2, 1, HandSpellCardStartLocation, HandSpellCardOffset);
+	// SpellCardToArea(Spell3, 2, HandSpellCardStartLocation, HandSpellCardOffset);
+	// SpellCardToArea(Spell4, 3, HandSpellCardStartLocation, HandSpellCardOffset);
 	
-	EnterLevel(StartLevel.RowName);
+	// EnterLevel(StartLevel.RowName);
 }
 
 void AProjectJGameProgress::EnterLevel(const FName& LevelRowName)
 {
-	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	// 移除当前关卡中元素
-	for (auto& LandmarkID : ContextSystem->GameContext.LevelLandmarks)
-	{
-		ContextSystem->RecycleByID(LandmarkID);
-	}
-	for (auto& CharacterID : ContextSystem->GameContext.LevelCharacters)
-	{
-		ContextSystem->RecycleByID(CharacterID);
-	}
-
-	for (auto& NavPointID : ContextSystem->GameContext.LevelNavPoints)
-	{
-		ContextSystem->RecycleByID(NavPointID);
-	}
+	// auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	// // 移除当前关卡中元素
+	// for (auto& LandmarkID : ContextSystem->GameContext.LevelLandmarks)
+	// {
+	// 	ContextSystem->RecycleByID(LandmarkID);
+	// }
+	// for (auto& CharacterID : ContextSystem->GameContext.LevelCharacters)
+	// {
+	// 	ContextSystem->RecycleByID(CharacterID);
+	// }
+	//
+	// for (auto& NavPointID : ContextSystem->GameContext.LevelNavPoints)
+	// {
+	// 	ContextSystem->RecycleByID(NavPointID);
+	// }
 	
 	// 加载关卡
-	ContextSystem->GameContext.CurrentLevel = LevelRowName;
-	auto LevelConfig = GetDefault<UProjectJDataTableSettings>()->LevelTable.LoadSynchronous()->FindRow<FProjectJLevelConfig>(LevelRowName, TEXT(""));
-	check(LevelConfig);
-	
-	// 生成Landmark
-	for (auto& Landmark : LevelConfig->Landmarks)
-	{
-		auto LandmarkActor = ContextSystem->CreateLandMark(Landmark.RowName);
-		LandmarkActor->SetActorLocation(Landmark.Location);
-		LandmarkActor->CanDrag = true;
-		ContextSystem->GameContext.LevelLandmarks.Add(LandmarkActor->ID);
-	}
-	
-	// 生成Character
-	for (auto& Character : LevelConfig->Characters)
-	{
-		auto Char = ContextSystem->CreateCharacter(Character.RowName);
-		Char->SetActorLocation(Character.Location);
-		Char->CanDrag = true;
-		ContextSystem->GameContext.LevelCharacters.Add(Char->ID);
-	}
-	// 生成NavPoint
-	for (auto& NavPoint : LevelConfig->NavPoints)
-	{
-		auto NavPointActor = ContextSystem->CreateNavPoint(NavPoint);
-		NavPointActor->CanDrag = false;
-		ContextSystem->GameContext.LevelNavPoints.Add(NavPointActor->ID);
-	}
+	// ContextSystem->GameContext.CurrentLevel = LevelRowName;
+	// auto LevelConfig = GetDefault<UProjectJDataTableSettings>()->LevelTable.LoadSynchronous()->FindRow<FProjectJLevelConfig>(LevelRowName, TEXT(""));
+	// check(LevelConfig);
+	//
+	// // 生成Landmark
+	// for (auto& Landmark : LevelConfig->Landmarks)
+	// {
+	// 	auto LandmarkActor = ContextSystem->CreateLandMark(Landmark.RowName);
+	// 	LandmarkActor->SetActorLocation(Landmark.Location);
+	// 	LandmarkActor->CanDrag = true;
+	// 	ContextSystem->GameContext.LevelLandmarks.Add(LandmarkActor->ID);
+	// }
+	//
+	// // 生成Character
+	// for (auto& Character : LevelConfig->Characters)
+	// {
+	// 	auto Char = ContextSystem->CreateCharacter(Character.RowName);
+	// 	Char->SetActorLocation(Character.Location);
+	// 	Char->CanDrag = true;
+	// 	ContextSystem->GameContext.LevelCharacters.Add(Char->ID);
+	// }
+	// // 生成NavPoint
+	// for (auto& NavPoint : LevelConfig->NavPoints)
+	// {
+	// 	auto NavPointActor = ContextSystem->CreateNavPoint(NavPoint);
+	// 	NavPointActor->CanDrag = false;
+	// 	ContextSystem->GameContext.LevelNavPoints.Add(NavPointActor->ID);
+	// }
+	//
+	// // 首次进入关卡
+	// if (!ContextSystem->GameContext.HasEnteredLevels.Contains(LevelRowName))
+	// {
+	// 	ContextSystem->GameContext.HasEnteredLevels.Add(LevelRowName);
+	// 	ContextSystem->LuaExecutor->FirstTimeEnterLevel(LevelRowName, LevelConfig->LuaScriptName);
+	// }
 
-	// 首次进入关卡
-	if (!ContextSystem->GameContext.HasEnteredLevels.Contains(LevelRowName))
-	{
-		ContextSystem->GameContext.HasEnteredLevels.Add(LevelRowName);
-		ContextSystem->LuaExecutor->FirstTimeEnterLevel(LevelRowName, LevelConfig->LuaScriptName);
-	}
-
-	ContextSystem->LuaExecutor->EnterLevel(LevelRowName);
+	// ContextSystem->LuaExecutor->EnterDungeon(LevelRowName);
 	
 	ChangeStage(EProjectJGameStage::Performing, EmptyPayload);
 }

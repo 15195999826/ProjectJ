@@ -27,7 +27,7 @@ public:
 	TSoftObjectPtr<UDataTable> UtilityTable;
 	
 	UPROPERTY(config, EditAnywhere, Category = DataTable)
-	TSoftObjectPtr<UDataTable> LevelTable;
+	TSoftObjectPtr<UDataTable> DungeonTable;
 	
 
 	UPROPERTY(config, EditAnywhere, Category = DataTable)

@@ -7,6 +7,20 @@
 #include "Types/ProjectJDateTime.h"
 #include "ProjectJGameContext.generated.h"
 
+USTRUCT()
+struct FProjectJDungeonLocation
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	FName ParentPoint;
+	UPROPERTY()
+	FName AreaPoint;
+};
+
+/**
+ * 仅用于存储游戏数据
+ */
 UCLASS()
 class PROJECTJ_API AProjectJGameContext : public AActor
 {
@@ -21,23 +35,26 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-public:
-	UPROPERTY()
-	FName CurrentLevel = NAME_None;
+	int32 MainCharacterID;
+	
 	UPROPERTY()
 	FProjectJDateTime DateTime;
+	
+	UPROPERTY()
+	FName CurrentDungeon = NAME_None;
+
+	UPROPERTY()
+	TArray<FName> PossibleDungeons;
+	UPROPERTY()
+	TMap<FName, FProjectJDungeonLocation> PossibleDungeonLocations;
+	
 	UPROPERTY()
 	TArray<int32> LevelCharacters;
 	UPROPERTY()
 	TArray<int32> LevelLandmarks;
 	UPROPERTY()
-	TArray<int32> LevelNavPoints;
-	UPROPERTY()
-	TArray<int32> HandSpellCards;
+	TArray<int32> LevelUtilities;
 
-	// 用于计算是否首次进入某个关卡
-	TArray<FName> HasEnteredLevels;
+public:
+	void RefreshDungeons();
 };

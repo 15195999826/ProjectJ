@@ -25,13 +25,12 @@ struct FProjectJDungeonConfig : public FTableRowBase
 	GENERATED_BODY()
 
 	FProjectJDungeonConfig()
-		: Name(NAME_None)
-		, Description(NAME_None)
+		:Description(NAME_None)
 	{
 	}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName Name;
+	FText Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName Description;
@@ -43,5 +42,17 @@ struct FProjectJDungeonConfig : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="刷新条件"))
 	FProjectJDungeonSpawnCondition SpawnCondition;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="刷新的角色卡", GetOptions="ProjectJ.ProjectJPropertyHelper.GetCharacters"))
+	TArray<FName> Characters;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="刷新的地标卡", GetOptions="ProjectJ.ProjectJPropertyHelper.GetLandmarks"))
+	TArray<FName> Landmarks;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(DisplayName="刷新的功能卡", GetOptions="ProjectJ.ProjectJPropertyHelper.GetUtilities"))
+	TArray<FName> Utilities;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	FName LuaScriptName;
 };
 

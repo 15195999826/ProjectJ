@@ -37,9 +37,11 @@ protected:
 	// ----- 关卡玩法相关 Start -----
 public:
 	UFUNCTION(BlueprintImplementableEvent)
-	void FirstTimeEnterLevel(const FName& RowName, const FName& ScriptName);
+	void CreateDungeon(const FName& RowName, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
-	void EnterLevel(const FName& RowName);
+	void EnterDungeon(const FName& RowName);
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveDungeon(const FName& RowName);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	bool CanExecute();

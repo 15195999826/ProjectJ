@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "Types/ProjectJLevelConfig.h"
-#include "Types/ProjectJLuaInstanceType.h"
 #include "BuildLevelWorldSubsystem.generated.h"
 
 /**
@@ -22,14 +20,12 @@ public:
 protected:
 	void OnLevelPrepared();
 	
-	void CreateNewLevel(const FName& InLevelName);
-	
 	void CreateNewCharacter(const FName& InCharacterName);
 
 	void CreateNewLandmark(const FName& InLandmarkName);
 
 	void CreateNewUtility(const FName& InUtilityName);
 	
-	void SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig);
+	// void SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig);
 	
 };

@@ -10,9 +10,10 @@ bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& 
 	bool AllowNewName = true;
 	switch (InType)
 	{
-		case EProjectJLuaInstanceType::Level:
-			GLuaSrcRelativePath = TEXT("Script/Levels/");
-			TemplateFilePath = "Config/LuaTemplates/LevelTemplate.lua";
+		case EProjectJLuaInstanceType::Dungeon:
+			GLuaSrcRelativePath = TEXT("Script/Dungeons/");
+			TemplateFilePath = "Config/LuaTemplates/DungeonTemplate.lua";
+			AllowNewName = false;
 			break;
 		case EProjectJLuaInstanceType::Character:
 			GLuaSrcRelativePath = TEXT("Script/Characters/");

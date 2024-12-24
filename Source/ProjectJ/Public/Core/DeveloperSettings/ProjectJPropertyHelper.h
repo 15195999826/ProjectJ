@@ -30,4 +30,13 @@ public:
 
 	UFUNCTION()
 	static TArray<FName> GetFeatureNames();
+
+	UFUNCTION()
+	static TArray<FName> GetCharacters();
+
+	UFUNCTION()
+	static TArray<FName> GetLandmarks();
+
+	UFUNCTION()
+	static TArray<FName> GetUtilities();
 };

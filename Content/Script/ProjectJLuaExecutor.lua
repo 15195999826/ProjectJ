@@ -11,7 +11,7 @@ local M = UnLua.Class()
 local Screen = require "Screen"
 
 --- 只提供相关的功能函数，不保存任何状态， 状态都在UE侧保存
-local LevelInstance = {}
+local DungeonInstance = {}
 local CharacterInstance = {}
 local LandmarkInstance = {}
 local UtilityInstance = {}
@@ -43,22 +43,26 @@ _G.EmptyTagArray = UE.TArray(UE.FGameplayTag());
 --end
 
 ---@param RowName string
----@param ScriptName string
-function M:FirstTimeEnterLevel(RowName, ScriptName)
-    if LevelInstance[RowName] == nil then
-        LevelInstance[RowName] = newInstance("Levels." .. ScriptName);
+---@param InLuaScriptName string
+function M:CreateDungeon(RowName, InLuaScriptName) 
+    if DungeonInstance[RowName] ~= nil then
+        Screen.Print("创建副本脚本失败,已经存在副本：" .. RowName);
     end
 
+    DungeonInstance[RowName] = newInstance("Dungeons." .. InLuaScriptName);
+end
+
+
+---@param RowName string
+function M:EnterDungeon(RowName)
     local ContextSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJContextSystem);
     local EventSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJEventSystem);
-    LevelInstance[RowName]:FirstTimeEnterLevel(ContextSystem, EventSystem);
+    DungeonInstance[RowName]:EnterDungeon(ContextSystem, EventSystem);
 end
 
 ---@param RowName string
-function M:EnterLevel(RowName)
-    local ContextSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJContextSystem);
-    local EventSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJEventSystem);
-    LevelInstance[RowName]:EnterLevel(ContextSystem, EventSystem);
+function M:RemoveDungeon(RowName) 
+    DungeonInstance[RowName] = nil;
 end
 
 ---@return boolean

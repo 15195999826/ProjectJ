@@ -7,10 +7,8 @@ struct FProjectJDateTime
 {
 	GENERATED_BODY()
 
-	FProjectJDateTime() : Year(0),
-	                      Day(0)
-	                      , Hour(0)
-	                      , Minute(0)
+	// 新游戏从第一年，第一天，6点开始
+	FProjectJDateTime() : Year(1),Day(1), Hour(6), Minute(0)
 	{
 	}
 

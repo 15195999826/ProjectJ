@@ -18,4 +18,7 @@ class PROJECTJ_API UProjectJAreaMap : public UUserWidget
 public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> MapPointRoot;
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateDungeons();
 };

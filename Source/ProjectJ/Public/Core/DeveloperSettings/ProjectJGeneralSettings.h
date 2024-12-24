@@ -76,9 +76,6 @@ public:
 	UPROPERTY(config, EditAnywhere)
 	TSubclassOf<AProjectJSpell> SpellClass;
 	
-	UPROPERTY(config, EditAnywhere)
-	TSubclassOf<AProjectJNavPointActor> NavPointClass;
-	
 	UPROPERTY(config, EditAnywhere, Category=Animations)
 	TSoftObjectPtr<UAnimMontage> HitMontage;
 

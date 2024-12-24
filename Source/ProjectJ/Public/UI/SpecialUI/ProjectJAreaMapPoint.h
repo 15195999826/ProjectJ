@@ -17,4 +17,7 @@ class PROJECTJ_API UProjectJAreaMapPoint : public UUserWidget
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Config)
 	FText PointText;
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void HighLightCircle(bool bCond);
 };

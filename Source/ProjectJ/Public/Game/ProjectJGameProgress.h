@@ -6,7 +6,6 @@
 #include "Card/ProjectJCardBase.h"
 #include "GameFramework/Actor.h"
 #include "Types/ProjectJGameStage.h"
-#include "Types/ProjectJLevelConfig.h"
 #include "ProjectJGameProgress.generated.h"
 
 USTRUCT()
@@ -19,6 +18,9 @@ struct FProjectJChangeStagePayload
 	TWeakObjectPtr<AProjectJCardBase> CardPayload;
 };
 
+/**
+ *  游戏流程控制
+ */
 UCLASS()
 class PROJECTJ_API AProjectJGameProgress : public AActor
 {
@@ -41,9 +43,6 @@ private:
 	float DeltaTimeAccumulator = 0.f;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FDataTableRowHandle StartLevel;
-
 	// Runtime
 	UPROPERTY(BlueprintReadOnly)
 	EProjectJGameStage GameStage = EProjectJGameStage::Idle;
@@ -54,8 +53,15 @@ protected:
 	TMap<FName, bool> WaitingSignals;
 	
 public:
+	/**
+	 * 开始新游戏
+	 * @param InMainCharacterRow 主角卡牌
+	 */
 	UFUNCTION(BlueprintCallable)
-	void StartNewGame();
+	void StartNewGame(const FName& InMainCharacterRow);
+	
+	UFUNCTION(BlueprintCallable)
+	void EnterDungeon();
 	
 	void EnterLevel(const FName& LevelRowName);
 	

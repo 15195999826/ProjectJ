@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Game/ProjectJGameBFL.h"
+#include "Game/ProjectJGameContext.h"
 #include "Game/ProjectJLuaExecutor.h"
 #include "Game/Card/ProjectJCardBase.h"
 #include "Interface/ProjectJCardInterface.h"
@@ -31,7 +32,7 @@ void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 	{
 		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 		// 时间流逝, 每一帧 + 1 分钟
-		ContextSystem->GameContext.DateTime.StepMinute();
+		ContextSystem->GameContext->DateTime.StepMinute();
 		
 		
 		bool bIsExecuteEnd = false;

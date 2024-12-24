@@ -5,7 +5,6 @@
 
 #include "DataTableEditorUtils.h"
 #include "FileHelpers.h"
-#include "IPythonScriptPlugin.h"
 #include "ProjectJEditorBFL.h"
 #include "PythonBridge.h"
 #include "BuildLevel/ProjectJBuildLevelGameMode.h"
@@ -14,7 +13,6 @@
 #include "Core/System/ProjectJEventSystem.h"
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/ProjectJLandmarkConfig.h"
-#include "Types/ProjectJLevelConfig.h"
 #include "Types/ProjectJUtilityConfig.h"
 
 
@@ -56,35 +54,9 @@ void UBuildLevelWorldSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 void UBuildLevelWorldSubsystem::OnLevelPrepared()
 {
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
-	EventSystem->OnCreateLevel.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewLevel);
 	EventSystem->OnCreateCharacter.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewCharacter);
 	EventSystem->OnCreateLandmark.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewLandmark);
 	EventSystem->OnCreateUtility.AddUObject(this, &UBuildLevelWorldSubsystem::CreateNewUtility);
-	EventSystem->OnSaveLevel.AddUObject(this, &UBuildLevelWorldSubsystem::SaveLevel);
-}
-
-void UBuildLevelWorldSubsystem::CreateNewLevel(const FName& InLevelName)
-{
-	auto LevelTable = GetDefault<UProjectJDataTableSettings>()->LevelTable.LoadSynchronous();
-
-	// 检查是否有重复的Row
-	auto RowNames = LevelTable->GetRowNames();
-	if (RowNames.Contains(InLevelName))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Level %s already exists!"), *InLevelName.ToString()));
-		return;
-	}
-
-	FString Pinyin = UPythonBridge::Get()->ToPinyin(InLevelName.ToString());
-	UProjectJEditorBFL::CreateLuaScript(InLevelName, Pinyin, EProjectJLuaInstanceType::Level);
-	
-	FProjectJLevelConfig NewLevelConfig;
-	NewLevelConfig.LevelName = FText::FromName(InLevelName);
-	NewLevelConfig.LuaScriptName = FName(*Pinyin);
-	LevelTable->AddRow(InLevelName, NewLevelConfig);
-	UEditorLoadingAndSavingUtils::SavePackages({ LevelTable->GetPackage() }, false);
-	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(LevelTable), FDataTableEditorUtils::EDataTableChangeInfo::RowList);
-
 }
 
 void UBuildLevelWorldSubsystem::CreateNewCharacter(const FName& InCharacterName)
@@ -148,24 +120,4 @@ void UBuildLevelWorldSubsystem::CreateNewUtility(const FName& InUtilityName)
 	UtilityTable->AddRow(InUtilityName, NewUtilityConfig);
 	UEditorLoadingAndSavingUtils::SavePackages({ UtilityTable->GetPackage() }, false);
 	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(UtilityTable), FDataTableEditorUtils::EDataTableChangeInfo::RowList);
-}
-
-void UBuildLevelWorldSubsystem::SaveLevel(const FName& Name, const FProjectJLevelConfig& ProjectJLevelConfig)
-{
-	auto LevelTable = GetDefault<UProjectJDataTableSettings>()->LevelTable.LoadSynchronous();
-	auto RowNames = LevelTable->GetRowNames();
-	if (!RowNames.Contains(Name))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Level %s not exists!"), *Name.ToString()));
-		return;
-	}
-
-	// 获取对应的Row， 更新数据
-	auto LevelRow = LevelTable->FindRow<FProjectJLevelConfig>(Name, TEXT("SaveLevel"));
-	check(LevelRow);
-	LevelRow->Characters = ProjectJLevelConfig.Characters;
-	LevelRow->Landmarks = ProjectJLevelConfig.Landmarks;
-	LevelRow->NavPoints = ProjectJLevelConfig.NavPoints;
-	UEditorLoadingAndSavingUtils::SavePackages({ LevelTable->GetPackage() }, false);
-	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(LevelTable), FDataTableEditorUtils::EDataTableChangeInfo::RowData);
 }

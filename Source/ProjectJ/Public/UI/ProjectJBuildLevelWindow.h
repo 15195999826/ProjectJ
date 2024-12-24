@@ -18,9 +18,6 @@ class PROJECTJ_API UProjectJBuildLevelWindow : public UUserWidget
 public:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(BindWidget))
 	TObjectPtr<UTextBlock> EditLevelText;
-	
-	UFUNCTION(BlueprintCallable)
-	void CreateNewLevel(const FName& InLevelName);
 
 	UFUNCTION(BlueprintCallable)
 	void CreateNewCharacter(const FName& InCharacterName);

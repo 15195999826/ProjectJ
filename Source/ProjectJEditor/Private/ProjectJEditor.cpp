@@ -21,6 +21,7 @@
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "Game/ProjectJEffectActor.h"
+#include "Types/ProjectJDungeonConfig.h"
 #include "Types/Item/ProjectJPropConfig.h"
 #include "UObject/UObjectIterator.h"
 #include "UI/SpecialUI/ProjectJBigMap.h"
@@ -140,9 +141,9 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 	const char* TemplateFilePath;
 	FString GAbilityLuaSrcRelativePath;
 	switch (InType) {
-		case EProjectJLuaInstanceType::Level:
-			TemplateFilePath = "Config/LuaTemplates/LevelTemplate.lua";
-			GAbilityLuaSrcRelativePath = TEXT("Script/Levels/");
+		case EProjectJLuaInstanceType::Dungeon:
+			TemplateFilePath = "Config/LuaTemplates/DungeonTemplate.lua";
+			GAbilityLuaSrcRelativePath = TEXT("Script/Dungeons/");
 			break;
 		case EProjectJLuaInstanceType::Character:
 			TemplateFilePath = "Config/LuaTemplates/CharacterTemplate.lua";
@@ -485,7 +486,7 @@ static void CreateStaticVariableLua()
 
 
 	auto DTSettings = GetDefault<UProjectJDataTableSettings>();
-	auto LevelTableVariables = MakeTableRowValues(DTSettings->LevelTable.LoadSynchronous(), TEXT("Level"));
+	auto DungeonTableVariables = MakeTableRowValues(DTSettings->DungeonTable.LoadSynchronous(), TEXT("Level"));
 	auto CharacterTableVariables = MakeTableRowValues(DTSettings->CharacterTable.LoadSynchronous(), TEXT("Character"));
 	auto LandmarkTableVariables = MakeTableRowValues(DTSettings->LandmarkTable.LoadSynchronous(), TEXT("Landmark"));
 	auto UtilityTableVariables = MakeTableRowValues(DTSettings->UtilityTable.LoadSynchronous(), TEXT("Utility"));
@@ -494,7 +495,7 @@ static void CreateStaticVariableLua()
 	auto PropTableVariables = MakeTableRowValues(DTSettings->PropTable.LoadSynchronous(), TEXT("Prop"));
 
 	// LevelTableVariables\CharacterTableVariables\LandmarkTableVariables 三者都需要写入Content
-	Content = FString::Join(LevelTableVariables, TEXT("\n"));
+	Content = FString::Join(DungeonTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(CharacterTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(LandmarkTableVariables, TEXT("\n"));
 	Content = Content + TEXT("\n") + FString::Join(UtilityTableVariables, TEXT("\n"));
@@ -509,7 +510,7 @@ static void CreateStaticVariableLua()
 
 static void MigrateAbilityTemplate()
 {
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Level);
+	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Dungeon);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Character);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Utility);
@@ -606,7 +607,7 @@ static void CreatePropLuaScript()
 	auto RowMap = PropDT->GetRowMap();
 
 	// 检查是否存在重复的拼音
-	TMap<FString, TArray<FName>> PinyinMap; 
+	TMap<FString, TArray<FName>> PinyinMap;
 	for (const auto& Pair : RowMap)
 	{
 		auto DesiredPinyin = PythonBridge->ToPinyin(Pair.Key.ToString());
@@ -629,7 +630,7 @@ static void CreatePropLuaScript()
 			return;
 		}
 	}
-	
+
 	for (const auto& Pair : RowMap)
 	{
 		auto PropConfig = reinterpret_cast<FProjectJPropConfig*>(Pair.Value);
@@ -638,8 +639,9 @@ static void CreatePropLuaScript()
 		PropConfig->ExecLuaScriptName = FName(*DesiredPinyin);
 	}
 	// 保存DataTable
-	UEditorLoadingAndSavingUtils::SavePackages({ PropDT->GetPackage() }, false);
-	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(PropDT), FDataTableEditorUtils::EDataTableChangeInfo::RowData);
+	UEditorLoadingAndSavingUtils::SavePackages({PropDT->GetPackage()}, false);
+	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(PropDT),
+	                                           FDataTableEditorUtils::EDataTableChangeInfo::RowData);
 
 	// 检查是否存在未被使用的脚本
 	FString GLuaSrcFullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + "Script/Props/");
@@ -664,7 +666,84 @@ static void CreatePropLuaScript()
 	if (UnusedScripts.Num() > 0)
 	{
 		FString UnusedScriptsList = FString::Join(UnusedScripts, TEXT("\n"));
-		FText DialogText = FText::Format(LOCTEXT("UnusedScripts", "[Warning] 存在未被使用的脚本:\n{0}"), FText::FromString(UnusedScriptsList));
+		FText DialogText = FText::Format(
+			LOCTEXT("UnusedScripts", "[Warning] 存在未被使用的脚本:\n{0}"), FText::FromString(UnusedScriptsList));
+		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+	}
+	else
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, LOCTEXT("NoUnusedScripts", "更新成功"));
+	}
+}
+
+static void CreateDungeonLuaScript()
+{
+	auto PythonBridge = UPythonBridge::Get();
+	auto PropDT = GetDefault<UProjectJDataTableSettings>()->DungeonTable.LoadSynchronous();
+	auto RowMap = PropDT->GetRowMap();
+
+	// 检查是否存在重复的拼音
+	TMap<FString, TArray<FName>> PinyinMap;
+	for (const auto& Pair : RowMap)
+	{
+		auto DesiredPinyin = PythonBridge->ToPinyin(Pair.Key.ToString());
+		auto& PinyinArray = PinyinMap.FindOrAdd(DesiredPinyin);
+		PinyinArray.Add(Pair.Key);
+	}
+
+	for (const auto& Pair : PinyinMap)
+	{
+		if (Pair.Value.Num() > 1)
+		{
+			FString ErrorString = FString::Printf(TEXT("重复的拼音: %s, Rows: "), *Pair.Key);
+			for (const auto& Name : Pair.Value)
+			{
+				ErrorString += Name.ToString() + TEXT(", ");
+			}
+			// 提示框显示ErrorString
+			FText DialogText = FText::Format(LOCTEXT("Error", "{0}"), FText::FromString(ErrorString));
+			FMessageDialog::Open(EAppMsgType::Ok, DialogText);
+			return;
+		}
+	}
+
+	for (const auto& Pair : RowMap)
+	{
+		auto PropConfig = reinterpret_cast<FProjectJDungeonConfig*>(Pair.Value);
+		auto DesiredPinyin = PythonBridge->ToPinyin(Pair.Key.ToString());
+		UProjectJEditorBFL::CreateLuaScript(Pair.Key, DesiredPinyin, EProjectJLuaInstanceType::Dungeon, false);
+		PropConfig->LuaScriptName = FName(*DesiredPinyin);
+	}
+	// 保存DataTable
+	UEditorLoadingAndSavingUtils::SavePackages({PropDT->GetPackage()}, false);
+	FDataTableEditorUtils::BroadcastPostChange(const_cast<UDataTable*>(PropDT),
+	                                           FDataTableEditorUtils::EDataTableChangeInfo::RowData);
+
+	// 检查是否存在未被使用的脚本
+	FString GLuaSrcFullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + "Script/Dungeons/");
+	TArray<FString> LuaFiles;
+	IFileManager::Get().FindFilesRecursive(LuaFiles, *GLuaSrcFullPath, TEXT("*.lua"), true, false);
+	TSet<FString> UsedScripts;
+	for (const auto& Pair : RowMap)
+	{
+		auto PropConfig = reinterpret_cast<FProjectJDungeonConfig*>(Pair.Value);
+		UsedScripts.Add(PropConfig->LuaScriptName.ToString() + TEXT(".lua"));
+	}
+
+	TArray<FString> UnusedScripts;
+	for (const FString& LuaFile : LuaFiles)
+	{
+		if (!UsedScripts.Contains(FPaths::GetCleanFilename(LuaFile)))
+		{
+			UnusedScripts.Add(LuaFile);
+		}
+	}
+
+	if (UnusedScripts.Num() > 0)
+	{
+		FString UnusedScriptsList = FString::Join(UnusedScripts, TEXT("\n"));
+		FText DialogText = FText::Format(
+			LOCTEXT("UnusedScripts", "[Warning] 存在未被使用的脚本:\n{0}"), FText::FromString(UnusedScriptsList));
 		FMessageDialog::Open(EAppMsgType::Ok, DialogText);
 	}
 	else
@@ -746,6 +825,13 @@ static void RegisterGameEditorMenus()
 				LOCTEXT("ProjectJDataTableSubMenuEntry2_ToolTip", "更新道具Lua脚本"),
 				FSlateIcon(),
 				FUIAction(FExecuteAction::CreateStatic(&CreatePropLuaScript))
+			);
+			SubSection.AddMenuEntry(
+				"ProjectJDataTableSubMenuEntry2",
+				LOCTEXT("ProjectJDataTableSubMenuEntry2_Label", "更新副本Lua脚本"),
+				LOCTEXT("ProjectJDataTableSubMenuEntry2_ToolTip", "更新副本Lua脚本"),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateStatic(&CreateDungeonLuaScript))
 			);
 		})
 	);
