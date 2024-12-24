@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Engine/DeveloperSettings.h"
+#include "Types/ProjectJMapPoint.h"
 #include "ProjectJGeneralSettings.generated.h"
 
+class UProjectJBigMap;
 class AProjectJUtility;
 class AProjectJItem;
 class UProjectJLuaGameplayAbility;
@@ -26,6 +28,11 @@ class UProjectJGeneralSettings : public UDeveloperSettings
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(config, EditAnywhere, Category = Gameplay)
+	TSubclassOf<UProjectJBigMap> BigMapClass;
+	UPROPERTY(config, EditAnywhere, Category = Gameplay)
+	TArray<FProjectJMapPoint> MapPoints;
+	
 	virtual FName GetCategoryName() const override;
 
 	UPROPERTY(config, EditAnywhere, Category=GAS)
@@ -77,4 +84,12 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category = Gameplay)
 	TMap<FGameplayTag, TSubclassOf<UGameplayEffect>> FeatureGEMap;
+
+
+	/**
+	 * 获取可以选择的地点名，通过_组合
+	 * @return 
+	 */
+	UFUNCTION()
+	static TArray<FName> GetPointNames();
 };

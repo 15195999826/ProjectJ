@@ -15,11 +15,15 @@
 #include "ToolMenu.h"
 #include "ToolMenus.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Blueprint/UserWidget.h"
+#include "Components/CanvasPanel.h"
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
+#include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/DeveloperSettings/ProjectJPropertyHelper.h"
 #include "Game/ProjectJEffectActor.h"
 #include "Types/Item/ProjectJPropConfig.h"
 #include "UObject/UObjectIterator.h"
+#include "UI/SpecialUI/ProjectJBigMap.h"
 
 #define LOCTEXT_NAMESPACE "FProjectJEditorModule"
 

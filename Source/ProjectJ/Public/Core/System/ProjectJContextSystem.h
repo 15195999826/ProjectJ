@@ -25,30 +25,30 @@ class AProjectJLandmark;
 class AProjectJCharacter;
 class AProjectJSpell;
 
-// USTRUCT()
-// struct FProjectJGameContext
-// {
-// 	GENERATED_BODY()
-//
-// 	FProjectJGameContext(){}
-//
-// 	UPROPERTY()
-// 	FName CurrentLevel = NAME_None;
-// 	UPROPERTY()
-// 	FProjectJDateTime DateTime;
-// 	UPROPERTY()
-// 	TArray<int32> LevelCharacters;
-// 	UPROPERTY()
-// 	TArray<int32> LevelLandmarks;
-// 	UPROPERTY()
-// 	TArray<int32> LevelNavPoints;
-// 	UPROPERTY()
-// 	TArray<int32> HandSpellCards;
-//
-// 	// 用于计算是否首次进入某个关卡
-// 	TArray<FName> HasEnteredLevels;
-//
-// 	
+USTRUCT()
+struct FDecoraptedProjectJGameContext
+{
+	GENERATED_BODY()
+
+	FDecoraptedProjectJGameContext(){}
+
+	UPROPERTY()
+	FName CurrentLevel = NAME_None;
+	UPROPERTY()
+	FProjectJDateTime DateTime;
+	UPROPERTY()
+	TArray<int32> LevelCharacters;
+	UPROPERTY()
+	TArray<int32> LevelLandmarks;
+	UPROPERTY()
+	TArray<int32> LevelNavPoints;
+	UPROPERTY()
+	TArray<int32> HandSpellCards;
+
+	// 用于计算是否首次进入某个关卡
+	TArray<FName> HasEnteredLevels;
+
+	
 };
 
 USTRUCT()
@@ -95,7 +95,7 @@ public:
 	// RuntimeData
 public:
 	UPROPERTY()
-	FProjectJGameContext GameContext;
+	FDecoraptedProjectJGameContext GameContext;
 
 	// UPROPERTY()
 	// TWeakObjectPtr<AProjectJCardBase> WeakFocusCard;

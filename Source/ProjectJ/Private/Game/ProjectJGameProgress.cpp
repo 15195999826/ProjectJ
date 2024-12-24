@@ -147,7 +147,7 @@ void AProjectJGameProgress::StartNewGame()
 {
 	// 生成4张Spell, 观察、检查、躲藏、偷袭
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	ContextSystem->GameContext = FProjectJGameContext();
+	ContextSystem->GameContext = FDecoraptedProjectJGameContext();
 	auto Spell1 = ContextSystem->CreateSpell(TEXT("观察"));
 	ContextSystem->GameContext.HandSpellCards.Add(Spell1->ID);
 	auto Spell2 = ContextSystem->CreateSpell(TEXT("检查"));
