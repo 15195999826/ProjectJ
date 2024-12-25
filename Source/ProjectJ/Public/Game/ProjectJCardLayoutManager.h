@@ -43,9 +43,11 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Layout")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Config")
 	FLayoutConfig LayoutConfig;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Config")
+	bool bEnableDebug = false;
 	/**
 	 * 
 	 * @param NewCard

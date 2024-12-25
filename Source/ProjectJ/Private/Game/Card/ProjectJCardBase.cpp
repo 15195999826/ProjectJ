@@ -176,7 +176,14 @@ FVector AProjectJCardBase::GetCurrentLocation()
 
 void AProjectJCardBase::OnWaitForExecuteSelect()
 {
+	CanSelect = true;
 	FrameSprite->SetVisibility(true);
+}
+
+void AProjectJCardBase::EndExecuteSelect()
+{
+	CanSelect = false;
+	FrameSprite->SetVisibility(false);
 }
 
 void AProjectJCardBase::HideCard(float Duration)
@@ -420,6 +427,11 @@ void AProjectJCardBase::UpdatePopupAnimation()
 	SetActorLocation(CurrentLocation);
 	SetActorRotation(CurrentRotation);
 	SetActorScale3D(CurrentScale);
+}
+
+void AProjectJCardBase::PerformSelected()
+{
+	
 }
 
 float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const

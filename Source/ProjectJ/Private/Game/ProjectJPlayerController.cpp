@@ -13,16 +13,35 @@ void AProjectJPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
-	EventSystem->OnStageChange.AddUObject(this, &AProjectJPlayerController::OnStageChange);
+	// EventSystem->OnStageChange.AddUObject(this, &AProjectJPlayerController::OnStageChange);
+	EventSystem->WaitForSelectTarget.AddUObject(this, &AProjectJPlayerController::OnWaitForSelectTarget);
 }
 
 void AProjectJPlayerController::CustomTick(float DeltaSeconds, bool OverWidget, bool IsHitGround,
                                            const FVector& HitGroundLocation, AActor* InHitActor)
 {
-	if (IsPending)
+	if (IsWaitingForSelectTarget)
 	{
+		if (LeftMouseState == EProjectJMouseState::Press)
+		{
+			if (InHitActor)
+			{
+				auto CardBase = Cast<AProjectJCardBase>(InHitActor);
+				if (CardBase && CardBase->CanSelect)
+				{
+					auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+					EventSystem->OnSelectTarget.Broadcast(CardBase);
+					IsWaitingForSelectTarget = false;
+				}
+			}
+		}
 		return;
 	}
+	
+	// if (IsPending)
+	// {
+		// return;
+	// }
 	
 	if (RightMouseState == EProjectJMouseState::Press)
 	{
@@ -164,12 +183,21 @@ void AProjectJPlayerController::OnCancelDrag()
 
 void AProjectJPlayerController::OnStageChange(EProjectJGameStage OldStage, EProjectJGameStage NewStage)
 {
-	if (NewStage != EProjectJGameStage::Idle)
+	// if (NewStage != EProjectJGameStage::Idle)
+	// {
+	// 	IsPending = true;
+	// }
+	// else
+	// {
+	// 	IsPending = false;
+	// }
+}
+
+void AProjectJPlayerController::OnWaitForSelectTarget()
+{
+	IsWaitingForSelectTarget = true;
+	if (IsDragging)
 	{
-		IsPending = true;
-	}
-	else
-	{
-		IsPending = false;
+		OnCancelDrag();
 	}
 }

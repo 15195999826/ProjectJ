@@ -37,7 +37,7 @@ protected:
 	
 
 	bool IsPending = false;
-	
+	bool IsWaitingForSelectTarget = false;
 	bool IsDragging = false;
 	UPROPERTY()
 	TScriptInterface<IProjectJDragInterface> DragActor;
@@ -48,5 +48,5 @@ private:
 	void OnCancelDrag();
 
 	void OnStageChange(EProjectJGameStage OldStage, EProjectJGameStage NewStage);
-	
+	void OnWaitForSelectTarget();
 };

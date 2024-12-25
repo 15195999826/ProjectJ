@@ -6,11 +6,26 @@
 #include "Components/TextRenderComponent.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "ProjectJ/ProjectJGlobal.h"
 
 void AProjectJSpell::BindConfig_Implementation(const FName& InRowName)
 {
 	ConfigRowName = InRowName;
-	Title->SetText(FText::FromString(InRowName.ToString()));
+	SpellTag = InRowName;
+	static TMap<FName, FText> SpellNameMap = {
+		{ProjectJGlobal::GuanCha, NSLOCTEXT("Spell", "GuanCha", "观察")},
+		{ProjectJGlobal::YinBi, NSLOCTEXT("Spell", "YinBi", "隐蔽")},
+		{ProjectJGlobal::TouXi, NSLOCTEXT("Spell", "TouXi", "偷袭")},
+		{ProjectJGlobal::TouQie, NSLOCTEXT("Spell", "TouQie", "偷窃")},
+	};
+	if (SpellNameMap.Contains(InRowName))
+	{
+		Title->SetText(SpellNameMap[InRowName]);
+	}
+	else
+	{
+		Title->SetText(FText::FromString(InRowName.ToString()));
+	}
 }
 
 FName AProjectJSpell::GetConfigRowName_Implementation()

@@ -9,13 +9,13 @@ local M = {StartTickFrame = -1}
 
 ---[[[
 --- 进入该关卡时
----@param ContextSystem UProjectJContextSystem
 ---@param EventSystem UProjectJEventSystem
 ---]]]
-function M:EnterDungeon(ContextSystem, EventSystem)
+function M:EnterDungeon(EventSystem)
     ---关卡内卡牌:[[[
-    SpawnCharacter(Character_DaoZhu);
-    SpawnLandmark(Landmark_JuShi, {GuanCha, 10});
+    SpawnLandmark(Landmark_JinSuoDeFangJian);
+    SpawnLandmark(Landmark_WeiShangSuoDeBaoXiang);
+    SpawnCharacter(Character_DaoZhu,{GuanCha, 10})
     ---]]]
     
     --- 播放剧情， 写入剧情描述

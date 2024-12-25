@@ -41,6 +41,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 private:
 	float DeltaTimeAccumulator = 0.f;
+	/**
+	 * 目前暂停的情况有:
+	 * 1. Roll点动画未播放完毕
+	 * 2. 选择目标时
+	 */
+	bool bIsLogicTickPause = false;
 
 protected:
 	// Runtime
@@ -61,13 +67,13 @@ public:
 	void StartNewGame(const FName& InMainCharacterRow);
 	
 	UFUNCTION(BlueprintCallable)
-	void EnterDungeon();
+	void EnterDungeon(const FName& DungeonRowName);
 	
 	void EnterLevel(const FName& LevelRowName);
 	
 private:
 	void OnLevelPrepared();
-	void SpellCardToArea(AProjectJCardBase* InCard, int32 Index, const FVector& CenterLocation, const FVector& Offset);
+	FVector GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation, const FVector& Offset);
 
 	void OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload);
 	void ChangeStage(EProjectJGameStage NewStage, const FProjectJChangeStagePayload& Payload);
@@ -85,4 +91,11 @@ private:
 protected:
 	UFUNCTION()
 	void OnTalkOver();
+	UFUNCTION()
+	void OnPostRollResult(int32 OutInt);
+	UFUNCTION()
+	void OnPostRollAnimationOver();
+
+	void OnWaitForSelectTarget();
+	void OnSelectTarget(AProjectJCardBase* ProjectJCardBase);
 };

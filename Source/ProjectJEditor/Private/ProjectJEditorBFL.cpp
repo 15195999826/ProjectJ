@@ -37,6 +37,11 @@ bool UProjectJEditorBFL::CreateLuaScript(const FName& InRowName, const FString& 
 			GLuaSrcRelativePath = TEXT("Script/Utilities/");
 			TemplateFilePath = "Config/LuaTemplates/UtilityTemplate.lua";
 			break;
+		case EProjectJLuaInstanceType::Spell:
+			GLuaSrcRelativePath = TEXT("Script/Spells/");
+			TemplateFilePath = "Config/LuaTemplates/SpellTemplate.lua";
+			AllowNewName = false;
+			break;
 		default:
 			UE_LOG(LogTemp, Error, TEXT("Unknown LuaFileType %d"), (int32)InType);
 			return false;

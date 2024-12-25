@@ -21,6 +21,10 @@ namespace ProjectJGameplayTags
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint4);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActionPoint5);
 
+	// 游玩属性
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Play_Observe); // 观察
+	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Play_Perception); // 感知
+
 	// 战斗属性
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Battle_Health);
 	PROJECTJ_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SetByCaller_Attribute_Battle_Attack);

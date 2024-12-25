@@ -7,6 +7,7 @@
 #include "Core/DeveloperSettings/ProjectJDataTableSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
+#include "Game/ProjectJCardExecuteHelper.h"
 #include "Game/ProjectJGameContext.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/ProjectJLuaExecutor.h"
@@ -17,6 +18,8 @@
 #include "Game/Card/ProjectJCharacter.h"
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJSpell.h"
+#include "ProjectJ/ProjectJGlobal.h"
+#include "Types/ProjectJDungeonConfig.h"
 
 // Sets default values
 AProjectJGameProgress::AProjectJGameProgress()
@@ -33,6 +36,11 @@ void AProjectJGameProgress::BeginPlay()
 	GM->OnLevelPrepared.AddUObject(this, &AProjectJGameProgress::OnLevelPrepared);
 
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+	EventSystem->WaitForSelectTarget.AddUObject(this, &AProjectJGameProgress::OnWaitForSelectTarget);
+	EventSystem->OnSelectTarget.AddUObject(this, &AProjectJGameProgress::OnSelectTarget);
+	EventSystem->PostRollResult.AddDynamic(this, &AProjectJGameProgress::OnPostRollResult);
+	EventSystem->PostRollAnimationOver.AddDynamic(this, &AProjectJGameProgress::OnPostRollAnimationOver);
+	
 	EventSystem->OnPerformEnd.AddUObject(this, &AProjectJGameProgress::OnPerformEnd);
 	
 	EventSystem->OnObserveCard.AddUObject(this, &AProjectJGameProgress::OnObserveCard);
@@ -47,14 +55,17 @@ void AProjectJGameProgress::BeginPlay()
 void AProjectJGameProgress::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	DeltaTimeAccumulator += DeltaTime;
-	// 更新逻辑帧数 逻辑帧率按60帧计算
-	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	if (DeltaTimeAccumulator >= 1.f / 60.f)
+	if (!bIsLogicTickPause)
 	{
-		DeltaTimeAccumulator -= 1.f / 60.f;
-		ContextSystem->StepLogicFrameCount();
-		ContextSystem->ExecuteArea->CustomTick(ContextSystem->GetLogicFrameCount());
+		DeltaTimeAccumulator += DeltaTime;
+		// 更新逻辑帧数 逻辑帧率按60帧计算
+		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+		if (DeltaTimeAccumulator >= 1.f / 60.f)
+		{
+			DeltaTimeAccumulator -= 1.f / 60.f;
+			ContextSystem->StepLogicFrameCount();
+			ContextSystem->ExecuteArea->CustomTick(ContextSystem->GetLogicFrameCount());
+		}
 	}
 
 	switch (GameStage) {
@@ -91,12 +102,11 @@ void AProjectJGameProgress::OnLevelPrepared()
 {
 }
 
-void AProjectJGameProgress::SpellCardToArea(AProjectJCardBase* InCard, int32 Index, const FVector& CenterLocation,
+FVector AProjectJGameProgress::GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation,
 	const FVector& Offset)
 {
 	// 总共4张牌， 居中摆放, 1和2在中间，0和3在两侧
-	FVector NewLocation = CenterLocation + Offset * (Index - 1.5f);
-	InCard->SetActorLocation(NewLocation);
+	return  CenterLocation + Offset * (Index - 1.5f);
 }
 
 void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload)
@@ -148,38 +158,39 @@ void AProjectJGameProgress::StartNewGame(const FName& InMainCharacterRow)
 	// 创建主角， 主角始终是一张正在使用的卡牌， 但是不显示在场景中
 	auto MainCharacter = ContextSystem->CreateCharacter(InMainCharacterRow);
 	ContextSystem->GameContext->MainCharacterID = MainCharacter->ID;
+	ContextSystem->GameContext->UsingCharacterID = MainCharacter->ID;
 	ContextSystem->GameContext->DateTime = FProjectJDateTime();
 	// 刷新副本
 	ContextSystem->GameContext->RefreshDungeons();
 }
 
-void AProjectJGameProgress::EnterDungeon()
+void AProjectJGameProgress::EnterDungeon(const FName& DungeonRowName)
 {
-	// 刷新副本里的卡牌
-
 	// Todo: 设定， 执行完卡牌后，抛出Event, 数据为： 执行了哪张卡， 携带一些payload， 比如观察， 携带roll 感知的数值
+	// 刷新副本里的卡牌
+	auto DungeonConfig = GetDefault<UProjectJDataTableSettings>()->DungeonTable.LoadSynchronous()->FindRow<FProjectJDungeonConfig>(DungeonRowName, TEXT("EnterDungeon"));
+	check(DungeonConfig);
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	ContextSystem->LuaExecutor->CreateDungeon(DungeonRowName, DungeonConfig->LuaScriptName);
+	ContextSystem->GameContext->CurrentDungeon = DungeonRowName;
+	// 创建4张Spell卡牌
+	auto LevelSettingActor = ContextSystem->LevelSettingActor;
+	auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
+	auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
+	auto GuanchLocation = GetSpellCardToAreaLocation(0, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto YinBiLocation = GetSpellCardToAreaLocation(1, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto TouXiLocation = GetSpellCardToAreaLocation(2, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto TouQieLocation = GetSpellCardToAreaLocation(3, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto ExecHelper = GetWorld()->GetSubsystem<UProjectJCardExecuteHelper>();
+	ExecHelper->SpawnSpell(ProjectJGlobal::GuanCha, GuanchLocation, ContextSystem);
+	ExecHelper->SpawnSpell(ProjectJGlobal::YinBi, YinBiLocation, ContextSystem);
+	ExecHelper->SpawnSpell(ProjectJGlobal::TouXi, TouXiLocation, ContextSystem);
+	ExecHelper->SpawnSpell(ProjectJGlobal::TouQie, TouQieLocation, ContextSystem);
 	
-	// 生成4张Spell, 观察、检查、躲藏、偷袭
-	// auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	// ContextSystem->GameContext = FDecoraptedProjectJGameContext();
-	// auto Spell1 = ContextSystem->CreateSpell(TEXT("观察"));
-	// ContextSystem->GameContext.HandSpellCards.Add(Spell1->ID);
-	// auto Spell2 = ContextSystem->CreateSpell(TEXT("检查"));
-	// ContextSystem->GameContext.HandSpellCards.Add(Spell2->ID);
-	// auto Spell3 = ContextSystem->CreateSpell(TEXT("躲藏"));
-	// ContextSystem->GameContext.HandSpellCards.Add(Spell3->ID);
-	// auto Spell4 = ContextSystem->CreateSpell(TEXT("偷袭"));
-	// ContextSystem->GameContext.HandSpellCards.Add(Spell4->ID);
-	// 放到手牌位置, Attach To MainCamera
-	// auto LevelSettingActor = ContextSystem->LevelSettingActor;
-	// auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
-	// auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
-	// SpellCardToArea(Spell1, 0, HandSpellCardStartLocation, HandSpellCardOffset);
-	// SpellCardToArea(Spell2, 1, HandSpellCardStartLocation, HandSpellCardOffset);
-	// SpellCardToArea(Spell3, 2, HandSpellCardStartLocation, HandSpellCardOffset);
-	// SpellCardToArea(Spell4, 3, HandSpellCardStartLocation, HandSpellCardOffset);
-	
+	ContextSystem->LuaExecutor->EnterDungeon(DungeonRowName);
 	// EnterLevel(StartLevel.RowName);
+
+	ChangeStage(EProjectJGameStage::Performing, EmptyPayload);
 }
 
 void AProjectJGameProgress::EnterLevel(const FName& LevelRowName)
@@ -340,5 +351,25 @@ void AProjectJGameProgress::OnTalkOver()
 	WaitingSignals[SignalObserving] = true;
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	ContextSystem->SceneUIManager->OnTalkOver.RemoveDynamic(this, &AProjectJGameProgress::OnTalkOver);
+}
+
+void AProjectJGameProgress::OnPostRollResult(int32 OutInt)
+{
+	bIsLogicTickPause = true;
+}
+
+void AProjectJGameProgress::OnPostRollAnimationOver()
+{
+	bIsLogicTickPause = false;
+}
+
+void AProjectJGameProgress::OnWaitForSelectTarget()
+{
+	bIsLogicTickPause = true;
+}
+
+void AProjectJGameProgress::OnSelectTarget(AProjectJCardBase* ProjectJCardBase)
+{
+	bIsLogicTickPause = false;
 }
 

@@ -42,6 +42,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 ID;
 	bool CanDrag = true;
+	bool CanSelect = false;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -76,7 +77,7 @@ public:
 
 	// Todo: 不同类型的卡牌可以有不同的等待选择效果
 	virtual void OnWaitForExecuteSelect();
-
+	virtual void EndExecuteSelect();
 	
 	//----- 程序动画 Start -------
 	// 公开接口
@@ -88,7 +89,8 @@ public:
     
 	UFUNCTION(BlueprintCallable)
 	void PopupCard(const FVector& StartLocation, const FVector& TargetLocation, float Duration = 0.8f);
-	
+
+	void PerformSelected();
 private:
 	// 1. 拖拽卡牌
 	FTimerHandle DropOnGroundTimerHandle;
@@ -118,6 +120,9 @@ private:
 	FVector PopupTargetLocation;
 	FRotator PopupStartRotation;
 	FRotator PopupTargetRotation;
+	
+	// 5. 卡牌被点击选中
+
 
 	// ---- 程序动画 End ------
 

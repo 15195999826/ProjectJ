@@ -165,6 +165,10 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 			TemplateFilePath = "Config/LuaTemplates/UtilityTemplate.lua";
 			GAbilityLuaSrcRelativePath = TEXT("Script/Utilities/");
 			break;
+		case EProjectJLuaInstanceType::Spell:
+			TemplateFilePath = "Config/LuaTemplates/SpellTemplate.lua";
+			GAbilityLuaSrcRelativePath = TEXT("Script/Spells/");
+			break;
 		default:
 			return;
 	}
@@ -516,6 +520,81 @@ static void MigrateAbilityTemplate()
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Utility);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Ability);
 	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Prop);
+	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Spell);
+}
+
+static void CreateSpellLuaScript()
+{
+	// 显示一个对话框，可以输入技能名字， 并且包含确定和取消按钮
+	TSharedRef<SWindow> Dialog = SNew(SWindow)
+        .Title(FText::FromString("Create Ability Lua Script"))
+        .ClientSize(FVector2D(400, 200))
+        .SupportsMinimize(false)
+        .SupportsMaximize(false);
+
+    TSharedPtr<SEditableTextBox> AbilityNameTextBox;
+
+    Dialog->SetContent(
+        SNew(SVerticalBox)
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        [
+            SNew(STextBlock)
+            .Text(FText::FromString("Enter Ability Name:"))
+        ]
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        [
+            SAssignNew(AbilityNameTextBox, SEditableTextBox)
+        ]
+        + SVerticalBox::Slot()
+        .Padding(10)
+        .AutoHeight()
+        .HAlign(HAlign_Right)
+        [
+            SNew(SHorizontalBox)
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            .Padding(5)
+            [
+                SNew(SButton)
+                .Text(FText::FromString("OK"))
+                .OnClicked_Lambda([Dialog, AbilityNameTextBox]()
+                {
+                    FString SpellTagName = AbilityNameTextBox->GetText().ToString();
+                    if (!SpellTagName.IsEmpty())
+                    {
+                    	// 转化为拼音
+                    	auto PythonBridge = UPythonBridge::Get();
+                    	FString Pinyin = PythonBridge->ToPinyin(SpellTagName);
+                    	
+                        bool CreateSuccess = UProjectJEditorBFL::CreateLuaScript(FName(*SpellTagName), Pinyin, EProjectJLuaInstanceType::Spell);
+                    	if (CreateSuccess)
+                    	{
+                    		Dialog->RequestDestroyWindow();
+                    	}
+                    }
+                    return FReply::Handled();
+                })
+            ]
+            + SHorizontalBox::Slot()
+            .AutoWidth()
+            .Padding(5)
+            [
+                SNew(SButton)
+                .Text(FText::FromString("Cancel"))
+                .OnClicked_Lambda([Dialog]()
+                {
+                    Dialog->RequestDestroyWindow();
+                    return FReply::Handled();
+                })
+            ]
+        ]
+    );
+
+    FSlateApplication::Get().AddWindow(Dialog);
 }
 
 static void CreateAbilityLuaScript()
@@ -771,6 +850,14 @@ static void RegisterGameEditorMenus()
 			// 	FSlateIcon(),
 			// 	FUIAction(FExecuteAction::CreateStatic(&UpdateLuaAbilityDesc))
 			// );
+
+			SubSection.AddMenuEntry(
+				"ProjectJSubMenuEntry0",
+				LOCTEXT("ProjectJDataTableSubMenuEntry0_Label", "创建行为Lua脚本"),
+				LOCTEXT("ProjectJDataTableSubMenuEntry0_ToolTip", "创建行为Lua脚本"),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateStatic(&CreateSpellLuaScript))
+			);
 
 			SubSection.AddMenuEntry(
 				"ProjectJSubMenuEntry1",

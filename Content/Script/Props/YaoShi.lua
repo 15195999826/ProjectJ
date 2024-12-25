@@ -21,11 +21,11 @@ end
 ---[[[
 --- 每帧执行
 ---@param OwnerID integer
+---@param TargetID integer
 ---@param Frame integer
----@param ExecHelper UProjectJCardExecuteHelper
 ---@return boolean
 ---]]]
-function M:ExecuteTick(OwnerID, Frame, ExecHelper)
+function M:ExecuteTick(OwnerID, TargetID, Frame)
     --- 简单表达5帧后执行完成
     if (Frame - self.StartTickFrame) == 5 then
         return true;
@@ -38,9 +38,8 @@ end
 ---[[[
 --- 隐藏动画播放结束后执行
 ---@param OwnerID integer
----@param ExecHelper UProjectJCardExecuteHelper
 ---]]]
-function M:ExecuteAfterHide(OwnerID, ExecHelper)
+function M:ExecuteAfterHide(OwnerID)
 end
 
 

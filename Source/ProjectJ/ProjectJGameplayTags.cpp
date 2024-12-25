@@ -20,6 +20,9 @@ namespace ProjectJGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint4, "Ability.ActionPoint4", "Action Point 4");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActionPoint5, "Ability.ActionPoint5", "Action Point 5");
 
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Play_Observe, "SetByCaller.Attribute.Play.Observe", "观察");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Play_Perception, "SetByCaller.Attribute.Play.Perception", "感知");
+
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Battle_Health, "SetByCaller.Attribute.Battle.Health", "生命值");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Battle_Attack, "SetByCaller.Attribute.Battle.Attack", "攻击力");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SetByCaller_Attribute_Battle_Speed, "SetByCaller.Attribute.Battle.Speed", "身法"); 
@@ -39,11 +42,13 @@ namespace ProjectJGameplayTags
 	};
 
 	const TMap<FGameplayTag, TFunction<FGameplayAttribute()>> Tag2Attribute = {
+		{SetByCaller_Attribute_Play_Observe, [](){return UProjectJCharacterAttributeSet::GetObserveAttribute();}},
+		{SetByCaller_Attribute_Play_Perception, [](){return UProjectJCharacterAttributeSet::GetPerceptionAttribute();}},
+		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
+		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
 		{SetByCaller_Attribute_Battle_Health, [](){return UProjectJCharacterAttributeSet::GetHealthAttribute();}},
 		{SetByCaller_Attribute_Battle_Attack, [](){return UProjectJCharacterAttributeSet::GetAttackAttribute();}},
-		{SetByCaller_Attribute_Battle_Speed, [](){return UProjectJCharacterAttributeSet::GetSpeedAttribute();}},
-		{SetByCaller_Attribute_Battle_Armor, [](){return UProjectJCharacterAttributeSet::GetArmorAttribute();}},
-		{SetByCaller_Attribute_Battle_Damage, [](){return UProjectJCharacterAttributeSet::GetDamageAttribute();}},
+		{SetByCaller_Attribute_Battle_Speed, [](){return UProjectJCharacterAttributeSet::GetSpeedAttribute();}}
 	};
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Feature_Loose_OneDamageEachTime, "Feature.Loose.OneDamageEachTime", "Loose one damage each time.");

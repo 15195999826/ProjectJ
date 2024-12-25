@@ -9,10 +9,9 @@ local M = {StartTickFrame = -1}
 
 ---[[[
 --- 进入该关卡时
----@param ContextSystem UProjectJContextSystem
 ---@param EventSystem UProjectJEventSystem
 ---]]]
-function M:EnterDungeon(ContextSystem, EventSystem)
+function M:EnterDungeon(EventSystem)
     ---关卡内卡牌:[[[
     
     ---]]]

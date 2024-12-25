@@ -7,6 +7,8 @@
 #include "Types/ProjectJDateTime.h"
 #include "ProjectJGameContext.generated.h"
 
+class AProjectJCardBase;
+
 USTRUCT()
 struct FProjectJDungeonLocation
 {
@@ -36,6 +38,7 @@ protected:
 
 public:
 	int32 MainCharacterID;
+	int32 UsingCharacterID;
 	
 	UPROPERTY()
 	FProjectJDateTime DateTime;
@@ -55,6 +58,11 @@ public:
 	UPROPERTY()
 	TArray<int32> LevelUtilities;
 
+	UPROPERTY()
+	TArray<TObjectPtr<AProjectJCardBase>> InDungeonCards;
+	UPROPERTY()
+	TMap<int32, TObjectPtr<AProjectJCardBase>> InDungeonCardsMap;
+	
 public:
 	void RefreshDungeons();
 };

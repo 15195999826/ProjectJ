@@ -28,6 +28,7 @@ void AProjectJGameContext::RefreshDungeons()
 	
 	auto DungeonTable = GetDefault<UProjectJDataTableSettings>()->DungeonTable.LoadSynchronous();
 
+	// Todo: 如果以后数据非常多，考虑异步分帧执行逻辑
 	auto RowMap = DungeonTable->GetRowMap();
 	for (auto& Pair : RowMap)
 	{

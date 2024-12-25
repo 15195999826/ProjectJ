@@ -18,6 +18,7 @@
 #include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/Card/ProjectJItem.h"
 #include "Game/Card/ProjectJUtility.h"
+#include "ProjectJ/ProjectJGlobal.h"
 #include "Types/ProjectJCharacterConfig.h"
 #include "Types/ProjectJLandmarkConfig.h"
 #include "Types/ProjectJUtilityConfig.h"
@@ -151,94 +152,24 @@ void UProjectJContextSystem::OnWorldBeginPlay(UWorld& InWorld)
 	LogicFrameCount = 0;
 }
 
-TArray<TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCards()
-{
-	TArray<TObjectPtr<AProjectJCardBase>> Ret;
-	for (auto& Pair : UsingSpells)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingCharacters)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingLandmarks)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingItems)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingUtilities)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Value.Get());
-		}
-	}
-
-	return Ret;
-}
-
-TMap<int32, TObjectPtr<AProjectJCardBase>> UProjectJContextSystem::GetUsingCardsMap()
-{
-	TMap<int32, TObjectPtr<AProjectJCardBase>> Ret;
-	for (auto& Pair : UsingSpells)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Key, Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingCharacters)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Key, Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingLandmarks)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Key, Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingItems)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Key, Pair.Value.Get());
-		}
-	}
-	for (auto& Pair : UsingUtilities)
-	{
-		if (Pair.Value.IsValid())
-		{
-			Ret.Add(Pair.Key, Pair.Value.Get());
-		}
-	}
-
-	return Ret;
-}
-
-AProjectJSpell* UProjectJContextSystem::CreateSpell(const FName& Config)
+AProjectJSpell* UProjectJContextSystem::CreateSpell(const FName& InSpellTag)
 {
 	AProjectJSpell* Spell = GetSpell();
-	IProjectJCardInterface::Execute_BindConfig(Spell, Config);
+	IProjectJCardInterface::Execute_BindConfig(Spell, InSpellTag);
+	static TMap<FName, FName> SpellScriptMap = {
+		{ProjectJGlobal::GuanCha, TEXT("GuanCha")},
+		{ProjectJGlobal::YinBi, TEXT("YinBi")},
+		{ProjectJGlobal::TouXi, TEXT("TouXi")},
+		{ProjectJGlobal::TouQie, TEXT("TouQie")},
+	};
+	if (SpellScriptMap.Contains(InSpellTag))
+	{
+		LuaExecutor->CreateSpell(Spell->ID, SpellScriptMap[InSpellTag]);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("CreateSpell: 未配置对应的Lua脚本: %s"), *InSpellTag.ToString());
+	}
 	return Spell;
 }
 

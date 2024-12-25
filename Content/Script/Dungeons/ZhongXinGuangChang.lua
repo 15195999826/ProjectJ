@@ -10,10 +10,9 @@ local M = {StartTickFrame = -1}
 
 ---[[[
 --- 进入该关卡时
----@param ContextSystem UProjectJContextSystem
 ---@param EventSystem UProjectJEventSystem
 ---]]]
-function M:EnterDungeon(ContextSystem, EventSystem)
+function M:EnterDungeon(EventSystem)
     --- 播放剧情， 写入剧情描述
     local StoryRecord = UE.FProjectJStoryRecord();
     StoryRecord.Story:Add(

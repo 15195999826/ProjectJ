@@ -4,6 +4,7 @@
 #include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Components/BoxComponent.h"
 #include "Core/System/ProjectJContextSystem.h"
+#include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJGameContext.h"
 #include "Game/ProjectJLuaExecutor.h"
@@ -24,6 +25,8 @@ AProjectJCardExecuteArea::AProjectJCardExecuteArea()
 void AProjectJCardExecuteArea::BeginPlay()
 {
 	Super::BeginPlay();
+	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+	EventSystem->OnSelectTarget.AddUObject(this, &AProjectJCardExecuteArea::OnSelectTarget);
 }
 
 void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
@@ -120,21 +123,29 @@ void AProjectJCardExecuteArea::StartExecute(AProjectJCardBase* InCard)
 				}
 			}
 			break;
+		case EProjectJCardType::Spell:
 		case EProjectJCardType::Utility:
 			{
-				const auto& TargetFilter = ContextSystem->LuaExecutor->GetTargetFilter(InCard->ID);
+				const auto& TargetFilter = ContextSystem->LuaExecutor->GetTargetFilter(InCard->ID, CardType);
 				// 高亮满足条件的卡牌
-				auto AllCards = ContextSystem->GetUsingCardsMap();
+				auto AllCards = ContextSystem->GameContext->InDungeonCardsMap;
 				for (auto& Pair : AllCards)
 				{
+					if (Pair.Key == InCard->ID)
+					{
+						continue;
+					}
+					
 					if (SatisfyFilter(Pair.Value.Get(), TargetFilter))
 					{
 						Pair.Value->OnWaitForExecuteSelect();
 					}
 				}
+
+				// 等待选择目标
+				auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
+				EventSystem->WaitForSelectTarget.Broadcast();
 			}
-			break;
-		case EProjectJCardType::Spell:
 			break;
 	}
 
@@ -150,6 +161,25 @@ bool AProjectJCardExecuteArea::SatisfyFilter(AProjectJCardBase* InCard, const FP
 	}
 
 	return false;
+}
+
+void AProjectJCardExecuteArea::OnSelectTarget(AProjectJCardBase* InCard)
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	for (auto& Pair : ContextSystem->GameContext->InDungeonCardsMap)
+	{
+		if (Pair.Key == InCard->ID)
+		{
+			continue;
+		}
+		Pair.Value->EndExecuteSelect();
+	}
+	InCard->CanDrag = false;
+	InCard->PerformSelected();
+	SelectedCard = InCard;
+	auto CardType = IProjectJCardInterface::Execute_GetCardType(ExecutingCard.Get());
+	auto SelectedCardType = IProjectJCardInterface::Execute_GetCardType(InCard);
+	ContextSystem->LuaExecutor->ExecuteSelectTarget(CardType, ExecutingCard->ID, SelectedCardType, InCard->ID);
 }
 
 void AProjectJCardExecuteArea::OnLoseFocus_Implementation()

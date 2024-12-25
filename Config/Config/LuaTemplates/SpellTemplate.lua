@@ -5,7 +5,7 @@
 --- RowName：{RowName}
 ---
 
-local M = {StartTickFrame = -1}
+local M = {StartTickFrame = -1, SelectedID = nil, SelectedCardType = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -13,6 +13,13 @@ local M = {StartTickFrame = -1}
 ---]]]
 function M:GetTargetFilter()
    return DefaultPropTargetFilter;
+end
+
+---[[[
+--- 选择目标时执行
+---]]]
+function M:ExecuteSelectTarget()
+    
 end
 
 ---[[[

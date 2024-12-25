@@ -103,11 +103,9 @@ public:
 	TMap<int32, TWeakObjectPtr<AProjectJUtility>> UsingUtilities;
 	UPROPERTY()
 	TMap<int32, TWeakObjectPtr<AProjectJItem>> UsingItems;
-	
-	TArray<TObjectPtr<AProjectJCardBase>> GetUsingCards();
-	TMap<int32, TObjectPtr<AProjectJCardBase>> GetUsingCardsMap();
-	
-	AProjectJSpell* CreateSpell(const FName& Config);
+
+	// 创建卡牌，但不会被认为存在副本当中
+	AProjectJSpell* CreateSpell(const FName& InSpellTag);
 	AProjectJCharacter* CreateCharacter(const FName& Config);
 	AProjectJLandmark* CreateLandMark(const FName& Config);
 	AProjectJUtility* CreateUtility(const FName& Config);

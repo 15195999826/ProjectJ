@@ -10,7 +10,9 @@
 
 #include "Components/BoxComponent.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
+#include "Game/ProjectJGameContext.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
+#include "ProjectJ/ProjectJLogChannels.h"
 
 // Sets default values
 AProjectJCardLayoutManager::AProjectJCardLayoutManager()
@@ -34,7 +36,7 @@ void AProjectJCardLayoutManager::Tick(float DeltaTime)
 	{
 		const auto& Record = FrameRecords[0];
 		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-		auto UsingCards = ContextSystem->GetUsingCardsMap();
+		auto UsingCards = ContextSystem->GameContext->InDungeonCardsMap;
 		for (auto& Pair : Record)
 		{
 			if (Pair.Key == DraggingCardID)
@@ -86,7 +88,7 @@ void AProjectJCardLayoutManager::Tick(float DeltaTime)
 	else if (IsControlCardDrop)
 	{
 		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-		auto UsingCards = ContextSystem->GetUsingCardsMap();
+		auto UsingCards = ContextSystem->GameContext->InDungeonCardsMap;
 		if (auto Card = UsingCards.FindRef(DroppingCardID))
 		{
 			// 控制卡牌下落
@@ -124,14 +126,17 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	const float MaxY = (DeskTopSize.Y - CardSize.Y) * 0.5f;
 	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
 	// 以（0，0，0）为中心，Debug绘制一个DeskTopSize的矩形
-	DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);
+	if (bEnableDebug)
+	{
+		DrawDebugBox(GetWorld(), FVector(0.f, 0.f, 0.f), DeskTopSize * 0.5f, FColor::Green, false, 5.f);	
+	}
 	
 	OnStopDragCard(NewCard->ID);
 	DroppingCardID = INT_MIN;
 	// DeskBounds已经处理了卡牌的大小， 是卡牌中心可以在的范围
 	// 获取所有卡牌
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	TArray<TObjectPtr<AProjectJCardBase>> AllCards = ContextSystem->GetUsingCards();
+	TArray<TObjectPtr<AProjectJCardBase>> AllCards = ContextSystem->GameContext->InDungeonCards;
 	if (ContextSystem->ExecuteArea->ExecutingCard.IsValid())
 	{
 		AllCards.Remove(ContextSystem->ExecuteArea->ExecutingCard.Get());
@@ -176,7 +181,12 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 	{
 		auto LocalContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 		// 获取开始时间
-		auto start = std::chrono::high_resolution_clock::now();
+		std::chrono::time_point<std::chrono::steady_clock> start;
+		if (bEnableDebug)
+		{
+			start = std::chrono::high_resolution_clock::now();
+		}
+		
 	
 		TArray<TMap<int32, FVector>> TaskResult;
 		// 计算最优布局
@@ -271,10 +281,7 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 				// 如果超出了左边界， 则向右给与一个力
 				HandleBoundaryForces(GetForceCard, GetForceCardPosition, DeskBounds, Forces, FixedCards);
 			}
-
 			
-			
-
 			// 如果存在固定卡牌，则移动新卡牌
 			if (FixedCards.Num() > 0)
 			{
@@ -432,29 +439,35 @@ bool AProjectJCardLayoutManager::PlaceCardAndRelayout(AProjectJCardBase* NewCard
 
 			if (AllCardsNotOverlap)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("所有卡牌都不重叠，布局完成"));
+				if (bEnableDebug)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("所有卡牌都不重叠，布局完成"));
+				}
 				break;
 			}
 
 			Iteration++;
 		}
 
-		// // 获取结束时间
-		auto end = std::chrono::high_resolution_clock::now();
-		//
-		// 计算并打印执行时间, 0.001毫秒级别寻路，稍长一点也只有0.05毫秒
-		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-		UE_LOG(LogTemp, Warning, TEXT("布局执行时间 time: %lld microseconds"), duration.count());
+		if (bEnableDebug)
+		{
+			// 获取结束时间
+			auto end = std::chrono::high_resolution_clock::now();
 
+			// 计算并打印执行时间, 0.001毫秒级别寻路，稍长一点也只有0.05毫秒
+			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+			UE_LOG(LogProjectJ, Warning, TEXT("布局执行时间 time: %lld microseconds"), duration.count());
+		}
+		
 		return TaskResult;
 	}).Next([this](const TArray<TMap<int32, FVector>>& TaskResult)
 	{
 		// 如何在主线程调用ExecDebugFrameStatus？
 		AsyncTask(ENamedThreads::GameThread, [this, TaskResult]()
 		{
-			UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, CurrentLength: %d, AppendLength: %d"), FrameRecords.Num(), TaskResult.Num());
+			// UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, CurrentLength: %d, AppendLength: %d"), FrameRecords.Num(), TaskResult.Num());
 			FrameRecords.Append(TaskResult);
-			UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, AfterAppendLength: %d"), FrameRecords.Num());
+			// UE_LOG(LogTemp, Warning, TEXT("FrameRecords.Append, AfterAppendLength: %d"), FrameRecords.Num());
 		});
 	});
 	
@@ -608,7 +621,7 @@ bool AProjectJCardLayoutManager::RandomEmptyLocation(FVector& OutLocation)
 	));
 
 	// 添加所有卡牌占用区域
-	for (const auto& Card : ContextSystem->GetUsingCards())
+	for (const auto& Card : ContextSystem->GameContext->InDungeonCards)
 	{
 		if (!Card) continue;
 		FVector CardLoc = Card->GetActorLocation();
@@ -686,7 +699,101 @@ bool AProjectJCardLayoutManager::RandomEmptyLocation(FVector& OutLocation)
 	// 4. 如果没有可用区域，返回零向量
 	if (FreeAreas.Num() == 0)
 	{
+        // 计算ExecuteArea的边界
+        float ExecuteMinX = ExecuteAreaLoc.X - ExecuteAreaExtent.X;
+        float ExecuteMaxX = ExecuteAreaLoc.X + ExecuteAreaExtent.X;
+        float ExecuteMinY = ExecuteAreaLoc.Y - ExecuteAreaExtent.Y;
+        float ExecuteMaxY = ExecuteAreaLoc.Y + ExecuteAreaExtent.Y;
+        
+        // 计算桌面边界（考虑卡牌尺寸）
+        float TableMinX = -DeskBounds.X + CardSize.X * 0.5f;
+        float TableMaxX = DeskBounds.X - CardSize.X * 0.5f;
+        float TableMinY = -DeskBounds.Y + CardSize.Y * 0.5f;
+        float TableMaxY = DeskBounds.Y - CardSize.Y * 0.5f;
+        
+        // 计算可用区域（最多4个区域）
+        TArray<FBox2D> ValidAreas;
+        
+        // 上区域
+        if (TableMaxY > ExecuteMaxY)
+        {
+            ValidAreas.Add(FBox2D(
+                FVector2D(TableMinX, ExecuteMaxY),
+                FVector2D(TableMaxX, TableMaxY)
+            ));
+        }
+        
+        // 下区域
+        if (TableMinY < ExecuteMinY)
+        {
+            ValidAreas.Add(FBox2D(
+                FVector2D(TableMinX, TableMinY),
+                FVector2D(TableMaxX, ExecuteMinY)
+            ));
+        }
+        
+        // 左区域
+        if (TableMinX < ExecuteMinX)
+        {
+            ValidAreas.Add(FBox2D(
+                FVector2D(TableMinX, ExecuteMinY),
+                FVector2D(ExecuteMinX, ExecuteMaxY)
+            ));
+        }
+        
+        // 右区域
+        if (TableMaxX > ExecuteMaxX)
+        {
+            ValidAreas.Add(FBox2D(
+                FVector2D(ExecuteMaxX, ExecuteMinY),
+                FVector2D(TableMaxX, ExecuteMaxY)
+            ));
+        }
+        
+        // 计算各区域权重并选择一个区域
+        TArray<float> AreaWeights;
+        float TotalWeight = 0.0f;
+        
+        for (const auto& Area : ValidAreas)
+        {
+            float Weight = (Area.Max.X - Area.Min.X) * (Area.Max.Y - Area.Min.Y);
+            AreaWeights.Add(Weight);
+            TotalWeight += Weight;
+        }
+        
+        // 根据面积权重随机选择一个区域
+        float RandomValue = FMath::RandRange(0.0f, TotalWeight);
+        float AccumulatedWeight = 0.0f;
+        int32 SelectedIndex = 0;
+        
+        for (int32 i = 0; i < AreaWeights.Num(); ++i)
+        {
+            AccumulatedWeight += AreaWeights[i];
+            if (RandomValue <= AccumulatedWeight)
+            {
+                SelectedIndex = i;
+                break;
+            }
+        }
+        
+        // 在选中的区域内随机一个点
+        const FBox2D& SelectedArea = ValidAreas[SelectedIndex];
+        float RandomX = FMath::RandRange(SelectedArea.Min.X, SelectedArea.Max.X);
+        float RandomY = FMath::RandRange(SelectedArea.Min.Y, SelectedArea.Max.Y);
+		OutLocation = FVector(RandomX, RandomY, 0.0f);
 		return false;
+	}
+
+	// Todo: 存在一些Bug， 执行区上下两片没有被划分进来， 但是不是很关键，以后再说
+	// 绘制所有可用区域
+	if (bEnableDebug)
+	{
+		DrawDebugBox(GetWorld(), FVector(0.0f, 0.0f, 0.0f), FVector(DeskTopSize.X * 0.5f, DeskTopSize.Y * 0.5f, 0.0f), FColor::Green, false, 5.0f);
+		for (const auto& Area : FreeAreas)
+		{
+			DrawDebugBox(GetWorld(), FVector((Area.Min.X + Area.Max.X) * 0.5f, (Area.Min.Y + Area.Max.Y) * 0.5f, 0.0f),
+				FVector((Area.Max.X - Area.Min.X) * 0.5f, (Area.Max.Y - Area.Min.Y) * 0.5f, 0.0f), FColor::Red, false, 5.0f);
+		}
 	}
 
 	// 5. 随机选择一个可用区域，并在该区域内随机一个点

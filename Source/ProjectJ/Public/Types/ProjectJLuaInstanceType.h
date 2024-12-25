@@ -13,4 +13,5 @@ enum class EProjectJLuaInstanceType : uint8
 	Ability = 3,
 	Prop = 4, 
 	Utility = 5,// 道具: 主要用于实现道具在场景中的执行功能
+	Spell = 6,
 };

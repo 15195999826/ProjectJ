@@ -54,7 +54,9 @@ public:
 	void CreateUtility(int32 ID, const FName& InLuaScriptName);
 	UFUNCTION(BlueprintImplementableEvent)
 	void CreateItem(int32 ID, const FName& InLuaScriptName);
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateSpell(int32 ID, const FName& InLuaScriptName);
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void RemoveCharacter(int32 ID);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -63,9 +65,14 @@ public:
 	void RemoveItem(int32 ID);
 	UFUNCTION(BlueprintImplementableEvent)
 	void RemoveUtility(int32 ID);
+	UFUNCTION(BlueprintImplementableEvent)
+	void RemoveSpell(int32 ID);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	FProjectJTargetFilter GetTargetFilter(int32 ID);
+	FProjectJTargetFilter GetTargetFilter(int32 ID, EProjectJCardType InCardType);
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteSelectTarget(EProjectJCardType CardType, int32 ID, EProjectJCardType SelectedCardType, int32 SelectedID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ExecuteStart(EProjectJCardType CardType, int32 ID, int32 Frame);

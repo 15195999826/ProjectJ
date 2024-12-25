@@ -52,9 +52,13 @@ public:
 
 	UPROPERTY()
 	TWeakObjectPtr<AProjectJCardBase> ExecutingCard;
+	UPROPERTY()
+	TWeakObjectPtr<AProjectJCardBase> SelectedCard;
 
 private:
 	EProjectJItemType CachedItemSecondaryType = EProjectJItemType::None;
 	bool DuringHiding = false;
 	bool SatisfyFilter(AProjectJCardBase* InCard, const FProjectJTargetFilter& InTargetFilter);
+
+	void OnSelectTarget(AProjectJCardBase* InCard);
 };

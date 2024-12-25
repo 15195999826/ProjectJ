@@ -10,12 +10,62 @@
 local M = UnLua.Class()
 local Screen = require "Screen"
 
+---@type UProjectJCardExecuteHelper
+_G.ExecHelper = nil;
+
+---@param CharacterRow string
+---@param ConditionTable table
+---@return integer
+_G.SpawnCharacter = function(CharacterRow, ConditionTable)
+    local NewCharacterID = ExecHelper:SpawnCharacter(CharacterRow);
+    if ConditionTable ~= nil then
+        --- Todo: 设置刷新条件
+    end
+    return NewCharacterID;
+end
+
+---@param LandmarkRow string
+---@param ConditionTable table
+---@return integer
+_G.SpawnLandmark = function(LandmarkRow, ConditionTable)
+    local NewLandmarkID = ExecHelper:SpawnLandmark(LandmarkRow);
+    if ConditionTable ~= nil then
+
+    end
+    return NewLandmarkID;
+end
+
+---@param UtilityRow string
+---@param ConditionTable table
+---@return integer
+_G.SpawnUtility = function(UtilityRow, ConditionTable)
+    local NewUtilityID = ExecHelper:SpawnUtility(UtilityRow);
+    if ConditionTable ~= nil then
+
+    end
+    return NewUtilityID;
+end
+
+---@param ItemRow string
+---@param ItemType EProjectJItemType
+---@param ConditionTable table
+---@return integer
+_G.SpawnItem = function(ItemRow, ItemType, ConditionTable)
+    local NewItemID = ExecHelper:SpawnItem(ItemType, ItemRow);
+    if ConditionTable ~= nil then
+
+    end
+    return NewItemID;
+end
+
+
 --- 只提供相关的功能函数，不保存任何状态， 状态都在UE侧保存
 local DungeonInstance = {}
 local CharacterInstance = {}
 local LandmarkInstance = {}
 local UtilityInstance = {}
 local ItemInstance = {}
+local SpellInstance = {}
 local EventInstances = {}
 
 local function GetExecInstance(CardType, ID)
@@ -27,6 +77,8 @@ local function GetExecInstance(CardType, ID)
         return ItemInstance[ID];
     elseif CardType == UE.EProjectJCardType.Utility then
         return UtilityInstance[ID];
+    elseif CardType == UE.EProjectJCardType.Spell then
+        return SpellInstance[ID];
     end
 
     return nil;
@@ -35,12 +87,9 @@ end
 
 _G.EmptyTagArray = UE.TArray(UE.FGameplayTag());
 
---function M:ReceiveBeginPlay()
---    local T = UE.UProjectJBlueprintFunctionLibrary.GetLocText("Hello", "你好世界")
---    print(T)
---    T = NSLOCTEXT("Unlua", "Hello", "你好世界")
---    print(T)
---end
+function M:ReceiveBeginPlay()
+    ExecHelper = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJCardExecuteHelper);
+end
 
 ---@param RowName string
 ---@param InLuaScriptName string
@@ -55,9 +104,8 @@ end
 
 ---@param RowName string
 function M:EnterDungeon(RowName)
-    local ContextSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJContextSystem);
     local EventSystem = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJEventSystem);
-    DungeonInstance[RowName]:EnterDungeon(ContextSystem, EventSystem);
+    DungeonInstance[RowName]:EnterDungeon(EventSystem);
 end
 
 ---@param RowName string
@@ -110,6 +158,17 @@ function M:CreateItem(ID, InLuaScriptName)
     ItemInstance[ID] = newInstance("Items." .. InLuaScriptName);
 end
 
+
+---@param ID integer
+---@param InLuaScriptName string
+function M:CreateSpell(ID, InLuaScriptName) 
+    if SpellInstance[ID] ~= nil then
+        Screen.Print("创建行为脚本失败,已经存在行为：" .. ID);
+    end
+
+    SpellInstance[ID] = newInstance("Spells." .. InLuaScriptName);
+end
+
 ---@param ID integer
 function M:RemoveCharacter(ID)
     if CharacterInstance[ID] == nil then
@@ -146,17 +205,42 @@ function M:RemoveItem(ID)
     ItemInstance[ID] = nil;
 end
 
+---@param ID integer
+function M:RemoveSpell(ID)
+    if SpellInstance[ID] == nil then
+        Screen.Print("删除行为脚本失败,不存在行为：" .. ID);
+    end
+
+    SpellInstance[ID] = nil;
+end
+
 
 ---@param ID integer
+---@param InCardType EProjectJCardType
 ---@return FProjectJTargetFilter
-function M:GetTargetFilter(ID)
-    ---目前只有Item需要选择目标
-    local Instance = ItemInstance[ID];
+function M:GetTargetFilter(ID, InCardType) 
+    local Instance = GetExecInstance(InCardType, ID);
     if Instance == nil then
         return UE.FProjectJTargetFilter();
     end
-    
+
     return Instance:GetTargetFilter();
+end
+
+---@param CardType EProjectJCardType
+---@param ID integer
+---@param SelectedCardType EProjectJCardType
+---@param SelectedID integer
+function M:ExecuteSelectTarget(CardType, ID, SelectedCardType, SelectedID)
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+
+    Instance.SelectedCardType = SelectedCardType;
+    Instance.SelectedID = SelectedID;
+    Instance:ExecuteSelectTarget();
 end
 
 ---@param CardType EProjectJCardType
@@ -183,8 +267,7 @@ function M:ExecuteTick(CardType, ID, LogicFrame)
         Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
         return;
     end
-    local ExecHelper = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJCardExecuteHelper);
-    return Instance:ExecuteTick(ID, LogicFrame, ExecHelper);
+    return Instance:ExecuteTick(ID, LogicFrame);
 end
 
 ---@param CardType EProjectJCardType
@@ -195,8 +278,7 @@ function M:ExecuteAfterHide(CardType, ID)
         Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
         return;
     end
-    local ExecHelper = UE.USubsystemBlueprintLibrary.GetWorldSubsystem(self, UE.UProjectJCardExecuteHelper);
-    Instance:ExecuteAfterHide(ID, ExecHelper);
+    Instance:ExecuteAfterHide(ID);
 end
 ---@param InLuaScriptName string
 ---@return string

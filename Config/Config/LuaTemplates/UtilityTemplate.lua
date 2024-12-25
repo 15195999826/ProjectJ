@@ -5,7 +5,7 @@
 --- RowName：{RowName}
 ---
 
-local M = {StartTickFrame = -1}
+local M = {StartTickFrame = -1, SelectedID = nil, SelectedCardType = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -16,23 +16,28 @@ function M:GetTargetFilter()
 end
 
 ---[[[
+--- 选择目标时执行
+---]]]
+function M:ExecuteSelectTarget()
+
+end
+
+---[[[
 --- 每帧执行
 ---@param OwnerID integer
 ---@param TargetID integer
 ---@param Frame integer
----@param ExecHelper UProjectJCardExecuteHelper
 ---@return boolean
 ---]]]
-function M:ExecuteTick(OwnerID, TargetID,Frame, ExecHelper)
+function M:ExecuteTick(OwnerID, TargetID,Frame)
     return false;
 end
 
 ---[[[
 --- 隐藏动画播放结束后执行
 ---@param OwnerID integer
----@param ExecHelper UProjectJCardExecuteHelper
 ---]]]
-function M:ExecuteAfterHide(OwnerID, ExecHelper)
+function M:ExecuteAfterHide(OwnerID)
 end
 
 return M

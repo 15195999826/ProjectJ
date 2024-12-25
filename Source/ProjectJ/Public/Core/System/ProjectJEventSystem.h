@@ -19,6 +19,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJStoryRecordSignature, const
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FProjectJFocusEquipmentSlotSignature, bool , IsFocus,const FName& , RowName, EProjectJItemType, ItemType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FProjectJFocusFeatureBoxSignature, bool, IsFocus, const FGameplayTag&, FeatureTag);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJRequestDungeonsAtAreaPointSignature, UProjectJAreaMapPoint*, AreaPointWidget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJOneNameSignature, const FName&, OutName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FProjectJOneIntSignature, int32, OutInt);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FProjectJGeneralSignature);
 /**
  * 
  */
@@ -46,14 +49,23 @@ public:
 	FProjectJFocusEquipmentSlotSignature OnFocusEquipmentSlot;
 	UPROPERTY(BlueprintCallable, BlueprintAssignable)
 	FProjectJFocusFeatureBoxSignature OnFocusFeatureBox;
+	UPROPERTY(BlueprintAssignable)
+	FProjectJOneIntSignature PostRollResult;
+	UPROPERTY(BlueprintCallable)
+	FProjectJGeneralSignature PostRollAnimationOver;
 	// ----------------- UI事件 End-----------------
 
 	// ----------------- 游戏事件 Start-----------------
 
 	FSimpleMulticastDelegate OnDungeonsRefresh;
+	FSimpleMulticastDelegate WaitForSelectTarget;
+	FProjectJOneCardDelegate OnSelectTarget;
 	
 	UPROPERTY(BlueprintCallable, BlueprintAssignable)
 	FProjectJRequestDungeonsAtAreaPointSignature OnRequestDungeonsAtAreaPoint;
+
+	UPROPERTY(BlueprintCallable, BlueprintAssignable)
+	FProjectJOneNameSignature OnRequestEnterDungeon;
 
 	// ----------------- 游戏事件 End-----------------
 
