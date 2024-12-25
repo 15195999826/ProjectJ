@@ -57,8 +57,12 @@ public:
 	UFUNCTION()
 	int32 PopupItem(const EProjectJItemType InItemType, const FName& InRowName);
 	
-	int32 IntervalSpawnNewCard(const FVector& InLocation, const FName& InRowName, EProjectJCardType InType, EProjectJItemType InItemType = EProjectJItemType::None);
-
 	UFUNCTION()
 	void DestroyCard(int32 InCardID);
+	
+private:
+	AProjectJCardBase* IntervalSpawnNewCard(UProjectJContextSystem* InContextSystem, const FVector& InLocation, const FName& InRowName, EProjectJCardType InType, EProjectJItemType InItemType = EProjectJItemType::None);
+	void IntervalPopupNewCard(AProjectJCardBase* InCard, UProjectJContextSystem* InContextSystem);
+	void IntervalScaleSpawnNewCard(AProjectJCardBase* InCard);
+
 };

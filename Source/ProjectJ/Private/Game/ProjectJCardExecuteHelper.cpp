@@ -12,67 +12,6 @@
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJUtility.h"
 
-int32 UProjectJCardExecuteHelper::IntervalSpawnNewCard(const FName& InRowName, EProjectJCardType InType,
-                                               EProjectJItemType InItemType)
-{
-	UE_LOG(LogTemp, Warning, TEXT("SpawnNewCard, RowName: %s, CardType: %d, ItemType: %d"), *InRowName.ToString(), (int32)InType, (int32)InItemType);
-	
-	UProjectJContextSystem* ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-	auto ExecAreaLocation = ContextSystem->ExecuteArea->GetActorLocation();
-	int32 RetID = -1;
-	AProjectJCardBase* NewCard;
-	switch (InType) {
-		case EProjectJCardType::Character:
-			{
-				NewCard = ContextSystem->CreateCharacter(InRowName);
-			}
-			break;
-		case EProjectJCardType::Landmark:
-			{
-				NewCard = ContextSystem->CreateLandMark(InRowName);
-			}
-			break;
-		case EProjectJCardType::Utility:
-			{
-				NewCard = ContextSystem->CreateUtility(InRowName);
-			}
-			break;
-		case EProjectJCardType::Item:
-			{
-				NewCard = ContextSystem->CreateItem(InRowName, InItemType);
-			}
-			break;
-		default:
-			{
-				UE_LOG(LogTemp, Error, TEXT("不支持生成的 CardType %d"), (int32)InType);
-				return RetID;
-			}
-	}
-	RetID = NewCard->ID;
-	NewCard->SetActorLocation(ExecAreaLocation);
-	float PopupDuration = 0.8f;
-	auto DesiredLocation = ExecAreaLocation + FVector(200.f, 200.f, 10.f);
-	NewCard->PopupCard(ExecAreaLocation, DesiredLocation, PopupDuration);
-	// 0.8s内，禁止抓取卡牌
-	auto AllCard = ContextSystem->GetUsingCards();
-	for (auto& Card : AllCard)
-	{
-		Card->CanDrag = false;
-	}
-	FTimerHandle UnlockTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(UnlockTimerHandle, [NewCard, ContextSystem, AllCard, DesiredLocation]() {
-		auto GroundDesiredLocation = DesiredLocation;
-		GroundDesiredLocation.Z = 0.f;
-		ContextSystem->CardLayoutManager->PlaceCardAndRelayout(NewCard, 0.1f, GroundDesiredLocation);
-		for (auto& Card : AllCard)
-		{
-			Card->CanDrag = true;
-		}
-	}, PopupDuration - 0.033f, false);
-	
-	return RetID;
-}
-
 void UProjectJCardExecuteHelper::GiveCardDisplayCondition(int32 InCardID, const FName& InConditionTag,
 	const FString& InConditionValue)
 {
@@ -80,15 +19,31 @@ void UProjectJCardExecuteHelper::GiveCardDisplayCondition(int32 InCardID, const 
 
 int32 UProjectJCardExecuteHelper::SpawnCharacter(const FName& InRowName)
 {
-	
+	FVector RandomLocation;
+	auto Find = GetWorld()->GetSubsystem<UProjectJContextSystem>()->CardLayoutManager->RandomEmptyLocation(RandomLocation);
+	if (!Find)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[SpawnCharacter] 没有空位可以生成卡牌"));
+		// 简单随机一个在Bounds内的位置
+	}
+	return SpawnCharacterAtLocation(InRowName, RandomLocation);
 }
 
 int32 UProjectJCardExecuteHelper::SpawnCharacterAtLocation(const FName& InRowName, const FVector& InLocation)
 {
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	auto NewCard =  IntervalSpawnNewCard(ContextSystem, InLocation, InRowName, EProjectJCardType::Character, EProjectJItemType::None);
+	IntervalScaleSpawnNewCard(NewCard);
+	return NewCard->ID;
 }
 
 int32 UProjectJCardExecuteHelper::PopupCharacter(const FName& InRowName)
 {
+	UProjectJContextSystem* ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	auto ExecAreaLocation = ContextSystem->ExecuteArea->GetActorLocation();
+	auto NewCard = IntervalSpawnNewCard(ContextSystem, ExecAreaLocation, InRowName, EProjectJCardType::Character, EProjectJItemType::None);
+	IntervalPopupNewCard(NewCard, ContextSystem);
+	return NewCard->ID;
 }
 
 int32 UProjectJCardExecuteHelper::SpawnLandmark(const FName& InRowName)
@@ -128,8 +83,68 @@ int32 UProjectJCardExecuteHelper::PopupItem(const EProjectJItemType InItemType, 
 {
 }
 
-int32 UProjectJCardExecuteHelper::IntervalSpawnNewCard(const FVector& InLocation, const FName& InRowName,
+AProjectJCardBase* UProjectJCardExecuteHelper::IntervalSpawnNewCard(UProjectJContextSystem* InContextSystem, const FVector& InLocation, const FName& InRowName,
 	EProjectJCardType InType, EProjectJItemType InItemType)
+{
+	UE_LOG(LogTemp, Warning, TEXT("SpawnNewCard, RowName: %s, CardType: %d, ItemType: %d"), *InRowName.ToString(), (int32)InType, (int32)InItemType);
+	AProjectJCardBase* NewCard;
+	switch (InType) {
+		case EProjectJCardType::Character:
+			{
+				NewCard = InContextSystem->CreateCharacter(InRowName);
+			}
+		break;
+		case EProjectJCardType::Landmark:
+			{
+				NewCard = InContextSystem->CreateLandMark(InRowName);
+			}
+		break;
+		case EProjectJCardType::Utility:
+			{
+				NewCard = InContextSystem->CreateUtility(InRowName);
+			}
+		break;
+		case EProjectJCardType::Item:
+			{
+				NewCard = InContextSystem->CreateItem(InRowName, InItemType);
+			}
+		break;
+		default:
+			{
+				UE_LOG(LogTemp, Error, TEXT("不支持生成的 CardType %d"), (int32)InType);
+				return nullptr;
+			}
+	}
+	NewCard->SetActorLocation(InLocation);
+
+	return NewCard;
+}
+
+void UProjectJCardExecuteHelper::IntervalPopupNewCard(AProjectJCardBase* InCard, UProjectJContextSystem* InContextSystem)
+{
+	auto CardLocation = InCard->GetActorLocation();
+	float PopupDuration = 0.8f;
+	auto DesiredLocation = CardLocation + FVector(200.f, 200.f, 10.f);
+	InCard->PopupCard(CardLocation, DesiredLocation, PopupDuration);
+	// 0.8s内，禁止抓取卡牌
+	auto AllCard = InContextSystem->GetUsingCards();
+	for (auto& Card : AllCard)
+	{
+		Card->CanDrag = false;
+	}
+	FTimerHandle UnlockTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(UnlockTimerHandle, [InCard, InContextSystem, AllCard, DesiredLocation]() {
+		auto GroundDesiredLocation = DesiredLocation;
+		GroundDesiredLocation.Z = 0.f;
+		InContextSystem->CardLayoutManager->PlaceCardAndRelayout(InCard, 0.1f, GroundDesiredLocation);
+		for (auto& Card : AllCard)
+		{
+			Card->CanDrag = true;
+		}
+	}, PopupDuration - 0.033f, false);
+}
+
+void UProjectJCardExecuteHelper::IntervalScaleSpawnNewCard(AProjectJCardBase* InCard)
 {
 }
 

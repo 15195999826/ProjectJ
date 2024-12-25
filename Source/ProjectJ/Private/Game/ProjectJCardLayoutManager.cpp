@@ -7,6 +7,8 @@
 #include "Game/Card/ProjectJCardBase.h"
 
 #include <chrono>
+
+#include "Components/BoxComponent.h"
 #include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
 
@@ -581,7 +583,7 @@ bool AProjectJCardLayoutManager::IsTwoCardOverlap(const FVector& ACardLocation, 
 			FMath::Abs(ACardLocation.Y - BCardLocation.Y) < CardSize.Y;
 }
 
-FVector AProjectJCardLayoutManager::RandomEmptyLocation()
+bool AProjectJCardLayoutManager::RandomEmptyLocation(FVector& OutLocation)
 {
 	auto GSettings = GetDefault<UProjectJGeneralSettings>();
 	const auto& CardSize = GSettings->CardSize;
@@ -590,140 +592,140 @@ FVector AProjectJCardLayoutManager::RandomEmptyLocation()
 
 	const float MaxX = (DeskTopSize.X - CardSize.X) * 0.5f;
 	const float MaxY = (DeskTopSize.Y - CardSize.Y) * 0.5f;
-	const FVector2D DeskBounds = FVector2D(MaxX, MaxY)
+	const FVector2D DeskBounds = FVector2D(MaxX, MaxY);
 
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-        auto GSettings = GetDefault<UProjectJGeneralSettings>();
-        const FVector& CardSize = GSettings->CardSize;
-        
-        // 1. 获取所有占用区域
-        TArray<FBox2D> OccupiedAreas;
-        
-        // 添加ExecuteArea作为占用区域
-        FVector ExecuteAreaLoc = ContextSystem->ExecuteArea->GetActorLocation();
-        FVector ExecuteAreaExtent = ContextSystem->ExecuteArea->BoxComponent->GetScaledBoxExtent();
-        OccupiedAreas.Add(FBox2D(
-            FVector2D(ExecuteAreaLoc.X - ExecuteAreaExtent.X, ExecuteAreaLoc.Y - ExecuteAreaExtent.Y),
-            FVector2D(ExecuteAreaLoc.X + ExecuteAreaExtent.X, ExecuteAreaLoc.Y + ExecuteAreaExtent.Y)
-        ));
-        
-        // 添加所有卡牌占用区域
-        for (const auto& Card : ContextSystem->GetUsingCards())
-        {
-            if (!Card) continue;
-            FVector CardLoc = Card->GetActorLocation();
-            OccupiedAreas.Add(FBox2D(
-                FVector2D(CardLoc.X - CardSize.X/2, CardLoc.Y - CardSize.Y/2),
-                FVector2D(CardLoc.X + CardSize.X/2, CardLoc.Y + CardSize.Y/2)
-            ));
-        }
-        
-        // 2. 找到可用区域
-        TArray<FBox2D> FreeAreas;
-        // 初始可用区域为整个桌面
-        FreeAreas.Add(FBox2D(
-            FVector2D(-DeskBounds.X, -DeskBounds.Y),
-            FVector2D(DeskBounds.X, DeskBounds.Y)
-        ));
-        
-        // 从可用区域中减去占用区域
-        for (const auto& OccupiedArea : OccupiedAreas)
-        {
-            TArray<FBox2D> NewFreeAreas;
-            for (const auto& FreeArea : FreeAreas)
-            {
-                // 如果没有交集，保持原区域
-                if (!FreeArea.Intersect(OccupiedArea))
-                {
-                    NewFreeAreas.Add(FreeArea);
-                    continue;
-                }
-                
-                // 将空闲区域分割成最多4个新区域（上、下、左、右）
-                // 上区域
-                if (FreeArea.Max.Y > OccupiedArea.Max.Y)
-                {
-                    NewFreeAreas.Add(FBox2D(
-                        FVector2D(FreeArea.Min.X, OccupiedArea.Max.Y),
-                        FVector2D(FreeArea.Max.X, FreeArea.Max.Y)
-                    ));
-                }
-                // 下区域
-                if (FreeArea.Min.Y < OccupiedArea.Min.Y)
-                {
-                    NewFreeAreas.Add(FBox2D(
-                        FVector2D(FreeArea.Min.X, FreeArea.Min.Y),
-                        FVector2D(FreeArea.Max.X, OccupiedArea.Min.Y)
-                    ));
-                }
-                // 左区域
-                if (FreeArea.Min.X < OccupiedArea.Min.X)
-                {
-                    NewFreeAreas.Add(FBox2D(
-                        FVector2D(FreeArea.Min.X, OccupiedArea.Min.Y),
-                        FVector2D(OccupiedArea.Min.X, OccupiedArea.Max.Y)
-                    ));
-                }
-                // 右区域
-                if (FreeArea.Max.X > OccupiedArea.Max.X)
-                {
-                    NewFreeAreas.Add(FBox2D(
-                        FVector2D(OccupiedArea.Max.X, OccupiedArea.Min.Y),
-                        FVector2D(FreeArea.Max.X, OccupiedArea.Max.Y)
-                    ));
-                }
-            }
-            FreeAreas = NewFreeAreas;
-        }
-        
-        // 3. 过滤掉太小的区域（小于卡牌大小的区域）
-        FreeAreas = FreeAreas.FilterByPredicate([CardSize](const FBox2D& Area) {
-            return (Area.Max.X - Area.Min.X >= CardSize.X) && 
-                   (Area.Max.Y - Area.Min.Y >= CardSize.Y);
-        });
-        
-        // 4. 如果没有可用区域，返回零向量
-        if (FreeAreas.Num() == 0)
-        {
-            return FVector::ZeroVector;
-        }
-        
-        // 5. 随机选择一个可用区域，并在该区域内随机一个点
-        // 根据区域大小加权随机选择
-        TArray<float> Weights;
-        float TotalWeight = 0.0f;
-        for (const auto& Area : FreeAreas)
-        {
-            float Weight = (Area.Max.X - Area.Min.X) * (Area.Max.Y - Area.Min.Y);
-            Weights.Add(Weight);
-            TotalWeight += Weight;
-        }
-        
-        float RandomValue = FMath::RandRange(0.0f, TotalWeight);
-        int32 SelectedIndex = 0;
-        float AccumulatedWeight = 0.0f;
-        
-        for (int32 i = 0; i < Weights.Num(); ++i)
-        {
-            AccumulatedWeight += Weights[i];
-            if (RandomValue <= AccumulatedWeight)
-            {
-                SelectedIndex = i;
-                break;
-            }
-        }
-        
-        const FBox2D& SelectedArea = FreeAreas[SelectedIndex];
-        
-        // 在选定区域内随机一个点，考虑卡牌尺寸
-        float RandomX = FMath::RandRange(
-            SelectedArea.Min.X + CardSize.X/2,
-            SelectedArea.Max.X - CardSize.X/2
-        );
-        float RandomY = FMath::RandRange(
-            SelectedArea.Min.Y + CardSize.Y/2,
-            SelectedArea.Max.Y - CardSize.Y/2
-        );
-        
-        return FVector(RandomX, RandomY, 0.0f);;
+	
+	// 1. 获取所有占用区域
+	TArray<FBox2D> OccupiedAreas;
+
+	// 添加ExecuteArea作为占用区域
+	FVector ExecuteAreaLoc = ContextSystem->ExecuteArea->GetActorLocation();
+	FVector ExecuteAreaExtent = ContextSystem->ExecuteArea->BoxComponent->GetScaledBoxExtent();
+	OccupiedAreas.Add(FBox2D(
+		FVector2D(ExecuteAreaLoc.X - ExecuteAreaExtent.X, ExecuteAreaLoc.Y - ExecuteAreaExtent.Y),
+		FVector2D(ExecuteAreaLoc.X + ExecuteAreaExtent.X, ExecuteAreaLoc.Y + ExecuteAreaExtent.Y)
+	));
+
+	// 添加所有卡牌占用区域
+	for (const auto& Card : ContextSystem->GetUsingCards())
+	{
+		if (!Card) continue;
+		FVector CardLoc = Card->GetActorLocation();
+		OccupiedAreas.Add(FBox2D(
+			FVector2D(CardLoc.X - CardSize.X / 2, CardLoc.Y - CardSize.Y / 2),
+			FVector2D(CardLoc.X + CardSize.X / 2, CardLoc.Y + CardSize.Y / 2)
+		));
+	}
+
+	// 2. 找到可用区域
+	TArray<FBox2D> FreeAreas;
+	// 初始可用区域为整个桌面
+	FreeAreas.Add(FBox2D(
+		FVector2D(-DeskBounds.X, -DeskBounds.Y),
+		FVector2D(DeskBounds.X, DeskBounds.Y)
+	));
+
+	// 从可用区域中减去占用区域
+	for (const auto& OccupiedArea : OccupiedAreas)
+	{
+		TArray<FBox2D> NewFreeAreas;
+		for (const auto& FreeArea : FreeAreas)
+		{
+			// 如果没有交集，保持原区域
+			if (!FreeArea.Intersect(OccupiedArea))
+			{
+				NewFreeAreas.Add(FreeArea);
+				continue;
+			}
+
+			// 将空闲区域分割成最多4个新区域（上、下、左、右）
+			// 上区域
+			if (FreeArea.Max.Y > OccupiedArea.Max.Y)
+			{
+				NewFreeAreas.Add(FBox2D(
+					FVector2D(FreeArea.Min.X, OccupiedArea.Max.Y),
+					FVector2D(FreeArea.Max.X, FreeArea.Max.Y)
+				));
+			}
+			// 下区域
+			if (FreeArea.Min.Y < OccupiedArea.Min.Y)
+			{
+				NewFreeAreas.Add(FBox2D(
+					FVector2D(FreeArea.Min.X, FreeArea.Min.Y),
+					FVector2D(FreeArea.Max.X, OccupiedArea.Min.Y)
+				));
+			}
+			// 左区域
+			if (FreeArea.Min.X < OccupiedArea.Min.X)
+			{
+				NewFreeAreas.Add(FBox2D(
+					FVector2D(FreeArea.Min.X, OccupiedArea.Min.Y),
+					FVector2D(OccupiedArea.Min.X, OccupiedArea.Max.Y)
+				));
+			}
+			// 右区域
+			if (FreeArea.Max.X > OccupiedArea.Max.X)
+			{
+				NewFreeAreas.Add(FBox2D(
+					FVector2D(OccupiedArea.Max.X, OccupiedArea.Min.Y),
+					FVector2D(FreeArea.Max.X, OccupiedArea.Max.Y)
+				));
+			}
+		}
+		FreeAreas = NewFreeAreas;
+	}
+
+	// 3. 过滤掉太小的区域（小于卡牌大小的区域）
+	FreeAreas = FreeAreas.FilterByPredicate([CardSize](const FBox2D& Area)
+	{
+		return (Area.Max.X - Area.Min.X >= CardSize.X) &&
+			(Area.Max.Y - Area.Min.Y >= CardSize.Y);
+	});
+
+	// 4. 如果没有可用区域，返回零向量
+	if (FreeAreas.Num() == 0)
+	{
+		return false;
+	}
+
+	// 5. 随机选择一个可用区域，并在该区域内随机一个点
+	// 根据区域大小加权随机选择
+	TArray<float> Weights;
+	float TotalWeight = 0.0f;
+	for (const auto& Area : FreeAreas)
+	{
+		float Weight = (Area.Max.X - Area.Min.X) * (Area.Max.Y - Area.Min.Y);
+		Weights.Add(Weight);
+		TotalWeight += Weight;
+	}
+
+	float RandomValue = FMath::RandRange(0.0f, TotalWeight);
+	int32 SelectedIndex = 0;
+	float AccumulatedWeight = 0.0f;
+
+	for (int32 i = 0; i < Weights.Num(); ++i)
+	{
+		AccumulatedWeight += Weights[i];
+		if (RandomValue <= AccumulatedWeight)
+		{
+			SelectedIndex = i;
+			break;
+		}
+	}
+
+	const FBox2D& SelectedArea = FreeAreas[SelectedIndex];
+
+	// 在选定区域内随机一个点，考虑卡牌尺寸
+	float RandomX = FMath::RandRange(
+		SelectedArea.Min.X + CardSize.X / 2,
+		SelectedArea.Max.X - CardSize.X / 2
+	);
+	float RandomY = FMath::RandRange(
+		SelectedArea.Min.Y + CardSize.Y / 2,
+		SelectedArea.Max.Y - CardSize.Y / 2
+	);
+
+	OutLocation = FVector(RandomX, RandomY, 0.0f);
+	return true;
 }
