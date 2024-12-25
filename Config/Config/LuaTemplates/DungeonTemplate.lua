@@ -13,11 +13,17 @@ local M = {StartTickFrame = -1}
 ---@param EventSystem UProjectJEventSystem
 ---]]]
 function M:EnterDungeon(ContextSystem, EventSystem)
-    --- 播放剧情， 写入剧情描述
+    ---关卡内卡牌:[[[
+    
+    ---]]]
+    
+    ---播放剧情， 写入剧情描述
+    ---Story: [[[
     local StoryRecord = UE.FProjectJStoryRecord();
     StoryRecord.Story:Add(
             NSLOCTEXT("Unlua", "Story_{LuaScriptName}_1", "默认文本")
     );
+    ---]]]
 
     EventSystem.PostStoryRecord:Broadcast(StoryRecord);
 end

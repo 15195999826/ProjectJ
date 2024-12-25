@@ -60,6 +60,7 @@ public:
 	void OnDragCard(int32 InCardID);
 	void OnStopDragCard(int32 InCardID);
 
+	FVector RandomEmptyLocation();
 private:
 	int32 DraggingCardID = INT_MIN;
 	bool IsControlCardDrop = false;

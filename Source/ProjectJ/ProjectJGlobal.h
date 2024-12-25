@@ -26,5 +26,15 @@ namespace ProjectJGlobal
 
 	// 对应的值为int类型，然后转化成Enum
 	PROJECTJ_API extern const FName EffectAttachTypeKey;
-	
+
+	// ----Spell Tags Start----
+	PROJECTJ_API extern const FName GuanCha;
+	PROJECTJ_API extern const FName YinBi;
+	PROJECTJ_API extern const FName TouXi;
+	PROJECTJ_API extern const FName TouQie;
+
+	// Todo: 未来其它角色的特殊行为
+
+	// ----Spell Tags End----
+
 }

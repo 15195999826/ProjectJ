@@ -13,12 +13,19 @@ local M = {StartTickFrame = -1}
 ---@param EventSystem UProjectJEventSystem
 ---]]]
 function M:EnterDungeon(ContextSystem, EventSystem)
+    ---关卡内卡牌:[[[
+    SpawnCharacter(Character_DaoZhu);
+    SpawnLandmark(Landmark_JuShi, {GuanCha, 10});
+    ---]]]
+    
     --- 播放剧情， 写入剧情描述
+    ---Todo: 功能预留，以后可以通过读取Excel或者什么方式，自动化生成剧情描述
+    ---Story: [[[
     local StoryRecord = UE.FProjectJStoryRecord();
     StoryRecord.Story:Add(
             NSLOCTEXT("Unlua", "Story_CeshiGuanQia_1", "进入房间，击杀目标角色，任务完成")
     );
-
+    ---]]]
     EventSystem.PostStoryRecord:Broadcast(StoryRecord);
 end
 

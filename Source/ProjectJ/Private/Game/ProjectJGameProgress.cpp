@@ -155,6 +155,10 @@ void AProjectJGameProgress::StartNewGame(const FName& InMainCharacterRow)
 
 void AProjectJGameProgress::EnterDungeon()
 {
+	// 刷新副本里的卡牌
+
+	// Todo: 设定， 执行完卡牌后，抛出Event, 数据为： 执行了哪张卡， 携带一些payload， 比如观察， 携带roll 感知的数值
+	
 	// 生成4张Spell, 观察、检查、躲藏、偷袭
 	// auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	// ContextSystem->GameContext = FDecoraptedProjectJGameContext();

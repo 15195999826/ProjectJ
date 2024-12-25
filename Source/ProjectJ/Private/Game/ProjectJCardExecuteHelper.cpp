@@ -12,7 +12,7 @@
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJUtility.h"
 
-int32 UProjectJCardExecuteHelper::SpawnNewCard(const FName& InRowName, EProjectJCardType InType,
+int32 UProjectJCardExecuteHelper::IntervalSpawnNewCard(const FName& InRowName, EProjectJCardType InType,
                                                EProjectJItemType InItemType)
 {
 	UE_LOG(LogTemp, Warning, TEXT("SpawnNewCard, RowName: %s, CardType: %d, ItemType: %d"), *InRowName.ToString(), (int32)InType, (int32)InItemType);
@@ -71,6 +71,66 @@ int32 UProjectJCardExecuteHelper::SpawnNewCard(const FName& InRowName, EProjectJ
 	}, PopupDuration - 0.033f, false);
 	
 	return RetID;
+}
+
+void UProjectJCardExecuteHelper::GiveCardDisplayCondition(int32 InCardID, const FName& InConditionTag,
+	const FString& InConditionValue)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnCharacter(const FName& InRowName)
+{
+	
+}
+
+int32 UProjectJCardExecuteHelper::SpawnCharacterAtLocation(const FName& InRowName, const FVector& InLocation)
+{
+}
+
+int32 UProjectJCardExecuteHelper::PopupCharacter(const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnLandmark(const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnLandmarkAtLocation(const FName& InRowName, const FVector& InLocation)
+{
+}
+
+int32 UProjectJCardExecuteHelper::PopupLandmark(const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnUtility(const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnUtilityAtLocation(const FName& InRowName, const FVector& InLocation)
+{
+}
+
+int32 UProjectJCardExecuteHelper::PopupUtility(const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnItem(const EProjectJItemType InItemType, const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::SpawnItemAtLocation(const EProjectJItemType InItemType, const FName& InRowName,
+	const FVector& InLocation)
+{
+}
+
+int32 UProjectJCardExecuteHelper::PopupItem(const EProjectJItemType InItemType, const FName& InRowName)
+{
+}
+
+int32 UProjectJCardExecuteHelper::IntervalSpawnNewCard(const FVector& InLocation, const FName& InRowName,
+	EProjectJCardType InType, EProjectJItemType InItemType)
+{
 }
 
 void UProjectJCardExecuteHelper::DestroyCard(int32 InCardID)

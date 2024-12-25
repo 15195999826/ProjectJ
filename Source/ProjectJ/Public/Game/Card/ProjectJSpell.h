@@ -17,6 +17,8 @@ class PROJECTJ_API AProjectJSpell : public AProjectJCardBase, public IProjectJCa
 	GENERATED_BODY()
 
 public:
+	UPROPERTY()
+	FName SpellTag;
 
 	// IProjectJCard interface
 public:

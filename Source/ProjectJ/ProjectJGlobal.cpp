@@ -6,10 +6,10 @@ namespace ProjectJGlobal
 	
 	const TArray<FName> LeftTeams = {
 	};
-	
+
 
 	const TMap<FName, int32> LeftTeamToPosition = {
-		
+
 	};
 
 	// ------BattleEventData Keys Start------
@@ -20,13 +20,22 @@ namespace ProjectJGlobal
 	const FName Battle_GetFeatureLayerCountKey = TEXT("Battle_GetFeatureLayerCount");
 
 	// ------BattleEventData Keys End------
-	
+
 	const FName Program_Ani_NameKey = TEXT("Program_Ani_Name");
 	const FName Program_Ani_LocationKey = TEXT("Location");
-	
+
 	const TArray<FName> AnimCustomKeys = {
 		Program_Ani_NameKey
 	};
 
 	const FName Program_Ani_Knock = TEXT("Program_Ani_Knock");
+
+	// ----Spell Tags Start----
+
+	const FName GuanCha = TEXT("SpellGuanCha");
+	const FName YinBi = TEXT("SpellYinBi");
+	const FName TouXi = TEXT("SpellTouXi");
+	const FName TouQie = TEXT("SpellTouQie");
+	
+	// ----Spell Tags End----
 }
