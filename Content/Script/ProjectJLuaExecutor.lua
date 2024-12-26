@@ -126,6 +126,7 @@ function M:CreateCharacter(ID, InLuaScriptName)
     end
 
     CharacterInstance[ID] = newInstance("Characters." .. InLuaScriptName);
+    CharacterInstance[ID].SelfID = ID;
 end
 
 ---@param ID integer
@@ -136,6 +137,7 @@ function M:CreateLandMark(ID, InLuaScriptName)
     end
     
     LandmarkInstance[ID] = newInstance("Landmarks." .. InLuaScriptName);
+    LandmarkInstance[ID].SelfID = ID;
 end
 
 ---@param ID integer
@@ -146,6 +148,7 @@ function M:CreateUtility(ID, InLuaScriptName)
     end
 
     UtilityInstance[ID] = newInstance("Utilities." .. InLuaScriptName);
+    UtilityInstance[ID].SelfID = ID;
 end
 
 ---@param ID integer
@@ -156,6 +159,7 @@ function M:CreateItem(ID, InLuaScriptName)
     end
 
     ItemInstance[ID] = newInstance("Items." .. InLuaScriptName);
+    ItemInstance[ID].SelfID = ID;
 end
 
 
@@ -167,6 +171,7 @@ function M:CreateSpell(ID, InLuaScriptName)
     end
 
     SpellInstance[ID] = newInstance("Spells." .. InLuaScriptName);
+    SpellInstance[ID].SelfID = ID;
 end
 
 ---@param ID integer
@@ -245,6 +250,19 @@ end
 
 ---@param CardType EProjectJCardType
 ---@param ID integer
+---@return integer
+function M:GetExecuteMinutes(CardType, ID) 
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return 5;
+    end
+    
+    return Instance:GetExecuteMinutes();
+end
+
+---@param CardType EProjectJCardType
+---@param ID integer
 ---@param Frame integer
 function M:ExecuteStart(CardType, ID, Frame)
     local Instance = GetExecInstance(CardType, ID);
@@ -260,14 +278,24 @@ end
 ---@param CardType EProjectJCardType
 ---@param ID integer
 ---@param LogicFrame integer
----@return boolean
 function M:ExecuteTick(CardType, ID, LogicFrame)
     local Instance = GetExecInstance(CardType, ID);
     if Instance == nil then
         Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
         return;
     end
-    return Instance:ExecuteTick(ID, LogicFrame);
+    Instance:ExecuteTick(LogicFrame);
+end
+
+---@param CardType EProjectJCardType
+---@param ID integer
+function M:ExecuteOver(CardType, ID) 
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+    Instance:ExecuteOver();
 end
 
 ---@param CardType EProjectJCardType
@@ -280,6 +308,21 @@ function M:ExecuteAfterHide(CardType, ID)
     end
     Instance:ExecuteAfterHide(ID);
 end
+
+---@param SpellTag string
+---@param CardType EProjectJCardType
+---@param ID integer
+---@param RollResult integer
+function M:OnGetSpellResult(SpellTag, CardType, ID, RollResult)
+    local Instance = GetExecInstance(CardType, ID);
+    if Instance == nil then
+        Screen.Print("执行脚本失败,不存在Type:" .. CardType .. " ID:" .. ID);
+        return;
+    end
+    
+    Instance:OnGetSpellResult(SpellTag, RollResult);
+end
+
 ---@param InLuaScriptName string
 ---@return string
 function M:GetLuaAbilityDesc(InLuaScriptName) 

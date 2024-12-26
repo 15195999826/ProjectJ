@@ -5,7 +5,7 @@
 --- RowName：{RowName}
 ---
 
-local M = {StartTickFrame = -1}
+local M = {SelfID = nil, StartTickFrame = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -16,21 +16,25 @@ function M:GetTargetFilter()
 end
 
 ---[[[
---- 每帧执行
----@param OwnerID integer
----@param TargetID integer
----@param Frame integer
----@return boolean
+--- 返回执行时间(分钟)
+--- @return integer
 ---]]]
-function M:ExecuteTick(OwnerID, TargetID,Frame)
-    return false;
+function M:GetExecuteMinutes()
+   
+end
+
+---[[[
+--- 每帧执行
+---@param Frame integer
+---]]]
+function M:ExecuteTick(Frame)
+   
 end
 
 ---[[[
 --- 隐藏动画播放结束后执行
----@param OwnerID integer
 ---]]]
-function M:ExecuteAfterHide(OwnerID)
+function M:ExecuteAfterHide()
 end
 
 return M

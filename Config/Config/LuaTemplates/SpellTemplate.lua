@@ -5,7 +5,7 @@
 --- RowName：{RowName}
 ---
 
-local M = {StartTickFrame = -1, SelectedID = nil, SelectedCardType = nil}
+local M = {SelfID = nil, StartTickFrame = nil, SelectedID = nil, SelectedCardType = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -16,6 +16,15 @@ function M:GetTargetFilter()
 end
 
 ---[[[
+--- 返回执行时间(分钟)
+--- @return integer
+---]]]
+function M:GetExecuteMinutes()
+    return 15;
+end
+
+
+---[[[
 --- 选择目标时执行
 ---]]]
 function M:ExecuteSelectTarget()
@@ -24,20 +33,24 @@ end
 
 ---[[[
 --- 每帧执行
----@param OwnerID integer
----@param TargetID integer
 ---@param Frame integer
----@return boolean
 ---]]]
-function M:ExecuteTick(OwnerID, TargetID,Frame)
-    return false;
+function M:ExecuteTick(Frame)
+
 end
 
 ---[[[
---- 隐藏动画播放结束后执行
----@param OwnerID integer
+--- 执行完毕
 ---]]]
-function M:ExecuteAfterHide(OwnerID)
+function M:ExecuteOver()
+
+end
+
+
+---[[[
+--- 隐藏动画播放结束后执行
+---]]]
+function M:ExecuteAfterHide()
 end
 
 return M

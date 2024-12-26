@@ -5,10 +5,14 @@
 
 #include "AbilitySystemComponent.h"
 #include "GameplayTagsManager.h"
+#include "Core/DeveloperSettings/ProjectJGeneralSettings.h"
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJCardLayoutManager.h"
+#include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJGameContext.h"
+#include "Game/ProjectJLevelSettingActor.h"
+#include "Game/ProjectJSpellArea.h"
 #include "Game/Card/ProjectJCardBase.h"
 #include "Game/Card/ProjectJCardExecuteArea.h"
 #include "Game/Card/ProjectJCharacter.h"
@@ -16,6 +20,7 @@
 #include "Game/Card/ProjectJLandmark.h"
 #include "Game/Card/ProjectJUtility.h"
 #include "ProjectJ/ProjectJGameplayTags.h"
+#include "ProjectJ/ProjectJGlobal.h"
 
 void UProjectJCardExecuteHelper::GiveCardDisplayCondition(int32 InCardID, const FName& InConditionTag,
                                                           const FString& InConditionValue)
@@ -242,4 +247,78 @@ int32 UProjectJCardExecuteHelper::Roll(const FName& InTagName) const
 	auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 	EventSystem->PostRollResult.Broadcast(Ret);
 	return Ret;
+}
+
+void UProjectJCardExecuteHelper::ReSpawnSpell(int32 ID)
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	auto SpellCard = ContextSystem->UsingSpells[ID];
+	auto LevelSettingActor = ContextSystem->LevelSettingActor;
+	auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
+	auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
+	FVector SpellLocation;
+	if (SpellCard->SpellTag == ProjectJGlobal::GuanCha)
+	{
+		SpellLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(0, HandSpellCardStartLocation, HandSpellCardOffset);
+	}
+	else if (SpellCard->SpellTag == ProjectJGlobal::YinBi)
+	{
+		SpellLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(1, HandSpellCardStartLocation, HandSpellCardOffset);
+	}
+	else if (SpellCard->SpellTag == ProjectJGlobal::TouXi)
+	{
+		SpellLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(2, HandSpellCardStartLocation, HandSpellCardOffset);
+	}
+	else if (SpellCard->SpellTag == ProjectJGlobal::TouQie)
+	{
+		SpellLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(3, HandSpellCardStartLocation, HandSpellCardOffset);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("未知的SpellTag: %s"), *SpellCard->SpellTag.ToString());
+		return;
+	}
+
+	SpellCard->SetActorLocation(SpellLocation);
+	auto GSettings = GetDefault<UProjectJGeneralSettings>();
+	const auto& CardSize = GSettings->CardSize;
+	// 检查是否跟别的卡牌存在堆叠
+	auto AllCard = ContextSystem->GameContext->InDungeonCards;
+	bool NeedRelayout = false;
+	for (auto& Card : AllCard)
+	{
+		if (Card->ID != ID)
+		{
+			bool Overlap = ContextSystem->CardLayoutManager->IsTwoCardOverlap(SpellLocation, Card->GetActorLocation(),CardSize);
+			if (Overlap)
+			{
+				NeedRelayout = true;
+				break;
+			}
+		}
+	}
+
+	SpellCard->CanDrag = true;
+	SpellCard->SetActorEnableCollision(true);
+	
+	IntervalScaleSpawnNewCard(SpellCard.Get(), ContextSystem, NeedRelayout);
+}
+
+void UProjectJCardExecuteHelper::OnSpellToCard(const FName& InSpellTag, int32 TargetID, int32 RollResult)
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	auto Card = ContextSystem->GameContext->InDungeonCardsMap.FindRef(TargetID);
+	check(Card);
+	auto CardType = IProjectJCardInterface::Execute_GetCardType(Card);
+	// 被选择时， 禁用了CanDrag， Todo: 暂时在这里恢复， 未来问策划是否需要点击对话显示下段对话，对话结束才能操作
+	Card->CanDrag = true;
+	ContextSystem->LuaExecutor->OnGetSpellResult(InSpellTag, CardType, TargetID, RollResult);
+}
+
+void UProjectJCardExecuteHelper::DefaultActionToSpell(const FName& InSpellTag, int32 ID)
+{
+	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+	auto Card = ContextSystem->GameContext->InDungeonCardsMap.FindRef(ID);
+	check(Card);
+	Card->DefaultAction(InSpellTag);
 }

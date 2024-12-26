@@ -8,6 +8,7 @@
 #include "Core/System/ProjectJContextSystem.h"
 #include "Core/System/ProjectJEventSystem.h"
 #include "Game/ProjectJCardExecuteHelper.h"
+#include "Game/ProjectJGameBFL.h"
 #include "Game/ProjectJGameContext.h"
 #include "Game/ProjectJLevelSettingActor.h"
 #include "Game/ProjectJLuaExecutor.h"
@@ -102,13 +103,6 @@ void AProjectJGameProgress::OnLevelPrepared()
 {
 }
 
-FVector AProjectJGameProgress::GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation,
-	const FVector& Offset)
-{
-	// 总共4张牌， 居中摆放, 1和2在中间，0和3在两侧
-	return  CenterLocation + Offset * (Index - 1.5f);
-}
-
 void AProjectJGameProgress::OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload)
 {
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
@@ -177,10 +171,10 @@ void AProjectJGameProgress::EnterDungeon(const FName& DungeonRowName)
 	auto LevelSettingActor = ContextSystem->LevelSettingActor;
 	auto HandSpellCardStartLocation = ContextSystem->SpellArea->GetActorLocation();
 	auto HandSpellCardOffset = LevelSettingActor->HandSpellCardOffset;
-	auto GuanchLocation = GetSpellCardToAreaLocation(0, HandSpellCardStartLocation, HandSpellCardOffset);
-	auto YinBiLocation = GetSpellCardToAreaLocation(1, HandSpellCardStartLocation, HandSpellCardOffset);
-	auto TouXiLocation = GetSpellCardToAreaLocation(2, HandSpellCardStartLocation, HandSpellCardOffset);
-	auto TouQieLocation = GetSpellCardToAreaLocation(3, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto GuanchLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(0, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto YinBiLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(1, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto TouXiLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(2, HandSpellCardStartLocation, HandSpellCardOffset);
+	auto TouQieLocation = UProjectJGameBFL::GetSpellCardToAreaLocation(3, HandSpellCardStartLocation, HandSpellCardOffset);
 	auto ExecHelper = GetWorld()->GetSubsystem<UProjectJCardExecuteHelper>();
 	ExecHelper->SpawnSpell(ProjectJGlobal::GuanCha, GuanchLocation, ContextSystem);
 	ExecHelper->SpawnSpell(ProjectJGlobal::YinBi, YinBiLocation, ContextSystem);

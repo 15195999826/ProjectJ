@@ -5,7 +5,7 @@
 --- RowName：测试关卡的钥匙
 ---
 
-local M = {StartTickFrame = -1, SelectedID = nil, SelectedCardType = nil}
+local M = {SelfID = nil, StartTickFrame = nil, SelectedID = nil, SelectedCardType = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -24,20 +24,43 @@ end
 
 ---[[[
 --- 每帧执行
----@param OwnerID integer
----@param TargetID integer
 ---@param Frame integer
----@return boolean
 ---]]]
-function M:ExecuteTick(OwnerID, TargetID, Frame)
+function M:ExecuteTick(Frame)
     return false;
 end
 
 ---[[[
 --- 隐藏动画播放结束后执行
----@param OwnerID integer
 ---]]]
-function M:ExecuteAfterHide(OwnerID)
+function M:ExecuteAfterHide()
+end
+
+
+---[[[
+--- 返回执行时间(分钟)
+--- @return integer
+---]]]
+function M:GetExecuteMinutes()
+    return 15;
+end
+
+
+---[[[
+--- 执行完毕
+---]]]
+function M:ExecuteOver()
+
+end
+
+
+---[[[
+--- 收到了行为卡的执行结果
+--- @param SpellTag string
+--- @param RollResult integer
+---]]]
+function M:OnGetSpellResult(SpellTag, RollResult)
+    ExecHelper:DefaultActionToSpell(SpellTag, self.SelfID);
 end
 
 return M

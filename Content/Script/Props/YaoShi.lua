@@ -5,7 +5,7 @@
 --- RowName：钥匙
 ---
 
-local M = {StartTickFrame = -1}
+local M = {SelfID = nil, StartTickFrame = nil}
 
 ---[[[
 --- 返回可以使用的目标筛选器； 默认对所有角色、地标可用
@@ -20,12 +20,9 @@ end
 
 ---[[[
 --- 每帧执行
----@param OwnerID integer
----@param TargetID integer
 ---@param Frame integer
----@return boolean
 ---]]]
-function M:ExecuteTick(OwnerID, TargetID, Frame)
+function M:ExecuteTick(Frame)
     --- 简单表达5帧后执行完成
     if (Frame - self.StartTickFrame) == 5 then
         return true;
@@ -37,10 +34,18 @@ end
 
 ---[[[
 --- 隐藏动画播放结束后执行
----@param OwnerID integer
 ---]]]
-function M:ExecuteAfterHide(OwnerID)
+function M:ExecuteAfterHide()
 end
 
+
+
+---[[[
+--- 返回执行时间(分钟)
+--- @return integer
+---]]]
+function M:GetExecuteMinutes()
+   
+end
 
 return M

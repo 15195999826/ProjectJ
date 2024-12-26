@@ -64,6 +64,18 @@ public:
 
 	UFUNCTION()
 	int32 Roll(const FName& InTagName) const;
+
+	UFUNCTION()
+	void ReSpawnSpell(int32 ID);
+
+	UFUNCTION()
+	void OnSpellToCard(const FName& InSpellTag, int32 TargetID, int32 RollResult);
+
+	// UFUNCTION()
+	// void Speak(int32 ID, TArray<FText> InText);
+
+	UFUNCTION()
+	void DefaultActionToSpell(const FName& InSpellTag, int32 ID);
 	
 	int32 SpawnSpell(const FName& InSpellTag, const FVector& InLocation, UProjectJContextSystem* InContextSystem);
 	

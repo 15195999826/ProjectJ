@@ -42,15 +42,15 @@ void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 		FTimerHandle TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CardType]()
 		{
+			int32 LocalID = ExecutingCard->ID;
+			ExecutingCard = nullptr;
 			// Todo: 装备卡的功能特殊实现, 执行后，装备到角色身上
 			if (CachedItemSecondaryType == EProjectJItemType::None || CachedItemSecondaryType ==
 				EProjectJItemType::Prop)
 			{
 				auto LocalContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-				LocalContextSystem->LuaExecutor->ExecuteAfterHide(CardType, ExecutingCard->ID);
+				LocalContextSystem->LuaExecutor->ExecuteAfterHide(CardType, LocalID);
 			}
-			
-			ExecutingCard = nullptr;
 		}, 0.5f, false);
 	}
 	
@@ -60,30 +60,17 @@ void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 		// 时间流逝, 每一帧 + 1 分钟
 		ContextSystem->GameContext->DateTime.StepMinute();
 		
-		
-		bool bIsExecuteEnd = false;
 		const auto CardType = IProjectJCardInterface::Execute_GetCardType(ExecutingCard.Get());
-		
-		switch (CardType) {
-			case EProjectJCardType::None:
-				break;
-			case EProjectJCardType::Spell:
-				break;
-			case EProjectJCardType::Character:
-			case EProjectJCardType::Utility:
-			case EProjectJCardType::Landmark:
-				{
-					bIsExecuteEnd = ContextSystem->LuaExecutor->ExecuteTick(CardType, ExecutingCard->ID, InLogicFrameCount);
-				}
-				break;
-			case EProjectJCardType::Item:
-				break;
-		}
+		// Todo: 对话怎么形式
+		ContextSystem->LuaExecutor->ExecuteTick(CardType, ExecutingCard->ID, InLogicFrameCount);
 
-		if (bIsExecuteEnd)
-		{
-			DuringHiding = true;
-		}
+		PostExecutePercent((InLogicFrameCount - StartFrame) / (CachedMinutes * 10.f));
+		
+		if (InLogicFrameCount - StartFrame >= CachedMinutes * 10)
+        {
+			ContextSystem->LuaExecutor->ExecuteOver(CardType, ExecutingCard->ID);
+            DuringHiding = true;;
+        }
 	}
 }
 
@@ -149,6 +136,7 @@ void AProjectJCardExecuteArea::StartExecute(AProjectJCardBase* InCard)
 					}
 				}
 
+				ShowTips(NSLOCTEXT("ProjectJ", "SelectTarget", "请选择目标"));
 				// 等待选择目标
 				auto EventSystem = GetWorld()->GetSubsystem<UProjectJEventSystem>();
 				EventSystem->WaitForSelectTarget.Broadcast();
@@ -156,7 +144,11 @@ void AProjectJCardExecuteArea::StartExecute(AProjectJCardBase* InCard)
 			break;
 	}
 
-	ContextSystem->LuaExecutor->ExecuteStart(CardType, InCard->ID, ContextSystem->GetLogicFrameCount());
+	// Todo: 待讨论，是否需要Tick功能
+	CachedMinutes =ContextSystem->LuaExecutor->GetExecuteMinutes(CardType, InCard->ID);
+	StartFrame = ContextSystem->GetLogicFrameCount();
+	ContextSystem->LuaExecutor->ExecuteStart(CardType, InCard->ID, StartFrame);
+	StartHidingNextTick = false;
 }
 
 bool AProjectJCardExecuteArea::SatisfyFilter(AProjectJCardBase* InCard, const FProjectJTargetFilter& InTargetFilter)
@@ -172,13 +164,10 @@ bool AProjectJCardExecuteArea::SatisfyFilter(AProjectJCardBase* InCard, const FP
 
 void AProjectJCardExecuteArea::OnSelectTarget(AProjectJCardBase* InCard)
 {
+	HideTips();
 	auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
 	for (auto& Pair : ContextSystem->GameContext->InDungeonCardsMap)
 	{
-		if (Pair.Key == InCard->ID)
-		{
-			continue;
-		}
 		Pair.Value->EndExecuteSelect();
 	}
 	InCard->CanDrag = false;

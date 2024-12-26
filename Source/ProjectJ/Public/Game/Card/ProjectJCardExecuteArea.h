@@ -41,6 +41,12 @@ public:
 	void OnFocus();
 	UFUNCTION(BlueprintNativeEvent)
 	void OnLoseFocus();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowTips(const FText& InTips);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void HideTips();
 	
 	void StartExecute(AProjectJCardBase* InCard);
 
@@ -55,8 +61,14 @@ public:
 	UPROPERTY()
 	TWeakObjectPtr<AProjectJCardBase> SelectedCard;
 
+protected:
+	UFUNCTION(BlueprintImplementableEvent)
+	void PostExecutePercent(float InPercent);
+
 private:
 	EProjectJItemType CachedItemSecondaryType = EProjectJItemType::None;
+	int32 CachedMinutes;
+	int32 StartFrame;
 	bool DuringHiding = false;
 	bool StartHidingNextTick = false;
 	bool SatisfyFilter(AProjectJCardBase* InCard, const FProjectJTargetFilter& InTargetFilter);

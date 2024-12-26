@@ -213,3 +213,9 @@ FProjectJUtilityConfig* UProjectJGameBFL::GetUtilityConfig(const FName& InRowNam
 	
 	return nullptr;
 }
+
+FVector UProjectJGameBFL::GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation, const FVector& Offset)
+{
+	// 总共4张牌， 居中摆放, 1和2在中间，0和3在两侧
+	return  CenterLocation + Offset * (Index - 1.5f);
+}

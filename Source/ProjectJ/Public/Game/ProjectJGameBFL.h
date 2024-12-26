@@ -9,6 +9,7 @@
 #include "Card/ProjectJCharacter.h"
 #include "Card/ProjectJUtility.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "ProjectJ/ProjectJGlobal.h"
 #include "Types/ProjectJBattleEventData.h"
 #include "Types/ProjectJUtilityConfig.h"
 #include "Types/Item/ProjectJItemBase.h"
@@ -61,4 +62,15 @@ public:
 	static FProjectJPropConfig* GetPropConfig(const FName& InRowName);
 
 	static FProjectJUtilityConfig* GetUtilityConfig(const FName& InRowName);
+
+	static FVector GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation, const FVector& Offset);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FName GetGuanChaTag() { return ProjectJGlobal::GuanCha; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FName GetYinBiTag() { return ProjectJGlobal::YinBi; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FName GetTouXiTag() { return ProjectJGlobal::TouXi; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FName GetTouQieTag() { return ProjectJGlobal::TouQie; }
 };

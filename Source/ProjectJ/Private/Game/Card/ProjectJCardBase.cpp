@@ -142,7 +142,6 @@ void AProjectJCardBase::OnDrop(float InDuration)
 	}
 
 	SetActorEnableCollision(true);
-
 }
 
 void AProjectJCardBase::OnCancelDrag()
@@ -242,6 +241,7 @@ void AProjectJCardBase::UpdateDropOnGroundAnimation()
 		SetActorRotation(FRotator::ZeroRotator);
 		// Stop the timer when the animation is complete
 		GetWorld()->GetTimerManager().ClearTimer(DropOnGroundTimerHandle);
+		Title->SetVisibility(true);
 		return;
 	}
 	
@@ -290,6 +290,7 @@ void AProjectJCardBase::UpdateHideAnimation()
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
 		SetActorScale3D(FVector::ZeroVector);
+		Title->SetVisibility(false);
 		return;
 	}
     
@@ -333,6 +334,7 @@ void AProjectJCardBase::UpdateShowAnimation()
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
 		SetActorScale3D(InitialScale);
+		Title->SetVisibility(true);
 		return;
 	}
     
@@ -432,6 +434,44 @@ void AProjectJCardBase::UpdatePopupAnimation()
 void AProjectJCardBase::PerformSelected()
 {
 	
+	AnimationStartTime = GetWorld()->GetTimeSeconds();
+	AnimationDuration = 0.5f;
+	InitialScale = GetActorScale3D();
+
+	GetWorld()->GetTimerManager().SetTimer(
+		CardAnimationTimerHandle,
+		this,
+		&AProjectJCardBase::UpdateSelectedAnimation,
+		0.016f,
+		true
+	);
+}
+
+void AProjectJCardBase::UpdateSelectedAnimation()
+{
+	float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Alpha = (CurrentTime - AnimationStartTime) / AnimationDuration;
+	
+	if (Alpha >= 1.0f)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CardAnimationTimerHandle);
+		SetActorScale3D(FVector::OneVector);
+		return;
+	}
+	
+	float ScaleFactor;
+	if (Alpha < 0.5f) // 放大阶段
+	{
+		float SubAlpha = Alpha / 0.5f;
+		ScaleFactor = FMath::InterpEaseOut(1.0f, 1.2f, SubAlpha, 2.0f);
+	}
+	else // 平滑回到1
+	{
+		float SubAlpha = (Alpha - 0.5f) / (1.0f - 0.5f);
+		ScaleFactor = FMath::InterpEaseOut(1.2f, 1.0f, SubAlpha, 2.0f);
+	}
+	
+	SetActorScale3D(InitialScale * ScaleFactor);
 }
 
 float AProjectJCardBase::CalculateRequiredDistance(const FVector2D& CardSize, const FVector& Direction) const

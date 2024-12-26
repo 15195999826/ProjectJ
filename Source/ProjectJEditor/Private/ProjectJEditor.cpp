@@ -136,7 +136,7 @@ static void TestAction()
 	UE_LOG(LogTemp, Warning, TEXT("TestAction"));
 }
 
-static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
+static void IntervalMigrateLuaTemplate(EProjectJLuaInstanceType InType)
 {
 	const char* TemplateFilePath;
 	FString GAbilityLuaSrcRelativePath;
@@ -174,15 +174,15 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 	}
 	
 	auto FullFilePath = FPaths::ProjectConfigDir() / TemplateFilePath;
-	FString AbilityTemplateContent;
-	FFileHelper::LoadFileToString(AbilityTemplateContent, *FullFilePath);
+	FString LuaTemplateContent;
+	FFileHelper::LoadFileToString(LuaTemplateContent, *FullFilePath);
 
 	// 将每一个function提取为FProjectJLuaFunction结构， 每一个函数的Comment保存在函数名上方---[[[与---]]]之间
 	TArray<FProjectJLuaFunction> TemplateFunctions;
 	FRegexPattern FunctionPattern(TEXT("function\\s+M:(\\w+)\\(([^)]*)\\)"));
 	FRegexPattern CommentPattern(TEXT("(?s)---\\[\\[\\[(.*?)---\\]\\]\\]"));
-	FRegexMatcher FunctionMatcher(FunctionPattern, AbilityTemplateContent);
-	FRegexMatcher CommentMatcher(CommentPattern, AbilityTemplateContent);
+	FRegexMatcher FunctionMatcher(FunctionPattern, LuaTemplateContent);
+	FRegexMatcher CommentMatcher(CommentPattern, LuaTemplateContent);
 	
 	while (FunctionMatcher.FindNext())
 	{
@@ -201,7 +201,7 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 		// 写入函数的默认内容, 在function xxx() end之间
 		FRegexPattern FunctionContentPattern(
 			FString::Printf(TEXT("(?s)function\\s+M:%s\\(([^)]*)\\)(.*?)\\bend\\b"), *LuaFunction.FunctionName));
-		FRegexMatcher FunctionContentMatcher(FunctionContentPattern, AbilityTemplateContent);
+		FRegexMatcher FunctionContentMatcher(FunctionContentPattern, LuaTemplateContent);
 	
 		if (FunctionContentMatcher.FindNext())
 		{
@@ -338,6 +338,24 @@ static void IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType InType)
 					break;
 			}
 		}
+
+		// 检查local M = {} 中 {} 里的内容是否相同
+		FRegexPattern LocalPattern(TEXT("local\\s+M\\s*=\\s*\\{([^}]*)\\}"));
+		FRegexMatcher LocalMatcher(LocalPattern, LuaContent); // for Lua Content
+		// Template
+		FRegexMatcher TemplateLocalMatcher(LocalPattern, LuaTemplateContent);
+		
+		if (LocalMatcher.FindNext() && TemplateLocalMatcher.FindNext())
+		{
+			FString LocalDef = LocalMatcher.GetCaptureGroup(1);
+			FString TemplateDef = TemplateLocalMatcher.GetCaptureGroup(1);
+			if (LocalDef != TemplateDef)
+			{
+				NeedSave = true;
+				LuaContent = LuaContent.Replace(*LocalDef, *TemplateDef);
+			}
+		}
+		
 		if (NeedSave)
 		{
 			FFileHelper::SaveStringToFile(LuaContent, *LuaFile, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
@@ -514,13 +532,13 @@ static void CreateStaticVariableLua()
 
 static void MigrateAbilityTemplate()
 {
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Dungeon);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Character);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Landmark);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Utility);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Ability);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Prop);
-	IntervalMigrateAbilityTemplate(EProjectJLuaInstanceType::Spell);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Dungeon);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Character);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Landmark);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Utility);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Ability);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Prop);
+	IntervalMigrateLuaTemplate(EProjectJLuaInstanceType::Spell);
 }
 
 static void CreateSpellLuaScript()

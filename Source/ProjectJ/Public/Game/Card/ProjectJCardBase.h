@@ -90,6 +90,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PopupCard(const FVector& StartLocation, const FVector& TargetLocation, float Duration = 0.8f);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void DefaultAction(FName Name);
+
+	// UFUNCTION(BlueprintImplementableEvent)
+	// void Speak(TArray<FText> InText);
+
 	void PerformSelected();
 private:
 	// 1. 拖拽卡牌
@@ -122,6 +128,7 @@ private:
 	FRotator PopupTargetRotation;
 	
 	// 5. 卡牌被点击选中
+	void UpdateSelectedAnimation();
 
 
 	// ---- 程序动画 End ------

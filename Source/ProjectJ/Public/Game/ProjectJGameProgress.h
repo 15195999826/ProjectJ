@@ -73,8 +73,7 @@ public:
 	
 private:
 	void OnLevelPrepared();
-	FVector GetSpellCardToAreaLocation(int32 Index, const FVector& CenterLocation, const FVector& Offset);
-
+	
 	void OnLeaveStage(EProjectJGameStage OldStage, FProjectJChangeStagePayload Payload);
 	void ChangeStage(EProjectJGameStage NewStage, const FProjectJChangeStagePayload& Payload);
 

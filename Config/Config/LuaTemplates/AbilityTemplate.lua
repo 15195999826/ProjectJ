@@ -5,7 +5,7 @@
 --- RowName：[[[{RowName}]]]
 ---
 
-local M={}
+local M = {}
 
 --- 返回技能描述
 ---[[[

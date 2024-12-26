@@ -75,13 +75,23 @@ public:
 	void ExecuteSelectTarget(EProjectJCardType CardType, int32 ID, EProjectJCardType SelectedCardType, int32 SelectedID);
 
 	UFUNCTION(BlueprintImplementableEvent)
+	int32 GetExecuteMinutes(EProjectJCardType CardType, int32 ID);
+	
+	UFUNCTION(BlueprintImplementableEvent)
 	void ExecuteStart(EProjectJCardType CardType, int32 ID, int32 Frame);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	bool ExecuteTick(EProjectJCardType CardType, int32 ID, int32 LogicFrame);
+	void ExecuteTick(EProjectJCardType CardType, int32 ID, int32 LogicFrame);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ExecuteOver(EProjectJCardType CardType, int32 ID);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ExecuteAfterHide(EProjectJCardType CardType, int32 ID);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnGetSpellResult(const FName& SpellTag, EProjectJCardType CardType, int32 ID, int32 RollResult);
+
 	// ----- 关卡玩法相关 End -----
 
 	// ----- 战斗技能相关 Start -----
