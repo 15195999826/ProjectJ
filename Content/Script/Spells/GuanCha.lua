@@ -19,7 +19,7 @@ end
 --- 选择目标时执行
 ---]]]
 function M:ExecuteSelectTarget()
-    ExecHelper:Roll(SetByCaller_Attribute_Play_Observe);
+   
 end
 
 ---[[[
@@ -30,6 +30,11 @@ end
 ---@return boolean
 ---]]]
 function M:ExecuteTick(OwnerID, TargetID,Frame)
+    if StartTickFrame - Frame == 10 then
+        ExecHelper:Roll(SetByCaller_Attribute_Play_Observe);
+        return true;
+    end
+    
     return false;
 end
 

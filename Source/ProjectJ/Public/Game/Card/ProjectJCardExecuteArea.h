@@ -58,6 +58,7 @@ public:
 private:
 	EProjectJItemType CachedItemSecondaryType = EProjectJItemType::None;
 	bool DuringHiding = false;
+	bool StartHidingNextTick = false;
 	bool SatisfyFilter(AProjectJCardBase* InCard, const FProjectJTargetFilter& InTargetFilter);
 
 	void OnSelectTarget(AProjectJCardBase* InCard);

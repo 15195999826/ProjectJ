@@ -31,6 +31,29 @@ void AProjectJCardExecuteArea::BeginPlay()
 
 void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 {
+	// 控制卡牌隐藏在Tick返回执行完毕的下一帧执行
+	if (DuringHiding && !StartHidingNextTick)
+	{
+		StartHidingNextTick = true;
+		const auto CardType = IProjectJCardInterface::Execute_GetCardType(ExecutingCard.Get());
+		// 执行结束, 播放卡牌隐藏动画
+		ExecutingCard->HideCard(0.5f);
+		// 等待动画结束后
+		FTimerHandle TimerHandle;
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CardType]()
+		{
+			// Todo: 装备卡的功能特殊实现, 执行后，装备到角色身上
+			if (CachedItemSecondaryType == EProjectJItemType::None || CachedItemSecondaryType ==
+				EProjectJItemType::Prop)
+			{
+				auto LocalContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
+				LocalContextSystem->LuaExecutor->ExecuteAfterHide(CardType, ExecutingCard->ID);
+			}
+			
+			ExecutingCard = nullptr;
+		}, 0.5f, false);
+	}
+	
 	if (ExecutingCard.IsValid() && !DuringHiding)
 	{
 		auto ContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
@@ -60,22 +83,6 @@ void AProjectJCardExecuteArea::CustomTick(int32 InLogicFrameCount)
 		if (bIsExecuteEnd)
 		{
 			DuringHiding = true;
-			// 执行结束, 播放卡牌隐藏动画
-			ExecutingCard->HideCard(0.5f);
-			// 等待动画结束后
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle, [this, CardType]()
-			{
-				// Todo: 装备卡的功能特殊实现, 执行后，装备到角色身上
-				if (CachedItemSecondaryType == EProjectJItemType::None || CachedItemSecondaryType ==
-					EProjectJItemType::Prop)
-				{
-					auto LocalContextSystem = GetWorld()->GetSubsystem<UProjectJContextSystem>();
-					LocalContextSystem->LuaExecutor->ExecuteAfterHide(CardType, ExecutingCard->ID);
-				}
-			
-				ExecutingCard = nullptr;
-			}, 0.5f, false);
 		}
 	}
 }
